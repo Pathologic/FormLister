@@ -1,0 +1,5 @@
+{
+    "require": {
+        "phpixie/validate": "3.*@dev"
+    }
+}
