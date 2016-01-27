@@ -27,6 +27,6 @@ if ($classname != 'FormLister' && file_exists($dir . $controller . ".php") && !c
 
 if (class_exists($classname, false) && $classname != 'FormLister') {
     $FormLister = new $classname($modx, $modx->Event->params, $_time);
-    $out = isset($modx->Event->params['api']) ? $FormLister->getJSON($data, $modx->Event->params['api']) : $FormLister->render();
+    $out = $FormLister->render(\APIhelpers::getkey($modx->event->params,'api',0));
 }
 return $out;

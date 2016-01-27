@@ -35,14 +35,15 @@ abstract class FormLister
 
 
     /**
-     * Данные для подстановки в шаблон
+     * Данные формы
      * fields - значения полей
      * errors - ошибки (поле => сообщение)
      * @var array
      */
     protected $_plh = array(
         'fields' => array(),
-        'errors' => array()
+        'errors' => array(),
+        'messages' => array()
     );
 
     /**
@@ -60,7 +61,9 @@ abstract class FormLister
      * Флаг успешной валидации
      * @var bool
      */
-    protected $isVaild = true;
+    protected $isValid = true;
+
+    protected $isSubmitted = false;
 
     public function __construct($modx, $cfg = array()) {
         $this->modx = $modx;
@@ -68,8 +71,10 @@ abstract class FormLister
         if (!isset($this->_cfg['formid'])) return false;
         $this->formid = $this->getCFGDef('formid');
         $this->setRequestParams(array_merge($_GET,$_POST));
+        $this->setFields();
         $this->getMailCfg(); //параметры для отправки почты в отдельный массив
         $this->renderTpl = $this->getCFGDef('formTpl');
+        
     }
 
     /**
@@ -110,6 +115,7 @@ abstract class FormLister
         } else {
             $ret = false;
         }
+        $this->isSubmitted = isset($this->_rq['formid']) && $this->_rq['formid'] == $this->formid;
         return $ret;
     }
 
@@ -143,33 +149,34 @@ abstract class FormLister
      * Сценарий
      */
     public function render() {
-        $this->getFields();
-        $this->getValidationRules();
-        $this->validateForm();
-        $this->sendForm(); //здесь подменяем шаблон и отправляем форму
+        if ($this->isSubmitted) {
+            $this->getValidationRules();
+            $this->validateForm();
+            if ($this->isValid) $this->process(); //здесь подменяем шаблон и отправляем форму
+        }
         return $this->renderForm();
     }
 
-    public function renderForm() {
+    public function renderForm($api = 0) {
         $tpl = $this->renderTpl;
-        $plh = $this->_plh['fields']; //поля формы
+        $plh = $this->fieldsToPlaceholders($this->_plh['fields']); //поля формы для подстановки в шаблон
         foreach ($this->_plh['errors'] as $type => $error) {
             $classType = ($type == 'required') ? 'required' : 'error';
             foreach ($error as $field => $message) {
-                $plh[$field.'.error'] = $message;
+                $plh[$field.'.error'] = $this->parseChunk($this->getCFGDef('errorTpl','@CODE:<div class="error">[+message+]</div>'),array('message'=>$message));
                 $plh[$field.'.'.$classType.'.class'] = $this->getCFGDef($field.'.'.$classType.'.class',$this->getCFGDef($classType.'.class',$classType));
             }
         }
+        $plh['form.messages'] = $this->renderMessages();
         $form = $this->parseChunk($tpl,$plh);
 
-        return $this->getCFGDef('api',0) ? json_encode($this->_plh) : $form;
+        return $api ? json_encode($this->_plh) : $form;
     }
 
-    public function getFields() {
-        $this->_plh['fields']['formid'] = $this->formid;
-        if (isset($this->_rq['formid']) && $this->_rq['formid'] == $this->formid) {
+    public function setFields() {
+         if ($this->isSubmitted) {
             foreach ($this->_rq as $key => $value) {
-                $this->_plh['fields'][$key . '.value'] = \APIhelpers::e($value);
+                $this->setField($key,$value);
             }
         }
     }
@@ -193,7 +200,7 @@ abstract class FormLister
 
         $document->allowExtraFields();
         $result = $validator->validate($this->_rq);
-        $this->isVaild = $result->isValid();
+        $this->isValid = $result->isValid();
         if (!$this->isValid) {
             foreach ($result->invalidFields() as $fieldResult) {
                 foreach ($fieldResult->errors() as $error) {
@@ -203,6 +210,26 @@ abstract class FormLister
                 }
             }
         }
+        return $this->isValid;
+    }
+
+    public function getField($field) {
+        if (isset($this->_plh['fields'][$field]))
+            return $this->_plh['fields'][$field];
+    }
+
+    public function setField($field, $value) {
+        $this->_plh['fields'][$field] = $value;
+    }
+
+    public function fieldsToPlaceholders($fields = array()) {
+        $out = array();
+        if ($fields) {
+            foreach ($fields as $field => $value) {
+                $out[$field.'.value'] = \APIhelpers::e($value);
+            }
+        }
+        return $out;
     }
 
     public function getValidationRules() {
@@ -211,17 +238,34 @@ abstract class FormLister
         $this->rules = $rules;
     }
 
-    public function renderValidationMessage() {
-        return '';
+    public function renderMessages() {
+        $out = '';
+        $messages = $this->_plh['messages'];
+        $errors = array();
+        if (isset($this->_plh['errors']['required'])) {
+            $errors = array_merge($errors,array_values($this->_plh['errors']['required']));
+        }
+        if (isset($this->_plh['errors']['filters'])) {
+            $errors = array_merge($errors,array_values($this->_plh['errors']['filters']));
+        }
+        $splitter = $this->getCFGDef('formMessagesSplitter','<br>');
+        $messages = implode($splitter,$messages);
+        $errors = implode($splitter,$errors);
+        $out = $this->parseChunk($this->getCFGDef('messagesTpl','@CODE:<div class="form-messages">[+messages+]</div>'),array(
+            'messages'=>$messages,
+            'errors'=>$errors
+        ));
+        return $out;
     }
 
-    /**
-     * @return bool
-     */
+    public function addMessage($message = '') {
+        if ($message) $this->_plh['errors']['messages'][] = $message;
+    }
+
     public function sendForm() {
-        return true;
+        $this->addMessage('Произошла ошибка при отправке формы');
+        return false;
     }
-
 
     public function getMailCfg() {
 
