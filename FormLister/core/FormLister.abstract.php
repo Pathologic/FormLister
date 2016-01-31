@@ -50,11 +50,6 @@ abstract class FormLister
     );
 
     /**
-     * @var array параметры для отправки почты
-     */
-    protected $_mailCfg = array();
-
-    /**
      * Массив с правилами валидации полей
      * @var array
      */
@@ -75,7 +70,6 @@ abstract class FormLister
         $this->formid = $this->getCFGDef('formid');
         $this->setRequestParams(array_merge($_GET,$_POST));
         $this->setFields();
-        $this->getMailCfg(); //параметры для отправки почты в отдельный массив
         $this->renderTpl = $this->getCFGDef('formTpl');
     }
 
@@ -148,19 +142,29 @@ abstract class FormLister
     }
 
     /*
-     * Сценарий
+     * Сценарий работы
      */
     public function render() {
         if ($this->isSubmitted) {
             $this->validateForm();
-            if ($this->isValid) $this->process(); //здесь подменяем шаблон и отправляем форму
+            if ($this->isValid) $this->process(); //здесь обрабатываем данные формы
         }
         return $this->renderForm();
     }
 
+    /**
+     * Вывод формы или шаблона
+     *
+     * @param int $api
+     * @return null|string
+     */
     public function renderForm($api = 0) {
+        if ($api) return json_encode($this->getFormData());
+        $formStatus = $this->getFormStatus();
         $tpl = $this->renderTpl;
-        $plh = $this->fieldsToPlaceholders($this->getFormFields()); //поля формы для подстановки в шаблон
+        $plh = $formStatus ? $this->fieldsToPlaceholders($this->getFormFields(),'','') : $this->fieldsToPlaceholders($this->getFormFields(),'','value'); //поля формы для подстановки в шаблон
+        $plh = array_merge($this->addPlaceholders(),$plh);
+
         foreach ($this->getFormErrors() as $field => $error) {
             foreach ($error as $type => $message) {
                 $classType = ($type == 'required') ? 'required' : 'error';
@@ -168,10 +172,12 @@ abstract class FormLister
                 $plh[$field.'.'.$classType.'.class'] = $this->getCFGDef($field.'.'.$classType.'.class',$this->getCFGDef($classType.'.class',$classType));
             }
         }
-        $plh['form.messages'] = $this->renderMessages();
-        $form = $this->parseChunk($tpl,$plh);
 
-        return $api ? json_encode($this->formData) : $form;
+        $plh['form.messages'] = $this->renderMessages();
+
+        $form = $this->parseChunk($tpl,$plh);
+        if ($formStatus) $form = nl2br($form);
+        return $form;
     }
 
     public function setFields() {
@@ -279,11 +285,13 @@ abstract class FormLister
         if ($message) $this->formData['messages'][] = $message;
     }
 
-    public function fieldsToPlaceholders($fields = array()) {
+    public function fieldsToPlaceholders($fields = array(), $prefix = '', $suffix = '') {
         $out = array();
         if ($fields) {
             foreach ($fields as $field => $value) {
-                $out[$field.'.value'] = \APIhelpers::e($value);
+                $field = array($prefix,$field,$suffix);
+                $field = implode('.',array_filter($field));
+                $out[$field] = \APIhelpers::e($value);
             }
         }
         return $out;
@@ -306,13 +314,107 @@ abstract class FormLister
         return $out;
     }
 
-    public function sendForm() {
-        $this->addMessage('Произошла ошибка при отправке формы');
-        return false;
+    public function renderReport() {
+        $out = '';
+        $tpl = $this->getCFGDef('reportTpl','');
+        $plh = $this->fieldsToPlaceholders($this->getFormFields()); //поля формы для подстановки в шаблон
+        $plh = array_merge($this->addPlaceholders(),$plh);
+        if (empty($tpl)) {
+            foreach ($plh as $key => $value)
+                $out .= "$key: $value\n";
+        } else {
+            $out = $this->parseChunk($tpl,$plh);
+        }
+        return $out;
     }
 
-    public function getMailCfg() {
 
+    //из eform
+    /**
+     * @param $mail - объект почтового класса
+     * @param $type - тип адреса
+     * @param $addr - адрес
+     */
+    public function addAddressToMailer(&$mail, $type, $addr) {
+        if (empty($addr)) return;
+        $a = array_filter(array_map('trim', explode(',', $addr)));
+        foreach ($a as $address) {
+            switch ($type) {
+                case 'to':
+                    $mail->AddAddress($address);
+                    break;
+                case 'cc':
+                    $mail->AddCC($address);
+                    break;
+                case 'bcc':
+                    $mail->AddBCC($address);
+                    break;
+                case 'replyTo':
+                    $mail->AddReplyTo($address);
+            }
+        }
+    }
+
+    public function sendForm() {
+        //если отправлять некуда или незачем, то делаем вид, что отправили
+        if (!$this->getCFGDef('to') || $this->getCFGDef('noemail')) {
+            $this->setFormStatus(true);
+            return true;
+        }
+
+        $isHtml = $this->getCFGDef('isHtml',1);
+        $report = $this->renderReport();
+
+        //херня какая-то
+        $report = !$isHtml ? html_entity_decode($report) : nl2br(htmlspecialchars_decode($report, ENT_QUOTES));
+
+        $this->modx->loadExtension('MODxMailer');
+        $mail = &$this->modx->mail;
+        $mail->IsHTML($isHtml);
+        $mail->From     = $this->getCFGDef('from',$this->modx->config['emailsender']);
+        $mail->FromName = $this->getCFGDef('fromname',$this->modx->config['site_name']);
+        $mail->Subject  = $this->getCFGDef('subject');
+        $mail->Body     = $report;
+        $this->addAddressToMailer($mail,"replyTo",$this->getCFGDef('replyTo'));
+        $this->addAddressToMailer($mail,"to",$this->getCFGDef('to'));
+        $this->addAddressToMailer($mail,"cc",$this->getCFGDef('cc'));
+        $this->addAddressToMailer($mail,"bcc",$this->getCFGDef('bcc'));
+
+        //AttachFilesToMailer($modx->mail,$attachments);
+
+        if(!$mail->send()) {
+            $this->addMessage("Произошла ошибка при отправке формы ({$mail->ErrorInfo})");
+            //$modx->mail->ErrorInfo; - добавить потом в сообщения отладки
+        } else {
+            $mail->ClearAllRecipients();
+            $mail->ClearAttachments();
+            $this->setFormStatus(true);
+        }
+        return $this->getFormStatus();
+    }
+
+    public function addPlaceholders ($placeholders = array()) {
+        $out = $placeholders;
+        $plhGroups = explode(',',$this->getCFGDef('addPlaceholders',''));
+        foreach ($plhGroups as $group) {
+            switch ($group) {
+                case 'session':
+                    $out = array_merge($out,$this->fieldsToPlaceholders($_SESSION,'session'));
+                    break;
+                case 'document':
+                    include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modResource.php');
+                    $doc = new \modResource($this->modx);
+                    $out = array_merge($out,$this->fieldsToPlaceholders($doc->edit($this->modx->documentIdentifier)->toArray(),'doc'));
+                    break;
+                case 'cookie':
+                    $out = array_merge($out,$this->fieldsToPlaceholders($_COOKIE,'cookie'));
+                    break;
+                case 'placeholders':
+                    $out = array_merge($out,$this->fieldsToPlaceholders($this->modx['placeholders'],'plh'));
+                    break;
+            }
+        }
+        return $out;
     }
 
     public function parseChunk($name, $data, $parseDocumentSource = false)
