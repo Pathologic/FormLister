@@ -181,7 +181,7 @@ abstract class FormLister
     }
 
     public function setFields() {
-         if ($this->isSubmitted) {
+        if ($this->isSubmitted) {
             foreach ($this->_rq as $key => $value) {
                 $this->setField($key,$value);
             }
@@ -382,15 +382,61 @@ abstract class FormLister
 
         //AttachFilesToMailer($modx->mail,$attachments);
 
-        if(!$mail->send()) {
+        $result = $mail->send();
+        if(!$result) {
             $this->addMessage("Произошла ошибка при отправке формы ({$mail->ErrorInfo})");
             //$modx->mail->ErrorInfo; - добавить потом в сообщения отладки
         } else {
             $mail->ClearAllRecipients();
             $mail->ClearAttachments();
-            $this->setFormStatus(true);
+
         }
-        return $this->getFormStatus();
+        return $result;
+    }
+
+    public function checkSubmitProtection() {
+        $result = false;
+        if ($protectSubmit = $this->getCFGDef('protectSubmit',1)) {
+            $hash = $this->getFormHash();
+            if (isset($_SESSION[$this->formid.'_hash']) && $_SESSION[$this->formid.'_hash'] == $hash && $hash!='') {
+                $result = true;
+                $this->addMessage('Данные успешно отправлены. Нет нужды отправлять данные несколько раз.');
+            }
+        }
+        return $result;
+    }
+
+    public function checkSubmitLimit() {
+        $submitLimit = $this->getCFGDef('submitLimit',60);
+        $result = false;
+        if($submitLimit >0){
+            if( time()<$submitLimit+$_SESSION[$this->formid.'_limit'] ){
+                $result = true;
+                $this->addMessage('Вы уже отправляли эту форму, попробуйте еще раз через '.round($submitLimit / 60,0). ' мин.');
+            }
+            else unset($_SESSION[$this->formid.'_limit'], $_SESSION[$this->formid.'_hash']); //time expired
+        }
+        return $result;
+    }
+
+    public function setSubmitProtection() {
+        if($this->getCFGDef('submitLimit',1)) $_SESSION[$this->formid.'_hash'] = $this->getFormHash(); //hash is set earlier
+        if($this->getCFGDef('submitLimit',60)>0) $_SESSION[$this->formid.'_limit'] = time();
+    }
+
+    public function getFormHash() {
+        $hash = '';
+        $protectSubmit = $this->getCFGDef('protectSubmit',1);
+        if (!is_numeric($protectSubmit)) { //supplied field names
+            $protectSubmit = explode(',', $protectSubmit);
+            foreach ($protectSubmit as $field)
+                $hash .= $this->getField($field);
+        } else //all required fields
+            foreach ($this->rules as $field => $rules)
+                foreach ($rules as $rule => $description)
+                    if ($rule == 'required') $hash .= $this->getField($field);
+        if($hash) $hash = md5($hash);
+        return $hash;
     }
 
     public function addPlaceholders ($placeholders = array()) {
@@ -424,7 +470,10 @@ abstract class FormLister
         return $out;
     }
 
-    public function process() {
-
-    }
+    /**
+     * Обработка формы, определяется контроллерами
+     *
+     * @return mixed
+     */
+    abstract public function process();
 }
