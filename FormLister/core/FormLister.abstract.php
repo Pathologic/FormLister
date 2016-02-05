@@ -23,6 +23,8 @@ abstract class FormLister
      */
     protected $modx = null;
 
+    protected $fs = null;
+
     protected $formid = '';
     /**
      * Массив настроек переданный через параметры сниппету
@@ -65,12 +67,56 @@ abstract class FormLister
 
     public function __construct(\DocumentParser $modx, $cfg = array()) {
         $this->modx = $modx;
+        $this->FS = \Helpers\FS::getInstance();
+        if (isset($cfg['config'])) {
+            $cfg = array_merge($this->loadConfig($cfg['config']), $cfg);
+        }
         $this->setConfig($cfg);
         if (!isset($this->_cfg['formid'])) return false;
         $this->formid = $this->getCFGDef('formid');
         $this->setRequestParams(array_merge($_GET,$_POST));
         $this->setFields();
         $this->renderTpl = $this->getCFGDef('formTpl');
+    }
+
+    /**
+     * Загрузка конфигов из файла
+     *
+     * @param $name string имя конфига
+     * @return array массив с настройками
+     */
+    public function loadConfig($name)
+    {
+        //$this->debug->debug('Load json config: ' . $this->debug->dumpData($name), 'loadconfig', 2);
+        if (!is_scalar($name)) {
+            $name = '';
+        }
+        $config = array();
+        $name = explode(";", $name);
+        foreach ($name as $cfgName) {
+            $cfgName = explode(":", $cfgName, 2);
+            if (empty($cfgName[1])) {
+                $cfgName[1] = 'custom';
+            }
+            $cfgName[1] = rtrim($cfgName[1], '/');
+            switch($cfgName[1]){
+                case 'custom':
+                case 'core':
+                    $configFile = dirname(__DIR__) . "/config/{$cfgName[1]}/{$cfgName[0]}.json";
+                    break;
+                default:
+                    $configFile = $this->FS->relativePath( $cfgName[1] . '/' . $cfgName[0] . ".json");
+                    break;
+            }
+
+            if ($this->FS->checkFile($configFile)) {
+                $json = file_get_contents($configFile);
+                $config = array_merge($config, \jsonHelper::jsonDecode($json, array('assoc' => true), true));
+            }
+        }
+
+        //$this->debug->debugEnd("loadconfig");
+        return $config;
     }
 
     /**
@@ -162,17 +208,13 @@ abstract class FormLister
         if ($api) return json_encode($this->getFormData());
         $formStatus = $this->getFormStatus();
         $tpl = $this->renderTpl;
-        $plh = $formStatus ? $this->fieldsToPlaceholders($this->getFormFields(),'','') : $this->fieldsToPlaceholders($this->getFormFields(),'','value'); //поля формы для подстановки в шаблон
+        $plh = $formStatus
+            ? $this->fieldsToPlaceholders($this->getFormFields(),'','',$this->getCFGDef('arraySplitter','; '))
+            : $this->fieldsToPlaceholders($this->getFormFields(),'','value'); //поля формы для подстановки в шаблон
         $plh = array_merge($this->addPlaceholders(),$plh);
 
-        foreach ($this->getFormErrors() as $field => $error) {
-            foreach ($error as $type => $message) {
-                $classType = ($type == 'required') ? 'required' : 'error';
-                $plh[$field.'.error'] = $this->parseChunk($this->getCFGDef('errorTpl','@CODE:<div class="error">[+message+]</div>'),array('message'=>$message));
-                $plh[$field.'.'.$classType.'.class'] = $this->getCFGDef($field.'.'.$classType.'.class',$this->getCFGDef($classType.'.class',$classType));
-            }
-        }
-
+        $plh = array_merge($plh,$this->errorsToPlaceholders());
+        if (!$formStatus) $plh = array_merge($plh,$this->arraysToPlaceholders());
         $plh['form.messages'] = $this->renderMessages();
 
         $form = $this->parseChunk($tpl,$plh);
@@ -204,11 +246,16 @@ abstract class FormLister
             foreach ($rules as $rule => $description) {
                 if ($rule == 'required') {
                     $_field->required();
-                } else {
-                    if (isset($description['params']) && is_array($description['params'])) {
-                        $filters[$rule] = $description['params'];
+                }  else {
+
+                    if (!is_array($this->getField($field))) {
+                        if (isset($description['params']) && is_array($description['params'])) {
+                            $filters[$rule] = $description['params'];
+                        } else {
+                            $filters[] = $rule;
+                        }
                     } else {
-                        $filters[] = $rule;
+                        $_field->addArrayOf()->$rule($description['params']);
                     }
                 }
             }
@@ -221,23 +268,38 @@ abstract class FormLister
         $result = $validator->validate($this->_rq);
         $this->isValid = $result->isValid();
         if (!$this->isValid) {
-            $this->addMessage('Форма заполнена неверно.');
+            //$this->addMessage('Форма заполнена неверно.');
             foreach ($result->invalidFields() as $fieldResult) {
                 foreach ($fieldResult->errors() as $error) {
-                    if ($error->type() == 'empty') {
-                        $this->addError(
-                            $fieldResult->path(),
-                            'required',
-                            $this->rules[$fieldResult->path()]['required']
-                        );
-                    } else {
-                        $rule = $this->rules[$fieldResult->path()][$error->filter()];
-                        $message = isset($rule['message']) ? $rule['message'] : $rule;
-                        $this->addError(
-                            $fieldResult->path(),
-                            $error->filter(),
-                            $message
-                        );
+                    switch ($error->type()) {
+                        case 'empty':
+                            $this->addError(
+                                $fieldResult->path(),
+                                'required',
+                                $this->rules[$fieldResult->path()]['required']
+                            );
+                            break;
+                        case 'itemCount':
+                            if ($error->maxCount() !== null) {
+                                $rule = $this->rules[$fieldResult->path()]['maxCount'];
+                            } else {
+                                $rule = $this->rules[$fieldResult->path()]['minCount'];
+                            }
+                            $message = is_array($rule) && isset($rule['message']) ? $rule['message'] : $rule;
+                            $this->addError($fieldResult->path(),
+                                'filter',
+                                $message
+                                );
+                            break;
+                        default:
+                            $rule = $this->rules[$fieldResult->path()][$error->filter()];
+                            $message = is_array($rule) && isset($rule['message']) ? $rule['message'] : $rule;
+                            $this->addError(
+                                $fieldResult->path(),
+                                $error->filter(),
+                                $message
+                            );
+                            break;
                     }
                 }
             }
@@ -285,16 +347,42 @@ abstract class FormLister
         if ($message) $this->formData['messages'][] = $message;
     }
 
-    public function fieldsToPlaceholders($fields = array(), $prefix = '', $suffix = '') {
+    public function fieldsToPlaceholders($fields = array(), $prefix = '', $suffix = '', $arraySplitter = '') {
         $out = array();
         if ($fields) {
             foreach ($fields as $field => $value) {
                 $field = array($prefix,$field,$suffix);
                 $field = implode('.',array_filter($field));
+                $value = is_array($value) && $arraySplitter ? implode($arraySplitter,$value) : $value;
                 $out[$field] = \APIhelpers::e($value);
             }
         }
         return $out;
+    }
+
+    public function errorsToPlaceholders() {
+        $plh = array();
+        foreach ($this->getFormErrors() as $field => $error) {
+            foreach ($error as $type => $message) {
+                $classType = ($type == 'required') ? 'required' : 'error';
+                $plh[$field.'.error'] = $this->parseChunk($this->getCFGDef('errorTpl','@CODE:<div class="error">[+message+]</div>'),array('message'=>$message));
+                $plh[$field.'.'.$classType.'.class'] = $this->getCFGDef($field.'.'.$classType.'.class',$this->getCFGDef($classType.'.class',$classType));
+            }
+        }
+        return $plh;
+    }
+
+    public function arraysToPlaceholders() {
+        $plh = array();
+        foreach ($this->getFormFields() as $field => $value) {
+            if (is_array($value)) {
+                foreach ($value as $_value) {
+                    $plh["s.{$field}.{$_value}"] = 'selected';
+                    $plh["c.{$field}.{$_value}"] = 'checked';
+                }
+            }
+        }
+        return $plh;
     }
 
     public function getValidationRules() {
@@ -304,20 +392,44 @@ abstract class FormLister
     }
 
     public function renderMessages() {
-        $splitter = $this->getCFGDef('formMessagesSplitter','<br>');
-        $messages = implode($splitter,$this->getFormMessages());
-        $errors = implode($splitter,$this->getFormErrors());
+        $formMessages = $this->getFormMessages();
+        $formErrors = $this->getFormErrors();
+
+        $requiredMessages = $filterMessages = array();
+        if ($formErrors) {
+            foreach ($formErrors as $field => $error) {
+                $type = key($error);
+                if ($type == 'required') {
+                    $requiredMessages[] = $error[$type];
+                } else {
+                    $filterMessages[] = $error[$type];
+                }
+            }
+        }
+
         $out = $this->parseChunk($this->getCFGDef('messagesTpl','@CODE:<div class="form-messages">[+messages+]</div>'),array(
-            'messages'=>$messages,
-            'errors'=>$errors
+            'messages'=>$this->renderMessagesGroup($formMessages,$this->getCFGDef('messagesOuterTpl',''),$this->getCFGDef('messagesSplitter','<br>')),
+            'required'=>$this->renderMessagesGroup($requiredMessages,$this->getCFGDef('messagesRequiredOuterTpl',''),$this->getCFGDef('messagesRequiredSplitter','<br>')),
+            'filters'=>$this->renderMessagesGroup($filterMessages,$this->getCFGDef('messagesFiltersOuterTpl',''),$this->getCFGDef('messagesFiltersSplitter','<br>')),
         ));
+
+        return $out;
+    }
+
+    public function renderMessagesGroup($messages, $wrapper, $splitter) {
+        $out = '';
+        if (is_array($messages) && !empty($messages)) {
+            $out = implode($splitter,$messages);
+            $wrapperChunk = $this->getCFGDef($wrapper,'@CODE: [+messages+]');
+            $out = $this->parseChunk($wrapperChunk,array('messages'=>$out));
+        }
         return $out;
     }
 
     public function renderReport() {
         $out = '';
         $tpl = $this->getCFGDef('reportTpl','');
-        $plh = $this->fieldsToPlaceholders($this->getFormFields()); //поля формы для подстановки в шаблон
+        $plh = $this->fieldsToPlaceholders($this->getFormFields(),'','',$this->getCFGDef('arraySplitter','; ')); //поля формы для подстановки в шаблон
         $plh = array_merge($this->addPlaceholders(),$plh);
         if (empty($tpl)) {
             foreach ($plh as $key => $value)
