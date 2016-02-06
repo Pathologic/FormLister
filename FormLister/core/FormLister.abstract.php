@@ -26,6 +26,8 @@ abstract class FormLister
     protected $fs = null;
 
     protected $formid = '';
+
+    protected $captcha = null;
     /**
      * Массив настроек переданный через параметры сниппету
      * @var array
@@ -67,7 +69,7 @@ abstract class FormLister
 
     public function __construct(\DocumentParser $modx, $cfg = array()) {
         $this->modx = $modx;
-        $this->FS = \Helpers\FS::getInstance();
+        $this->fs = \Helpers\FS::getInstance();
         if (isset($cfg['config'])) {
             $cfg = array_merge($this->loadConfig($cfg['config']), $cfg);
         }
@@ -77,6 +79,7 @@ abstract class FormLister
         $this->setRequestParams(array_merge($_GET,$_POST));
         $this->setFields();
         $this->renderTpl = $this->getCFGDef('formTpl');
+        $this->initCaptcha();
     }
 
     /**
@@ -572,6 +575,7 @@ abstract class FormLister
                     break;
             }
         }
+        $out['captcha'] = $this->addCaptchaPlaceholder();
         return $out;
     }
 
@@ -579,6 +583,31 @@ abstract class FormLister
     {
         $out = null;
         $out = \DLTemplate::getInstance($this->modx)->parseChunk($name, $data, $parseDocumentSource);
+        return $out;
+    }
+
+    public function initCaptcha() {
+        if ($captcha = $this->getCFGDef('captcha')) {
+            $wrapper = MODX_BASE_PATH."assets/snippets/FormLister/lib/captcha/{$captcha}/wrapper.php";
+            if ($this->fs->checkFile($wrapper)) {
+                include_once($wrapper);
+                $_captcha = captcha::init($this->modx, $this->getConfig());
+                if ($_captcha !== false) {
+                    $this->captcha = $_captcha;
+                    $rules = $this->getCFGDef('rules', '');
+                    if ($rules) {
+                        $this->setConfig(array('rules' => str_replace('##captcha##', $this->captcha->getCaptcha(),$rules)));
+                    }
+                }
+            }
+        }
+    }
+
+    public function addCaptchaPlaceholder() {
+        $out = '';
+        if (!is_null($this->captcha)) {
+            $out = $this->captcha->getPlaceholder();
+        }
         return $out;
     }
 
