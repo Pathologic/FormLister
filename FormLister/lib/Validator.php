@@ -1,24 +1,47 @@
 <?php
+namespace FormLister;
 
-namespace PHPixie\Validate\Filters\Registry\Type;
-
-class Pattern extends \PHPixie\Validate\Filters\Registry\Implementation
+class Validator
 {
-    public function filters()
-    {
-        return array(
-            'alpha',
-            'numeric',
-            'alphaNumeric',
-            'slug',
-            'decimal',
-            'phone',
-            'matches',
-            'url',
-            'email'
-        );
+    public function required($value) {
+        return !in_array($value, array(null, ''), true);
     }
-    
+
+    public function min($value, $min)
+    {
+        return $value >= $min;
+    }
+
+    public function max($value, $max)
+    {
+        return $value <= $max;
+    }
+
+    public function greater($value, $min)
+    {
+        return $value > $min;
+    }
+
+    public function less($value, $max)
+    {
+        return $value < $max;
+    }
+
+    public function between($value, $min, $max)
+    {
+        return ($value >= $min && $value <= $max);
+    }
+
+    public function equals($value, $allowed)
+    {
+        return $value === $allowed;
+    }
+
+    public function in($value, $allowed)
+    {
+        return in_array($value, $allowed, true);
+    }
+
     public function alpha($value)
     {
         return (bool) preg_match('/^\pL++$/uD', $value);
@@ -67,7 +90,6 @@ class Pattern extends \PHPixie\Validate\Filters\Registry\Implementation
             $~iDx',
             $value);
     }
-
     public function email($value)
     {
         return (bool) preg_match(
@@ -80,5 +102,30 @@ class Pattern extends \PHPixie\Validate\Filters\Registry\Implementation
             $/iDx',
             $value
         );
+    }
+    public function length($value, $length)
+    {
+        return $this->getLength($value) === $length;
+    }
+
+    public function minLength($value, $minLength)
+    {
+        return $this->getLength($value) >= $minLength;
+    }
+
+    public function maxLength($value, $maxLength)
+    {
+        return $this->getLength($value) <= $maxLength;
+    }
+
+    public function lengthBetween($value, $minLength, $maxLength)
+    {
+        $length = $this->getLength($value);
+        return ($length >= $minLength && $length <= $maxLength);
+    }
+
+    protected function getLength($string)
+    {
+        return strlen(utf8_decode($string));
     }
 }

@@ -9,7 +9,10 @@ class Login extends FormLister
 {
     public function render()
     {
-        if ($this->modx->getLoginUserID()) return;
+        if ($this->modx->getLoginUserID()) {
+            if ($redirect = $this->getCFGDef('redirectTo',false)) $this->modx->sendRedirect($this->modx->makeUrl($redirect), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
+            return;
+        };
         return parent::render();
     }
 
