@@ -124,6 +124,18 @@ class Validator
         return ($length >= $minLength && $length <= $maxLength);
     }
 
+    public function minSize($value, $minSize) {
+        return count($value) >= $minSize;
+    }
+
+    public function maxSize($value, $maxSize) {
+        return count($value) <= $maxSize;
+    }
+
+    public function sizeBetween($value, $minSize, $maxSize) {
+        return (count($value) >= $minSize && count($value) <= $maxSize);
+    }
+
     protected function getLength($string)
     {
         return strlen(utf8_decode($string));

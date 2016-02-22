@@ -252,14 +252,20 @@ abstract class FormLister
     }
 
     /**
-     * Формирует массив значений для подстановки в плейсхолдеры
+     * Формирует массив плейсхолдеров
      * @return array
      */
     public function prerenderForm() {
-        $plh = $this->fieldsToPlaceholders($this->getFormFields(), '', 'value'); //поля формы для подстановки в шаблон
-        $plh = array_merge($plh, $this->errorsToPlaceholders());
-        $plh = array_merge($plh, $this->controlsToPlaceholders());
-        $plh['form.messages'] = $this->renderMessages();
+        if ($this->getFormStatus()) {
+            $plh = $this->fieldsToPlaceholders($this->getFormFields(), '', '', true);
+        } else {
+            $plh = array_merge(
+                $this->fieldsToPlaceholders($this->getFormFields(), '', 'value'),
+                $this->controlsToPlaceholders(),
+                $this->errorsToPlaceholders()
+            );
+            $plh['form.messages'] = $this->renderMessages();
+        }
         return $plh;
     }
 
@@ -274,21 +280,8 @@ abstract class FormLister
         if ($api) {
             return json_encode($this->getFormData());
         }
-        $formStatus = $this->getFormStatus();
-        $tpl = $this->renderTpl;
-        $plh = $formStatus
-            ? $this->fieldsToPlaceholders($this->getFormFields(), '', '', $this->getCFGDef('arraySplitter', '; '))
-            : $this->fieldsToPlaceholders($this->getFormFields(), '', 'value'); //поля формы для подстановки в шаблон
-        $plh = array_merge($this->addPlaceholders(), $plh);
-
-        $plh = array_merge($plh, $this->errorsToPlaceholders());
-        if (!$formStatus) {
-            $plh = array_merge($plh, $this->controlsToPlaceholders());
-        }
-        $plh['form.messages'] = $this->renderMessages();
-
-        $form = $this->parseChunk($tpl, $plh);
-        if ($formStatus) {
+        $form = $this->parseChunk($this->renderTpl, $this->prerenderForm());
+        if ($this->getFormStatus()) {
             $form = nl2br($form);
         }
         return $form;
@@ -399,14 +392,17 @@ abstract class FormLister
         }
     }
 
-    public function fieldsToPlaceholders($fields = array(), $prefix = '', $suffix = '', $arraySplitter = '')
+    public function fieldsToPlaceholders($fields = array(), $prefix = '', $suffix = '', $split = false)
     {
         $out = array();
         if ($fields) {
             foreach ($fields as $field => $value) {
                 $field = array($prefix, $field, $suffix);
                 $field = implode('.', array_filter($field));
-                $value = is_array($value) && $arraySplitter ? implode($arraySplitter, $value) : $value;
+                if ($split && is_array($value)) {
+                    $arraySplitter = $this->getCFGDef($field.'Splitter',$this->getCFGDef('arraySplitter','; '));
+                    $value = implode($arraySplitter, $value);
+                }
                 $out[$field] = \APIhelpers::e($value);
             }
         }
@@ -432,12 +428,19 @@ abstract class FormLister
     public function controlsToPlaceholders()
     {
         $plh = array();
-        foreach ($this->getFormFields() as $field => $value) {
-            if (is_array($value)) {
+        $formControls = explode(',',$this->getCFGDef('formControls'));
+        foreach ($formControls as $field) {
+            $value = $this->getField($field);
+            if (empty($value)) {
+                continue;
+            } elseif (is_array($value)) {
                 foreach ($value as $_value) {
                     $plh["s.{$field}.{$_value}"] = 'selected';
                     $plh["c.{$field}.{$_value}"] = 'checked';
                 }
+            } else {
+                $plh["s.{$field}.{$value}"] = 'selected';
+                $plh["c.{$field}.{$value}"] = 'checked';
             }
         }
         return $plh;
