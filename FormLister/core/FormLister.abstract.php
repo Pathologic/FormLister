@@ -84,7 +84,6 @@ abstract class FormLister
         }
         $this->renderTpl = $this->formid ? $this->getCFGDef('formTpl') : '@CODE:';
         $this->initCaptcha();
-        $this->initValidator();
     }
 
     /**
