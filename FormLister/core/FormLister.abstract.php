@@ -49,6 +49,8 @@ abstract class FormLister
         'status'   => false
     );
 
+    protected $validator = null;
+
     /**
      * Массив с правилами валидации полей
      * @var array
@@ -71,14 +73,18 @@ abstract class FormLister
             $cfg = array_merge($this->loadConfig($cfg['config']), $cfg);
         }
         $this->setConfig($cfg);
-        if (!isset($this->_cfg['formid'])) {
-            return false;
+    }
+
+    public function initForm() {
+        $this->formid = $this->getCFGDef('formid'); //TODO debug
+        if ($this->setRequestParams(array_merge($_GET, $_POST))) {
+            $this->setFields($this->_rq);
+        } else {
+            $this->setDefaults();
         }
-        $this->formid = $this->getCFGDef('formid');
-        $this->setRequestParams(array_merge($_GET, $_POST));
-        $this->setFields();
-        $this->renderTpl = $this->getCFGDef('formTpl');
+        $this->renderTpl = $this->formid ? $this->getCFGDef('formTpl') : '@CODE:';
         $this->initCaptcha();
+        $this->initValidator();
     }
 
     /**
@@ -147,36 +153,41 @@ abstract class FormLister
     }
 
     /**
-     * Закгрузка значений по умолчанию, вызывается один раз при выводе формы
+     * Загрузка значений по умолчанию, вызывается один раз при выводе формы
      */
     public function setDefaults() {
-        $sources = array_unique(explode(',',$this->getCFGDef('defaultsSource','json')));
+        $sources = array_unique(explode(',',$this->getCFGDef('defaultsSource','array')));
         $defaults = array();
+        $prefix = '';
         foreach ($sources as $source) {
             switch ($source) {
-                case 'json':
-                    $defaults = array_merge($defaults,\jsonHelper::jsonDecode($this->getCFGDef('defaults'), array('assoc' => true), true));
+                case 'array':
+                    $defaults = array_merge($defaults,is_array($this->getCFGDef('defaults')) ? $this->getCFGDef('defaults') : \jsonHelper::jsonDecode($this->getCFGDef('defaults'), array('assoc' => true), true));
                     break;
                 case 'session':
                     $_source = explode(':',$source);
                     $defaults = isset($_source[1]) && isset($_SESSION[$_source[1]]) ?
                         array_merge($defaults,$_SESSION[$_source[1]]) :
                         array_merge($defaults, $_SESSION);
+                    $prefix = 'session';
                     break;
                 case 'plh':
                     $_source = explode(':',$source);
                     $defaults = isset($_source[1]) && isset($this->modx->placeholders[$_source[1]]) ?
                         array_merge($defaults,$this->modx->placeholders[$_source[1]]) :
                         array_merge($defaults, $this->modx->placeholders);
+                    $prefix = 'plh';
                     break;
                 case 'config':
                     $defaults = array_merge($defaults,$this->modx->config);
+                    $prefix = 'config';
                     break;
                 case 'cookie':
                     $_source = explode(':',$source);
                     $defaults = isset($_source[1]) && isset($_COOKIE[$_source[1]]) ?
                         array_merge($defaults,$_COOKIE[$_source[1]]) :
                         array_merge($defaults, $_COOKIE);
+                    $prefix = 'cookie';
                     break;
                 default:
                     $_source = explode(':',$source);
@@ -185,13 +196,12 @@ abstract class FormLister
                         $obj = new $classname($this->modx);
                         if ($data = $obj->edit($_source[1])) {
                             $defaults = array_merge($defaults,$data->toArray());
+                            $prefix = $classname;
                         }
                     }
             }
         }
-        foreach($defaults as $key => $value) {
-            if (!empty($value)) $this->setField($key, $value);
-        }
+        $this->setFields($defaults,$prefix);
     }
 
     /**
@@ -290,26 +300,32 @@ abstract class FormLister
     /**
      * Устанавливает значения полей формы
      */
-    public function setFields()
+    public function setFields($fields = array(),$prefix = '')
     {
-        if ($this->isSubmitted) {
-            foreach ($this->_rq as $key => $value) {
+        foreach ($fields as $key => $value) {
+            if (!empty($value)) {
+                if ($prefix) $key = implode('.',array($prefix,$key));
                 $this->setField($key, $value);
             }
-        } else {
-            $this->setDefaults();
         }
+    }
+
+    public function initValidator() {
+        include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Validator.php');
+        $this->validator = new \FormLister\Validator();
+        return $this->validator;
     }
 
     public function validateForm()
     {
+        $validator = $this->initValidator();
         $this->getValidationRules();
-        if (!$this->rules) {
+        if (!$this->rules || is_null($validator)) {
             return false;
         } //если правил нет, то не проверяем
 
-        include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Validator.php');
-        $validator = new \FormLister\Validator();
+        $result = true;
+
         //применяем правила
         foreach ($this->rules as $field => $rules) {
             $_field = $this->getField($field);
@@ -321,10 +337,13 @@ abstract class FormLister
                 } else {
                     $message = $description;
                 }
-                if (is_scalar($rule) && method_exists($validator, $rule)) {
+                if (is_scalar($rule) && ($rule != 'custom') && method_exists($validator, $rule)) {
                     $result = call_user_func_array(array($validator, $rule), $params);
-                } elseif ((is_object($rule) && ($rule instanceof Closure)) || is_callable($rule)) {
-                    $result = call_user_func_array($rule, $params);
+                } else {
+                    if (isset($description['rule'])) $_rule = $description['rule'];
+                    if ((is_object($_rule) && ($_rule instanceof Closure)) || is_callable($_rule)) {
+                        $result = call_user_func_array($_rule, $params);
+                    }
                 }
                 if (!$result) {
                     $this->addError(
@@ -394,8 +413,8 @@ abstract class FormLister
 
     public function fieldsToPlaceholders($fields = array(), $prefix = '', $suffix = '', $split = false)
     {
-        $out = array();
-        if ($fields) {
+        $plh = array();
+        if (is_array($fields) && !empty($fields)) {
             foreach ($fields as $field => $value) {
                 $field = array($prefix, $field, $suffix);
                 $field = implode('.', array_filter($field));
@@ -403,10 +422,10 @@ abstract class FormLister
                     $arraySplitter = $this->getCFGDef($field.'Splitter',$this->getCFGDef('arraySplitter','; '));
                     $value = implode($arraySplitter, $value);
                 }
-                $out[$field] = \APIhelpers::e($value);
+                $plh[$field] = \APIhelpers::e($value);
             }
         }
-        return $out;
+        return $plh;
     }
 
     public function errorsToPlaceholders()

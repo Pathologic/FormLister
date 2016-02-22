@@ -27,6 +27,7 @@ if ($classname != 'FormLister' && file_exists($dir . $controller . ".php") && !c
 
 if (class_exists($classname, false) && $classname != 'FormLister') {
     $FormLister = new $classname($modx, $modx->Event->params, $_time);
+    $FormLister->initForm();
     $out = $FormLister->render(\APIhelpers::getkey($modx->event->params,'api',0));
 }
 return $out;
