@@ -651,6 +651,7 @@ abstract class Core
     {
         //если отправлять некуда или незачем, то делаем вид, что отправили
         if (!$this->getCFGDef('to') || $this->getCFGDef('noemail')) {
+            $this->setFormStatus(true);
             return true;
         }
 
