@@ -3,7 +3,7 @@
  * Контроллер для обычных форм, типа обратной связи
  */
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
-class Form extends FormLister
+class Form extends Core
 {
     public function process() {
         //если сработала защита, то не отправляем

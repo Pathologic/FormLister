@@ -1,52 +1,60 @@
-<?php namespace FormLister;
+<?php
 /**
- * Created by PhpStorm.
- * User: Pathologic
- * Date: 06.02.2016
- * Time: 1:07
+ * Обертка для работы с классом капчи
  */
-
 include_once ('modxCaptcha.php');
 
-class captcha
+class modxCaptchaWrapper
 {
-    protected $modx = null;
+    protected $FL = null;
     protected $captcha = null;
-    protected $formid = '';
 
-    public static function init($modx, $params = array()) {
-        if (!isset($params['formid'])) {
-            return false;
-        } else {
-            return new self($modx, $params);
-        }
-    }
-
-    public function __construct($modx, $params = array())
+    public function __construct(FormLister\Core $FL)
     {
-        $this->modx = $modx;
-        $this->params = $params;
-        $width = isset($params['captchaWidth']) ? $params['captchaWidth'] : 200;
-        $height = isset($params['captchaHeight']) ? $params['captchaHeight'] : 160;
-        $this->captcha = new \modxCaptcha($modx, $width, $height);
-        $this->formid = $params['formid'];
+        $this->FL = $FL;
+        $width = $this->FL->getCFGDef('captchaWidth',200);
+        $height = $this->FL->getCFGDef('captchaHeight',160);
+        $this->captcha = new \modxCaptcha($FL->getMODX(), $width, $height);
     }
 
-    public function getCaptcha() {
-        $out = $_SESSION[$this->formid.'.captcha'];
-        $_SESSION[$this->formid.'.captcha'] = $this->captcha->word;
+    /**
+     * Значение капчи
+     * @return mixed
+     */
+    public function getValue() {
+        $formid = $this->FL->getFormId();
+        $out = $_SESSION[$formid.'.captcha'];
+        $_SESSION[$formid.'.captcha'] = $this->captcha->word;
         return $out;
-
     }
 
+    /**
+     * Плейсхолдер капчи для вывода в шаблон
+     * Может быть ссылкой на коннектор (чтобы можно было обновлять c помощью js), может быть сразу картинкой в base64
+     * @return string
+     */
     public function getPlaceholder() {
-        if (isset($this->params['captchaInline']) && $this->params['captchaInline']) {
+        if ($this->FL->getCFGDef('captchaInline',1)) {
             $out = $this->captcha->output_image(true);
         } else {
-            $out = MODX_BASE_URL . 'assets/snippets/FormLister/lib/captcha/modxCaptcha/connector.php?formid=' . $this->formid;
-            if (isset($this->params['captchaWidth'])) $out .= '&w=' . $this->params['captchaWidth'];
-            if (isset($this->params['captchaHeight'])) $out .= '&h=' . $this->params['captchaHeight'];
+            $out = MODX_BASE_URL . 'assets/snippets/FormLister/lib/captcha/modxCaptcha/connector.php?formid=' . $this->FL->getFormId();
+            $out .= '&w=' . $this->FL->getCFGDef('captchaWidth',200);
+            $out .= '&h=' . $this->FL->getCFGDef('captchaHeight',160);
         }
         return $out;
+    }
+
+    /**
+     * Установка правила валидации поля с капчей
+     * @return array
+     */
+    public function getRule() {
+        return array(
+            "required" => $this->FL->getCFGDef('captchaRequiredMessage', 'Введите проверочный код'),
+            "equals"   => array(
+                "params"  => array($this->getValue()),
+                "message" => $this->FL->getCFGDef('captchaErrorMessage', 'Неверный проверочный код')
+            )
+        );
     }
 }

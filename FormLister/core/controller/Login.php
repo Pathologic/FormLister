@@ -5,7 +5,7 @@
  */
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
 include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
-class Login extends FormLister
+class Login extends Core
 {
     public function render()
     {

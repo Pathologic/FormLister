@@ -9,7 +9,7 @@ require_once(MODX_BASE_PATH . "assets/snippets/DocLister/lib/DLTemplate.class.ph
  * Class FormLister
  * @package FormLister
  */
-abstract class FormLister
+abstract class Core
 {
     /**
      * @var array
@@ -21,9 +21,12 @@ abstract class FormLister
 
     protected $fs = null;
 
+    /**
+     * Идентификатор формы
+     * @var mixed|string
+     */
     protected $formid = '';
 
-    protected $captcha = null;
     /**
      * Массив настроек переданный через параметры сниппету
      * @var array
@@ -31,8 +34,11 @@ abstract class FormLister
      */
     private $_cfg = array();
 
+    /**
+     * Шаблон для вывода по правилам DocLister
+     * @var string
+     */
     public $renderTpl = '';
-
 
     /**
      * Данные формы
@@ -63,7 +69,24 @@ abstract class FormLister
      */
     protected $isValid = true;
 
+    /**
+     * Если данные из формы отправлены, то true
+     * @var bool
+     */
     protected $isSubmitted = false;
+
+    /**
+     * Массив с именами полей, которые можно отправлять в форме
+     * По умолчанию все поля разрешены
+     * @var array
+     */
+    public $allowedFields = array();
+
+    /**
+     * Массив с именами полей, которые запрещено отправлять в форме
+     * @var array
+     */
+    public $forbiddenFields = array();
 
     public function __construct($modx, $cfg = array())
     {
@@ -73,16 +96,23 @@ abstract class FormLister
             $cfg = array_merge($this->loadConfig($cfg['config']), $cfg);
         }
         $this->setConfig($cfg);
+        $this->allowedFields = $this->getCFGDef('allowedFields') ? explode(',',$this->getCFGDef('allowedFields')) : array();
+        $this->disallowedFields = $this->getCFGDef('disallowedFields') ? explode(',',$this->getCFGDef('disallowedFields')) : array();
+        $this->formid = $this->getCFGDef('formid');
     }
 
+    /**
+     * Установка значений в formData
+     * Установка шаблона формы
+     * Загрузка капчи
+     */
     public function initForm() {
-        $this->formid = $this->getCFGDef('formid'); //TODO debug
+        if (!$this->isSubmitted) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         if ($this->setRequestParams(array_merge($_GET, $_POST))) {
             $this->setFields($this->_rq);
-        } else {
-            $this->setDefaults();
+            if ($this->getCFGDef('preserveDefaults')) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         }
-        $this->renderTpl = $this->formid ? $this->getCFGDef('formTpl') : '@CODE:';
+        $this->renderTpl = $this->formid ? $this->getCFGDef('formTpl') : '@CODE:'; //Шаблон по умолчанию
         $this->initCaptcha();
     }
 
@@ -152,40 +182,44 @@ abstract class FormLister
     }
 
     /**
-     * Загрузка значений по умолчанию, вызывается один раз при выводе формы
+     * Загружает в formData данные не из формы
+     * @param string $sources список источников
+     * @param string $arrayParam название параметра с данными
      */
-    public function setDefaults() {
-        $sources = array_unique(explode(',',$this->getCFGDef('defaultsSource','array')));
-        $defaults = array();
-        $prefix = '';
+    public function setExternalFields($sources = 'array', $arrayParam = 'defaults') {
+        $sources = explode(',',$sources);
+        $fields = array();
         foreach ($sources as $source) {
             switch ($source) {
                 case 'array':
-                    $defaults = array_merge($defaults,is_array($this->getCFGDef('defaults')) ? $this->getCFGDef('defaults') : \jsonHelper::jsonDecode($this->getCFGDef('defaults'), array('assoc' => true), true));
+                    if ($arrayParam) {
+                        $fields = array_merge($fields,is_array($this->getCFGDef($arrayParam)) ? $this->getCFGDef($arrayParam) : \jsonHelper::jsonDecode($this->getCFGDef($arrayParam), array('assoc' => true), true));
+                        $prefix = '';
+                    }
                     break;
                 case 'session':
                     $_source = explode(':',$source);
-                    $defaults = isset($_source[1]) && isset($_SESSION[$_source[1]]) ?
-                        array_merge($defaults,$_SESSION[$_source[1]]) :
-                        array_merge($defaults, $_SESSION);
+                    $fields = isset($_source[1]) && isset($_SESSION[$_source[1]]) ?
+                        array_merge($fields,$_SESSION[$_source[1]]) :
+                        array_merge($fields, $_SESSION);
                     $prefix = 'session';
                     break;
                 case 'plh':
                     $_source = explode(':',$source);
-                    $defaults = isset($_source[1]) && isset($this->modx->placeholders[$_source[1]]) ?
-                        array_merge($defaults,$this->modx->placeholders[$_source[1]]) :
-                        array_merge($defaults, $this->modx->placeholders);
+                    $fields = isset($_source[1]) && isset($this->modx->placeholders[$_source[1]]) ?
+                        array_merge($fields,$this->modx->placeholders[$_source[1]]) :
+                        array_merge($fields, $this->modx->placeholders);
                     $prefix = 'plh';
                     break;
                 case 'config':
-                    $defaults = array_merge($defaults,$this->modx->config);
+                    $fields = array_merge($fields,$this->modx->config);
                     $prefix = 'config';
                     break;
                 case 'cookie':
                     $_source = explode(':',$source);
-                    $defaults = isset($_source[1]) && isset($_COOKIE[$_source[1]]) ?
-                        array_merge($defaults,$_COOKIE[$_source[1]]) :
-                        array_merge($defaults, $_COOKIE);
+                    $fields = isset($_source[1]) && isset($_COOKIE[$_source[1]]) ?
+                        array_merge($fields,$_COOKIE[$_source[1]]) :
+                        array_merge($fields, $_COOKIE);
                     $prefix = 'cookie';
                     break;
                 default:
@@ -194,13 +228,13 @@ abstract class FormLister
                     if (class_exists($classname) && isset($_source[1])) {
                         $obj = new $classname($this->modx);
                         if ($data = $obj->edit($_source[1])) {
-                            $defaults = array_merge($defaults,$data->toArray());
+                            $fields = array_merge($fields,$data->toArray());
                             $prefix = $classname;
                         }
                     }
             }
         }
-        $this->setFields($defaults,$prefix);
+        $this->setFields($fields,$this->getCFGDef('extPrefix') ? $prefix : '');
     }
 
     /**
@@ -248,6 +282,9 @@ abstract class FormLister
 
     /*
      * Сценарий работы
+     * Если форма отправлена, то проверяем данные
+     * Если проверка успешна, то обрабатываем данные
+     * Выводим шаблон
      */
     public function render()
     {
@@ -255,26 +292,26 @@ abstract class FormLister
             $this->validateForm();
             if ($this->isValid) {
                 $this->process();
-            } //здесь обрабатываем данные формы
+            }
         }
         return $this->renderForm();
     }
 
     /**
-     * Формирует массив плейсхолдеров
+     * Готовит данные для вывода в шаблоне
+     * @param bool $convertArraysToStrings
      * @return array
      */
-    public function prerenderForm() {
-        if ($this->getFormStatus()) {
-            $plh = $this->fieldsToPlaceholders($this->getFormFields(), '', '', true);
-        } else {
-            $plh = array_merge(
-                $this->fieldsToPlaceholders($this->getFormFields(), '', 'value'),
-                $this->controlsToPlaceholders(),
-                $this->errorsToPlaceholders()
-            );
-            $plh['form.messages'] = $this->renderMessages();
-        }
+    public function prerenderForm($convertArraysToStrings = false) {
+        $plh = array_merge(
+            $this->fieldsToPlaceholders($this->getFormData('fields'), 'value', $this->getFormData('status') || $convertArraysToStrings),
+            $this->controlsToPlaceholders(),
+            $this->errorsToPlaceholders(),
+            array(
+                'form.messages' => $this->renderMessages(),
+                'captcha'=>$this->getField('captcha')
+            )
+        );
         return $plh;
     }
 
@@ -290,31 +327,38 @@ abstract class FormLister
             return json_encode($this->getFormData());
         }
         $form = $this->parseChunk($this->renderTpl, $this->prerenderForm());
-        if ($this->getFormStatus()) {
-            $form = nl2br($form);
-        }
         return $form;
     }
 
     /**
-     * Устанавливает значения полей формы
+     * Загружает данные в formData
+     * @param array $fields массив полей
+     * @param string $prefix добавляет префикс к имени поля
      */
     public function setFields($fields = array(),$prefix = '')
     {
         foreach ($fields as $key => $value) {
-            if (!empty($value)) {
+            if ((!in_array($key,$this->forbiddenFields) || in_array($key,$this->allowedFields))&& !empty($value)) {
                 if ($prefix) $key = implode('.',array($prefix,$key));
                 $this->setField($key, $value);
             }
         }
     }
 
+    /**
+     * Загружает класс-валидатор и создает его экземпляр
+     * @return Validator|null
+     */
     public function initValidator() {
         include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Validator.php');
         $this->validator = new \FormLister\Validator();
         return $this->validator;
     }
 
+    /**
+     * Возвращает результат проверки полей
+     * @return bool
+     */
     public function validateForm()
     {
         $validator = $this->initValidator();
@@ -357,52 +401,66 @@ abstract class FormLister
         return $this->isValid;
     }
 
-    public function getFormData()
+    /**
+     * Возвращает массив formData или его часть
+     * @param string $section
+     * @return array
+     */
+    public function getFormData($section = '')
     {
-        return $this->formData;
+        if ($section && isset($this->formData[$section])) {
+            $out = $this->formData[$section];
+        } else {
+            $out = $this->formData;
+        }
+        return $out;
     }
 
-    public function getFormErrors()
-    {
-        return $this->formData['errors'];
-    }
-
-    public function getFormMessages()
-    {
-        return $this->formData['messages'];
-    }
-
-    public function getFormFields()
-    {
-        return $this->formData['fields'];
-    }
-
-    public function getFormStatus()
-    {
-        return $this->formData['status'];
-    }
-
+    /**
+     * Устанавливает статус формы, если true, то форма успешно обработана
+     * @param $status
+     */
     public function setFormStatus($status)
     {
         $this->formData['status'] = (bool)$status;
     }
 
+    /**
+     * Возвращает значение поля из formData
+     * @param $field
+     * @return string
+     */
     public function getField($field)
     {
         return isset($this->formData['fields'][$field]) ? $this->formData['fields'][$field] : '';
     }
 
+    /**
+     * Сохраняет значение поля в formData
+     * @param $field имя поля
+     * @param $value значение поля
+     */
     public function setField($field, $value)
     {
         $this->formData['fields'][$field] = $value;
     }
 
+    /**
+     * Добавляет в formData информацию об ошибке
+     * @param $field имя поля
+     * @param $type тип ошибки
+     * @param $message сообщение об ошибке
+     */
     public function addError($field, $type, $message)
     {
         $this->formData['errors'][$field][$type] = $message;
         $this->isValid = false;
     }
 
+    /**
+     * Добавляет сообщение в formData
+     * @param string $message
+     */
     public function addMessage($message = '')
     {
         if ($message) {
@@ -410,12 +468,19 @@ abstract class FormLister
         }
     }
 
-    public function fieldsToPlaceholders($fields = array(), $prefix = '', $suffix = '', $split = false)
+    /**
+     * Готовит данные для вывода в шаблон
+     * @param array $fields массив с данными
+     * @param string $suffix добавляет суффикс к имени поля
+     * @param bool $split преобразование массивов в строки
+     * @return array
+     */
+    public function fieldsToPlaceholders($fields = array(), $suffix = '', $split = false)
     {
         $plh = array();
         if (is_array($fields) && !empty($fields)) {
             foreach ($fields as $field => $value) {
-                $field = array($prefix, $field, $suffix);
+                $field = array($field, $suffix);
                 $field = implode('.', array_filter($field));
                 if ($split && is_array($value)) {
                     $arraySplitter = $this->getCFGDef($field.'Splitter',$this->getCFGDef('arraySplitter','; '));
@@ -427,10 +492,14 @@ abstract class FormLister
         return $plh;
     }
 
+    /**
+     * Готовит сообщения об ошибках для вывода в шаблон
+     * @return array
+     */
     public function errorsToPlaceholders()
     {
         $plh = array();
-        foreach ($this->getFormErrors() as $field => $error) {
+        foreach ($this->getFormData('errors') as $field => $error) {
             foreach ($error as $type => $message) {
                 $classType = ($type == 'required') ? 'required' : 'error';
                 $plh[$field . '.error'] = $this->parseChunk($this->getCFGDef('errorTpl',
@@ -442,7 +511,10 @@ abstract class FormLister
         return $plh;
     }
 
-    //TODO
+    /**
+     * Обработка чекбоксов, селектов, радио-кнопок перед выводом в шаблон
+     * @return array
+     */
     public function controlsToPlaceholders()
     {
         $plh = array();
@@ -465,22 +537,23 @@ abstract class FormLister
     }
 
     /**
-     * Загрузка массива с правилами валидации
+     * Загрузка правил валидации
      */
     public function getValidationRules()
     {
         $rules = $this->getCFGDef('rules', '');
         $rules = \jsonHelper::jsonDecode($rules, array('assoc' => true));
-        $this->rules = $rules;
-        if (!is_null($this->captcha)) {
-            $this->addCaptchaRule();
-        }
+        $this->rules = array_merge($this->rules,$rules);
     }
 
+    /**
+     * Готовит сообщения из formData для вывода в шаблон
+     * @return null|string
+     */
     public function renderMessages()
     {
-        $formMessages = $this->getFormMessages();
-        $formErrors = $this->getFormErrors();
+        $formMessages = $this->getFormData('messages');
+        $formErrors = $this->getFormData('errors');
 
         $requiredMessages = $filterMessages = array();
         if ($formErrors) {
@@ -520,26 +593,29 @@ abstract class FormLister
         return $out;
     }
 
+    /**
+     * Формирует текст письма для отправки
+     * @return null|string
+     */
     public function renderReport()
     {
-        $out = '';
-        $tpl = $this->getCFGDef('reportTpl', '');
-        $plh = $this->fieldsToPlaceholders($this->getFormFields(), '', '',
-            $this->getCFGDef('arraySplitter', '; ')); //поля формы для подстановки в шаблон
-        $plh = array_merge($this->addPlaceholders(), $plh);
+        $tpl = $this->getCFGDef('reportTpl');
         if (empty($tpl)) {
-            foreach ($plh as $key => $value) {
-                $out .= "$key: $value\n";
+            $tpl = '@CODE:';
+            foreach($this->getFormData('fields') as $key => $value) {
+                $tpl .= "[+{$key}+]: [+{$key}.value+]".PHP_EOL;
             }
-        } else {
-            $out = $this->parseChunk($tpl, $plh);
         }
+        $_tpl = $this->renderTpl;
+        $this->renderTpl = $tpl;
+        $out = $this->renderForm(true);
+        $this->renderTpl = $_tpl;
         return $out;
     }
 
 
-    //из eform
     /**
+     * Установка адресов в PHPMailer, из eForm
      * @param $mail - объект почтового класса
      * @param $type - тип адреса
      * @param $addr - адрес
@@ -567,11 +643,14 @@ abstract class FormLister
         }
     }
 
+    /**
+     * Отправка письма
+     * @return bool
+     */
     public function sendForm()
     {
         //если отправлять некуда или незачем, то делаем вид, что отправили
         if (!$this->getCFGDef('to') || $this->getCFGDef('noemail')) {
-            $this->setFormStatus(true);
             return true;
         }
 
@@ -579,15 +658,15 @@ abstract class FormLister
         $report = $this->renderReport();
 
         //TODO: херня какая-то
-        $report = !$isHtml ? html_entity_decode($report) : nl2br(htmlspecialchars_decode($report, ENT_QUOTES));
+        $report = !$isHtml ? htmlspecialchars_decode($report) : nl2br($report);
 
         $this->modx->loadExtension('MODxMailer');
-        $mail = &$this->modx->mail;
+        $mail = $this->modx->mail;
         $mail->IsHTML($isHtml);
         $mail->From = $this->getCFGDef('from', $this->modx->config['emailsender']);
         $mail->FromName = $this->getCFGDef('fromname', $this->modx->config['site_name']);
         $mail->Subject = $this->getCFGDef('subjectTpl') ?
-            $this->parseChunk($this->getCFGDef('subjectTpl'),$this->fieldsToPlaceholders($this->getFormFields(), '', '', $this->getCFGDef('arraySplitter', '; '))) :
+            $this->parseChunk($this->getCFGDef('subjectTpl'),$this->fieldsToPlaceholders($this->getFormData('fields'))) :
             $this->getCFGDef('subject');
         $mail->Body = $report;
         $this->addAddressToMailer($mail, "replyTo", $this->getCFGDef('replyTo'));
@@ -609,6 +688,10 @@ abstract class FormLister
         return $result;
     }
 
+    /**
+     * Проверка повторной отправки формы
+     * @return bool
+     */
     public function checkSubmitProtection()
     {
         $result = false;
@@ -622,6 +705,10 @@ abstract class FormLister
         return $result;
     }
 
+    /**
+     * Проверка повторной отправки в течение определенного времени, в секундах
+     * @return bool
+     */
     public function checkSubmitLimit()
     {
         $submitLimit = $this->getCFGDef('submitLimit', 60);
@@ -629,8 +716,7 @@ abstract class FormLister
         if ($submitLimit > 0) {
             if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
                 $result = true;
-                $this->addMessage('Вы уже отправляли эту форму, попробуйте еще раз через ' . round($submitLimit / 60,
-                        0) . ' мин.');
+                $this->addMessage('Вы уже отправляли эту форму, попробуйте еще раз через ' . round($submitLimit / 60, 0) . ' мин.');
             } else {
                 unset($_SESSION[$this->formid . '_limit'], $_SESSION[$this->formid . '_hash']);
             } //time expired
@@ -673,14 +759,6 @@ abstract class FormLister
         return $hash;
     }
 
-    //TODO
-    public function addPlaceholders($placeholders = array())
-    {
-        $out = $placeholders;
-        $out['captcha'] = $this->addCaptchaPlaceholder();
-        return $out;
-    }
-
     public function parseChunk($name, $data, $parseDocumentSource = false)
     {
         $out = null;
@@ -688,38 +766,29 @@ abstract class FormLister
         return $out;
     }
 
+    /**
+     * Загружает класс капчи
+     */
     public function initCaptcha()
     {
         if ($captcha = $this->getCFGDef('captcha')) {
             $wrapper = MODX_BASE_PATH . "assets/snippets/FormLister/lib/captcha/{$captcha}/wrapper.php";
             if ($this->fs->checkFile($wrapper)) {
                 include_once($wrapper);
-                $_captcha = captcha::init($this->modx, $this->getConfig());
-                if ($_captcha !== false) {
-                    $this->captcha = $_captcha;
-                }
+                $wrapper = $captcha.'Wrapper';
+                $captcha = new $wrapper ($this);
+                $this->rules[$this->getCFGDef('captchaField', 'vericode')] = $captcha->getRule();
+                $this->setField('captcha',$captcha->getPlaceholder());
             }
         }
     }
 
-    public function addCaptchaRule()
-    {
-        $this->rules[$this->getCFGDef('captchaField', 'vericode')] = array(
-            "required" => $this->getCFGDef('captchaRequiredMessage', 'Введите проверочный код'),
-            "equals"   => array(
-                "params"  => array($this->captcha->getCaptcha()),
-                "message" => $this->getCFGDef('captchaErrorMessage', 'Неверный проверочный код')
-            )
-        );
+    public function getMODX() {
+        return $this->modx;
     }
 
-    public function addCaptchaPlaceholder()
-    {
-        $out = '';
-        if (!is_null($this->captcha)) {
-            $out = $this->captcha->getPlaceholder();
-        }
-        return $out;
+    public function getFormId() {
+        return $this->formid;
     }
 
     /**

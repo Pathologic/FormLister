@@ -10,7 +10,7 @@ if (!defined('MODX_BASE_PATH')) {
 }
 if (!isset($formid)) return;
 
-$out = null;
+$out = '';
 $FLDir = MODX_BASE_PATH . 'assets/snippets/FormLister/';
 if (isset($controller)) {
     preg_match('/^(\w+)$/iu', $controller, $controller);
@@ -27,6 +27,7 @@ if ($classname != 'FormLister' && file_exists($dir . $controller . ".php") && !c
 
 if (class_exists($classname, false) && $classname != 'FormLister') {
     $FormLister = new $classname($modx, $modx->Event->params, $_time);
+    if (!$FormLister->getFormId()) return;
     $FormLister->initForm();
     $out = $FormLister->render(\APIhelpers::getkey($modx->event->params,'api',0));
 }

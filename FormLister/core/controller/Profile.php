@@ -4,7 +4,7 @@
  */
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
 include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
-class Profile extends FormLister {
+class Profile extends Core {
     public $userdata = null;
     public function __construct($modx, $cfg = array()) {
         $uid = $modx->getLoginUserId();
@@ -64,7 +64,7 @@ class Profile extends FormLister {
         $newpassword = $this->getField('password');
         if (!is_null($this->userdata)) {
             $password = $this->userdata->get('password');
-            $result = $this->userdata->fromArray($this->getFormFields())->save();
+            $result = $this->userdata->fromArray($this->getFormData('fields'))->save();
             if ($result) {
                 if (!empty($newpassword) && ($password !== $this->userdata->getpassword($newpassword))) $this->userdata->logOut();
                 $this->modx->sendRedirect($this->modx->makeUrl($this->getCFGDef('redirectTo',$this->modx->config['site_start'])));

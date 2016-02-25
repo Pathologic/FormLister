@@ -92,7 +92,8 @@ class modxCaptcha
         $text_color     = imagecolorallocate ($im_text, 0, 51, 153);
 
         /* draw text into canvas */
-        imagettftext    (   $im_text,
+        imagettftext    (
+            $im_text,
             $text_size,
             $text_angle,
             $text_x,
@@ -120,21 +121,25 @@ class modxCaptcha
 
         /* resize the background image to fit the size of image output */
         $this->im       = imagecreatetruecolor($this->im_width,$this->im_height);
-        imagecopyresampled ($this->im,
+        imagecopyresampled (
+            $this->im,
             $noise_img,
             0, 0, 0, 0,
             $this->im_width,
             $this->im_height,
             $noise_width,
-            $noise_height);
+            $noise_height
+        );
 
         /* put text image into background image */
-        imagecopymerge (    $this->im,
+        imagecopymerge (
+            $this->im,
             $this->draw_text(),
             0, 0, 0, 0,
             $this->im_width,
             $this->im_height,
-            70 );
+            70
+        );
 
         return $this->im;
     }
