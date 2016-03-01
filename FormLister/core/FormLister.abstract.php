@@ -2,8 +2,8 @@
 
 include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 include_once(MODX_BASE_PATH . 'assets/lib/Helpers/FS.php');
-require_once(MODX_BASE_PATH . "assets/snippets/DocLister/lib/jsonHelper.class.php");
 require_once(MODX_BASE_PATH . "assets/snippets/DocLister/lib/DLTemplate.class.php");
+include_once(MODX_BASE_PATH . "assets/snippets/FormLister/lib/Config.php");
 
 /**
  * Class FormLister
@@ -27,12 +27,7 @@ abstract class Core
      */
     protected $formid = '';
 
-    /**
-     * Массив настроек переданный через параметры сниппету
-     * @var array
-     * @access private
-     */
-    private $_cfg = array();
+    public $config = null;
 
     /**
      * Шаблон для вывода по правилам DocLister
@@ -64,12 +59,6 @@ abstract class Core
     protected $rules = array();
 
     /**
-     * Флаг успешной валидации
-     * @var bool
-     */
-    protected $isValid = true;
-
-    /**
      * Если данные из формы отправлены, то true
      * @var bool
      */
@@ -91,13 +80,11 @@ abstract class Core
     public function __construct($modx, $cfg = array())
     {
         $this->modx = $modx;
+        $this->config = new \Helpers\Config($cfg);
         $this->fs = \Helpers\FS::getInstance();
         if (isset($cfg['config'])) {
-            $cfg = array_merge($this->loadConfig($cfg['config']), $cfg);
+            $this->config->loadConfig($cfg['config']);
         }
-        $this->setConfig($cfg);
-        $this->allowedFields = $this->getCFGDef('allowedFields') ? explode(',',$this->getCFGDef('allowedFields')) : array();
-        $this->disallowedFields = $this->getCFGDef('disallowedFields') ? explode(',',$this->getCFGDef('disallowedFields')) : array();
         $this->formid = $this->getCFGDef('formid');
     }
 
@@ -107,78 +94,15 @@ abstract class Core
      * Загрузка капчи
      */
     public function initForm() {
+        $this->allowedFields = $this->getCFGDef('allowedFields') ? explode(',',$this->getCFGDef('allowedFields')) : array();
+        $this->disallowedFields = $this->getCFGDef('forbiddenFields') ? explode(',',$this->getCFGDef('forbiddenFields')) : array();
         if (!$this->isSubmitted) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         if ($this->setRequestParams(array_merge($_GET, $_POST))) {
             $this->setFields($this->_rq);
-            if ($this->getCFGDef('preserveDefaults')) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
+            if ($this->getCFGDef('keepDefaults')) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         }
         $this->renderTpl = $this->formid ? $this->getCFGDef('formTpl') : '@CODE:'; //Шаблон по умолчанию
         $this->initCaptcha();
-    }
-
-    /**
-     * Загрузка конфигов из файла
-     *
-     * @param $name string имя конфига
-     * @return array массив с настройками
-     */
-    public function loadConfig($name)
-    {
-        //$this->debug->debug('Load json config: ' . $this->debug->dumpData($name), 'loadconfig', 2);
-        if (!is_scalar($name)) {
-            $name = '';
-        }
-        $config = array();
-        $name = explode(";", $name);
-        foreach ($name as $cfgName) {
-            $cfgName = explode(":", $cfgName, 2);
-            if (empty($cfgName[1])) {
-                $cfgName[1] = 'custom';
-            }
-            $cfgName[1] = rtrim($cfgName[1], '/');
-            switch ($cfgName[1]) {
-                case 'custom':
-                case 'core':
-                    $configFile = dirname(__DIR__) . "/config/{$cfgName[1]}/{$cfgName[0]}.json";
-                    break;
-                default:
-                    $configFile = $this->fs->relativePath($cfgName[1] . '/' . $cfgName[0] . ".json");
-                    break;
-            }
-
-            if ($this->fs->checkFile($configFile)) {
-                $json = file_get_contents($configFile);
-                $config = array_merge($config, \jsonHelper::jsonDecode($json, array('assoc' => true), true));
-            }
-        }
-
-        //$this->debug->debugEnd("loadconfig");
-        return $config;
-    }
-
-    /**
-     * Получение всего списка настроек
-     * @return array
-     */
-    public function getConfig()
-    {
-        return $this->_cfg;
-    }
-
-    /**
-     * Сохранение настроек вызова сниппета
-     * @param array $cfg массив настроек
-     * @return int результат сохранения настроек
-     */
-    public function setConfig($cfg)
-    {
-        if (is_array($cfg)) {
-            $this->_cfg = array_merge($this->_cfg, $cfg);
-            $ret = count($this->_cfg);
-        } else {
-            $ret = false;
-        }
-        return $ret;
     }
 
     /**
@@ -193,7 +117,7 @@ abstract class Core
             switch ($source) {
                 case 'array':
                     if ($arrayParam) {
-                        $fields = array_merge($fields,is_array($this->getCFGDef($arrayParam)) ? $this->getCFGDef($arrayParam) : \jsonHelper::jsonDecode($this->getCFGDef($arrayParam), array('assoc' => true), true));
+                        $fields = array_merge($fields,$this->config->loadArray($this->getCFGDef($arrayParam)));
                         $prefix = '';
                     }
                     break;
@@ -255,20 +179,6 @@ abstract class Core
     }
 
     /**
-     * Полная перезапись настроек вызова сниппета
-     * @param array $cfg массив настроек
-     * @return int Общее число новых настроек
-     */
-    public function replaceConfig($cfg)
-    {
-        if (!is_array($cfg)) {
-            $cfg = array();
-        }
-        $this->_cfg = $cfg;
-        return count($this->_cfg);
-    }
-
-    /**
      * Получение информации из конфига
      *
      * @param string $name имя параметра в конфиге
@@ -277,7 +187,7 @@ abstract class Core
      */
     public function getCFGDef($name, $def = null)
     {
-        return \APIHelpers::getkey($this->_cfg, $name, $def);
+        return $this->config->getCFGDef($name, $def);
     }
 
     /*
@@ -290,7 +200,7 @@ abstract class Core
     {
         if ($this->isSubmitted) {
             $this->validateForm();
-            if ($this->isValid) {
+            if ($this->isValid()) {
                 $this->process();
             }
         }
@@ -350,8 +260,11 @@ abstract class Core
      * @return Validator|null
      */
     public function initValidator() {
-        include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Validator.php');
-        $this->validator = new \FormLister\Validator();
+        $validator = $this->getCFGDef('validator','\FormLister\Validator');
+        if (!class_exists($validator)) {
+            include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Validator.php');
+        }
+        $this->validator = new $validator();
         return $this->validator;
     }
 
@@ -398,7 +311,7 @@ abstract class Core
                 }
             }
         }
-        return $this->isValid;
+        return $this->isValid();
     }
 
     /**
@@ -454,7 +367,6 @@ abstract class Core
     public function addError($field, $type, $message)
     {
         $this->formData['errors'][$field][$type] = $message;
-        $this->isValid = false;
     }
 
     /**
@@ -542,7 +454,7 @@ abstract class Core
     public function getValidationRules()
     {
         $rules = $this->getCFGDef('rules', '');
-        $rules = \jsonHelper::jsonDecode($rules, array('assoc' => true));
+        $rules = $this->config->loadArray($rules);
         $this->rules = array_merge($this->rules,$rules);
     }
 
@@ -552,6 +464,7 @@ abstract class Core
      */
     public function renderMessages()
     {
+        $out = '';
         $formMessages = $this->getFormData('messages');
         $formErrors = $this->getFormData('errors');
 
@@ -566,19 +479,20 @@ abstract class Core
                 }
             }
         }
-
-        $out = $this->parseChunk($this->getCFGDef('messagesTpl', '@CODE:<div class="form-messages">[+messages+]</div>'),
-            array(
-                'messages' => $this->renderMessagesGroup($formMessages, $this->getCFGDef('messagesOuterTpl', ''),
-                    $this->getCFGDef('messagesSplitter', '<br>')),
-                'required' => $this->renderMessagesGroup($requiredMessages,
-                    $this->getCFGDef('messagesRequiredOuterTpl', ''),
-                    $this->getCFGDef('messagesRequiredSplitter', '<br>')),
-                'filters'  => $this->renderMessagesGroup($filterMessages,
-                    $this->getCFGDef('messagesFiltersOuterTpl', ''),
-                    $this->getCFGDef('messagesFiltersSplitter', '<br>')),
-            ));
-
+        $wrapper = $this->getCFGDef('messagesTpl', '@CODE:<div class="form-messages">[+messages+]</div>');
+        if (!empty($formMessages) || !empty($formErrors)) {
+            $out = $this->parseChunk($wrapper,
+                array(
+                    'messages' => $this->renderMessagesGroup($formMessages, $this->getCFGDef('messagesOuterTpl', ''),
+                        $this->getCFGDef('messagesSplitter', '<br>')),
+                    'required' => $this->renderMessagesGroup($requiredMessages,
+                        $this->getCFGDef('messagesRequiredOuterTpl', ''),
+                        $this->getCFGDef('messagesRequiredSplitter', '<br>')),
+                    'filters'  => $this->renderMessagesGroup($filterMessages,
+                        $this->getCFGDef('messagesFiltersOuterTpl', ''),
+                        $this->getCFGDef('messagesFiltersSplitter', '<br>')),
+                ));
+        }
         return $out;
     }
 
@@ -689,77 +603,6 @@ abstract class Core
         return $result;
     }
 
-    /**
-     * Проверка повторной отправки формы
-     * @return bool
-     */
-    public function checkSubmitProtection()
-    {
-        $result = false;
-        if ($protectSubmit = $this->getCFGDef('protectSubmit', 1)) {
-            $hash = $this->getFormHash();
-            if (isset($_SESSION[$this->formid . '_hash']) && $_SESSION[$this->formid . '_hash'] == $hash && $hash != '') {
-                $result = true;
-                $this->addMessage('Данные успешно отправлены. Нет нужды отправлять данные несколько раз.');
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Проверка повторной отправки в течение определенного времени, в секундах
-     * @return bool
-     */
-    public function checkSubmitLimit()
-    {
-        $submitLimit = $this->getCFGDef('submitLimit', 60);
-        $result = false;
-        if ($submitLimit > 0) {
-            if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
-                $result = true;
-                $this->addMessage('Вы уже отправляли эту форму, попробуйте еще раз через ' . round($submitLimit / 60, 0) . ' мин.');
-            } else {
-                unset($_SESSION[$this->formid . '_limit'], $_SESSION[$this->formid . '_hash']);
-            } //time expired
-        }
-        return $result;
-    }
-
-    public function setSubmitProtection()
-    {
-        if ($this->getCFGDef('submitLimit', 1)) {
-            $_SESSION[$this->formid . '_hash'] = $this->getFormHash();
-        } //hash is set earlier
-        if ($this->getCFGDef('submitLimit', 60) > 0) {
-            $_SESSION[$this->formid . '_limit'] = time();
-        }
-    }
-
-    public function getFormHash()
-    {
-        $hash = '';
-        $protectSubmit = $this->getCFGDef('protectSubmit', 1);
-        if (!is_numeric($protectSubmit)) { //supplied field names
-            $protectSubmit = explode(',', $protectSubmit);
-            foreach ($protectSubmit as $field) {
-                $hash .= $this->getField($field);
-            }
-        } else //all required fields
-        {
-            foreach ($this->rules as $field => $rules) {
-                foreach ($rules as $rule => $description) {
-                    if ($rule == 'required') {
-                        $hash .= $this->getField($field);
-                    }
-                }
-            }
-        }
-        if ($hash) {
-            $hash = md5($hash);
-        }
-        return $hash;
-    }
-
     public function parseChunk($name, $data, $parseDocumentSource = false)
     {
         $out = null;
@@ -790,6 +633,10 @@ abstract class Core
 
     public function getFormId() {
         return $this->formid;
+    }
+
+    public function isValid() {
+        return !count($this->getFormData('errors'));
     }
 
     /**

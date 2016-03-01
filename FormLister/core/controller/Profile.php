@@ -4,23 +4,25 @@
  */
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
 include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
+
 class Profile extends Core {
+
     public $userdata = null;
+
     public function __construct($modx, $cfg = array()) {
+        parent::__construct($modx, $cfg);
         $uid = $modx->getLoginUserId();
         if ($uid) {
             $user = new \modUsers($modx);
             $this->userdata = $user->edit($uid);
-            $cfg = array_merge($cfg,array(
-                'defaults'=>json_encode($this->userdata->toArray())
+            $this->config->setConfig(array(
+                'defaults'=>$this->userdata->toArray()
             ));
+        } else {
+            $this->modx->sendUnauthorizedPage(true);
         }
-        parent::__construct($modx, $cfg);
-        if (!$uid) {
-            $modx->sendRedirect($modx->makeUrl($this->getCFGDef('redirectTo',$modx->config['site_start'])));
-        }
-
     }
+
     public function getValidationRules() {
         parent::getValidationRules();
         $password = $this->getField('password');
@@ -48,16 +50,14 @@ class Profile extends Core {
             $this->userdata->set('email',$this->getField('email'));
             $checkEmail = $this->userdata->checkUnique('web_user_attributes', 'email', 'internalKey');
             if (!$checkEmail) {
-                $this->isValid = false;
                 $this->addError(
                     "email",
                     "unique",
                     "Вы не можете использовать этот e-mail"
                 );
-                $result = false;
             }
         }
-        return $result;
+        return $this->isValid();
     }
 
     public function process() {
