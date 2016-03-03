@@ -202,6 +202,8 @@ abstract class Core
             $this->validateForm();
             if ($this->isValid()) {
                 $this->process();
+                if ($this->getCFGDef('saveForm',0))
+                    $this->saveFormData();
             }
         }
         return $this->renderForm();
@@ -507,102 +509,6 @@ abstract class Core
         return $out;
     }
 
-    /**
-     * Формирует текст письма для отправки
-     * @return null|string
-     */
-    public function renderReport()
-    {
-        $tpl = $this->getCFGDef('reportTpl');
-        if (empty($tpl)) {
-            $tpl = '@CODE:';
-            foreach($this->getFormData('fields') as $key => $value) {
-                $tpl .= "[+{$key}+]: [+{$key}.value+]".PHP_EOL;
-            }
-        }
-        $_tpl = $this->renderTpl;
-        $this->renderTpl = $tpl;
-        $out = $this->renderForm(true);
-        $this->renderTpl = $_tpl;
-        return $out;
-    }
-
-
-    /**
-     * Установка адресов в PHPMailer, из eForm
-     * @param $mail - объект почтового класса
-     * @param $type - тип адреса
-     * @param $addr - адрес
-     */
-    public function addAddressToMailer(&$mail, $type, $addr)
-    {
-        if (empty($addr)) {
-            return;
-        }
-        $a = array_filter(array_map('trim', explode(',', $addr)));
-        foreach ($a as $address) {
-            switch ($type) {
-                case 'to':
-                    $mail->AddAddress($address);
-                    break;
-                case 'cc':
-                    $mail->AddCC($address);
-                    break;
-                case 'bcc':
-                    $mail->AddBCC($address);
-                    break;
-                case 'replyTo':
-                    $mail->AddReplyTo($address);
-            }
-        }
-    }
-
-    /**
-     * Отправка письма
-     * @return bool
-     */
-    public function sendForm()
-    {
-        //если отправлять некуда или незачем, то делаем вид, что отправили
-        if (!$this->getCFGDef('to') || $this->getCFGDef('noemail')) {
-            $this->setFormStatus(true);
-            return true;
-        }
-
-        $isHtml = $this->getCFGDef('isHtml', 1);
-        $report = $this->renderReport();
-
-        //TODO: херня какая-то
-        $report = !$isHtml ? htmlspecialchars_decode($report) : nl2br($report);
-
-        $this->modx->loadExtension('MODxMailer');
-        $mail = $this->modx->mail;
-        $mail->IsHTML($isHtml);
-        $mail->From = $this->getCFGDef('from', $this->modx->config['emailsender']);
-        $mail->FromName = $this->getCFGDef('fromname', $this->modx->config['site_name']);
-        $mail->Subject = $this->getCFGDef('subjectTpl') ?
-            $this->parseChunk($this->getCFGDef('subjectTpl'),$this->fieldsToPlaceholders($this->getFormData('fields'))) :
-            $this->getCFGDef('subject');
-        $mail->Body = $report;
-        $this->addAddressToMailer($mail, "replyTo", $this->getCFGDef('replyTo'));
-        $this->addAddressToMailer($mail, "to", $this->getCFGDef('to'));
-        $this->addAddressToMailer($mail, "cc", $this->getCFGDef('cc'));
-        $this->addAddressToMailer($mail, "bcc", $this->getCFGDef('bcc'));
-
-        //AttachFilesToMailer($modx->mail,$attachments);
-
-        $result = $mail->send();
-        if (!$result) {
-            $this->addMessage("Произошла ошибка при отправке формы ({$mail->ErrorInfo})");
-            //$modx->mail->ErrorInfo; - добавить потом в сообщения отладки
-        } else {
-            $mail->ClearAllRecipients();
-            $mail->ClearAttachments();
-
-        }
-        return $result;
-    }
-
     public function parseChunk($name, $data, $parseDocumentSource = false)
     {
         $out = null;
@@ -637,6 +543,11 @@ abstract class Core
 
     public function isValid() {
         return !count($this->getFormData('errors'));
+    }
+
+    public function saveFormData() {
+        if ($this->getFormData('status'))
+            $_SESSION[$this->getFormId()] = $this->getFormData('fields');
     }
 
     /**

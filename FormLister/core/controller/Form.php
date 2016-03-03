@@ -1,10 +1,33 @@
 <?php namespace FormLister;
 /**
- * Контроллер для обычных форм, типа обратной связи
+ * Контроллер для обычных форм с отправкой, типа обратной связи
  */
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
+include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Mailer.php');
 class Form extends Core
 {
+    /**
+     * Настройки для отправки почты
+     * @var array
+     */
+    public $mailConfig = array();
+
+    public function initForm()
+    {
+        parent::initForm();
+        $this->mailConfig = array(
+            'isHtml' => $this->getCFGDef('isHtml',1),
+            'to' => $this->getCFGDef('to'),
+            'from' => $this->getCFGDef('from',$this->modx->config['emailsender']),
+            'fromName' => $this->getCFGDef('fromName',$this->modx->config['site_name']),
+            'subject' => $this->getCFGDef('subject'),
+            'replyTo' => $this->getCFGDef('replyTo'),
+            'cc' => $this->getCFGDef('cc'),
+            'bcc' => $this->getCFGDef('bcc'),
+            'noemail' => $this->getCFGDef('noemail',false)
+        );
+    }
+
     /**
      * Проверка повторной отправки формы
      * @return bool
@@ -76,14 +99,110 @@ class Form extends Core
         return $hash;
     }
 
+    /**
+     * Формирует текст письма для отправки
+     * Если основной шаблон письма не задан, то формирует список полей формы
+     * @param string $tplParam имя параметра с шаблоном письма
+     * @return null|string
+     */
+    public function renderReport($tplParam = 'reportTpl')
+    {
+        $out = '';
+        $tpl = $this->getCFGDef($tplParam);
+        if (empty($tpl) && $tplParam == 'reportTpl') {
+            $tpl = '@CODE:';
+            foreach($this->getFormData('fields') as $key => $value) {
+                $tpl .= "[+{$key}+]: [+{$key}.value+]".PHP_EOL;
+            }
+        } else {
+            $out = $this->parseChunk($tpl, $this->prerenderForm(true));
+        }
+        return $out;
+    }
+
+    /**
+     * Получает тему письма из шаблона или строки
+     * @return mixed|null|string
+     */
+    public function renderSubject() {
+        $subject = $this->getCFGDef('subjectTpl');
+        if (!empty($subject)) {
+            $subject = $this->parseChunk($subject,$this->getFormData('fields'));
+        } else {
+            $subject = $this->getCFGDef('subject');
+        }
+        return $subject;
+    }
+
+    public function getAttachments() {
+        return array(); //TODO
+    }
+
+    /**
+     * Оправляет письмо
+     * @return mixed
+     */
+    public function sendReport() {
+        $mailer = new \Helpers\Mailer($this->modx,array_merge(
+            $this->mailConfig,
+            array('subject'=>$this->renderSubject())
+        ));
+        $out = $mailer->send($this->renderReport());
+        //TODO debug
+        return $out;
+    }
+
+    /**
+     * Оправляет копию письма на указанный адрес
+     * @return mixed
+     */
+    public function sendAutosender() {
+        $to = $this->getCFGDef('autosender');
+        if (!empty($to)) {
+            $mailer = new \Helpers\Mailer($this->modx,array_merge(
+                $this->mailConfig,
+                array(
+                    'subject'=>$this->renderSubject(),
+                    'to' => $to,
+                    'fromName' => $this->getCFGDef('autosenderName',$this->modx->config['site_name'])
+                )
+            ));
+            $out = $mailer->send($this->renderReport('automessageTpl'));
+            //TODO debug
+            return $out;
+        }
+    }
+
+    /**
+     * Отправляет копию письма на адрес из поля email
+     * @return mixed
+     */
+    public function sendCCSender() {
+        $to = $this->getField('email');
+        if (!empty($to) && $this->getCFGDef('ccSender',0)) {
+            $mailer = new \Helpers\Mailer($this->modx,array_merge(
+                $this->mailConfig,
+                array(
+                    'subject'=>$this->renderSubject(),
+                    'to' => $to
+                )
+            ));
+            $out = $mailer->send($this->renderReport($this->getCFGDef('ccSenderTpl','reportTpl')));
+            //TODO debug
+            return $out;
+        }
+    }
+
     public function process() {
         //если сработала защита, то не отправляем
         if($this->checkSubmitProtection() || $this->checkSubmitLimit()) return false;
 
-        $this->setField('form.date',date($this->getCFGDef('dateFormat','m.d.Y H:i:s')));
-        if ($this->sendForm()) {
+        $this->setField('form.date',date($this->getCFGDef('dateFormat','m.d.Y в H:i:s')));
+        if ($this->sendReport()) {
             $this->setFormStatus(true);
             $this->setSubmitProtection();
+            $this->sendCCSender();
+            $this->sendAutosender();
             if ($redirectTo = $this->getCFGDef('redirectTo',0)) {
                 $this->modx->sendRedirect($this->modx->makeUrl($redirectTo), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
             } else {
