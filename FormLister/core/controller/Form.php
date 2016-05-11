@@ -164,7 +164,7 @@ class Form extends Core
                 array(
                     'subject'=>$this->renderSubject(),
                     'to' => $to,
-                    'fromName' => $this->getCFGDef('autosenderName',$this->modx->config['site_name'])
+                    'fromName' => $this->getCFGDef('autosenderFromName',$this->modx->config['site_name'])
                 )
             ));
             $out = $mailer->send($this->renderReport('automessageTpl'));
@@ -178,16 +178,17 @@ class Form extends Core
      * @return mixed
      */
     public function sendCCSender() {
-        $to = $this->getField('email');
+        $to = $this->getField($this->getCFGDef('ccSenderField','email'));
         if (!empty($to) && $this->getCFGDef('ccSender',0)) {
             $mailer = new \Helpers\Mailer($this->modx,array_merge(
                 $this->mailConfig,
                 array(
                     'subject'=>$this->renderSubject(),
-                    'to' => $to
+                    'to' => $to,
+                    'fromName' => $this->getCFGDef('ccSenderFromName',$this->modx->config['site_name'])
                 )
             ));
-            $out = $mailer->send($this->renderReport($this->getCFGDef('ccSenderTpl','reportTpl')));
+            $out = $mailer->send($this->renderReport('ccSenderTpl'));
             //TODO debug
             return $out;
         }

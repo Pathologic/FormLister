@@ -95,6 +95,7 @@ abstract class Core
      */
     public function initForm() {
         $this->allowedFields = $this->getCFGDef('allowedFields') ? explode(',',$this->getCFGDef('allowedFields')) : array();
+        if ($this->allowedFields) $this->allowedFields[] = 'formid';
         $this->disallowedFields = $this->getCFGDef('forbiddenFields') ? explode(',',$this->getCFGDef('forbiddenFields')) : array();
         if (!$this->isSubmitted) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         if ($this->setRequestParams(array_merge($_GET, $_POST))) {
@@ -469,7 +470,7 @@ abstract class Core
     {
         $rules = $this->getCFGDef('rules', '');
         $rules = $this->config->loadArray($rules);
-        $this->rules = array_merge($this->rules,$rules);
+        if ($rules) $this->rules = array_merge($this->rules,$rules);
     }
 
     /**
