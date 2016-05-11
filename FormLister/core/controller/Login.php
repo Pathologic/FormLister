@@ -9,9 +9,9 @@ class Login extends Core
 {
     public function render()
     {
-        if ($this->modx->getLoginUserID()) {
+        if ($this->modx->getLoginUserID('web')) {
             if ($redirect = $this->getCFGDef('redirectTo',false)) $this->modx->sendRedirect($this->modx->makeUrl($redirect), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
-            return;
+            $this->renderTpl = $this->getCFGDef('successTpl');
         };
         return parent::render();
     }
@@ -32,7 +32,8 @@ class Login extends Core
             }
             $user->authUser($uid, true);
             $this->setFormStatus(true);
-            if (!$this->getCFGDef('api',0)) $this->modx->sendRedirect($this->modx->makeUrl($this->getCFGDef('redirectTo',$this->modx->documentIdentifier)), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
+            if (!$this->getCFGDef('api',0) && $redirect = $this->getCFGDef('redirectTo',false)) $this->modx->sendRedirect($this->modx->makeUrl($redirect), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
+            $this->renderTpl = $this->getCFGDef('successTpl');
         }
 
     }

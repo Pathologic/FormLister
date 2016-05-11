@@ -1,4 +1,5 @@
 <?php namespace Helpers;
+include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 
 class Mailer
 {
@@ -39,28 +40,15 @@ class Mailer
         }
     }
 
-    public function AttachFilesToMailer($attachFiles) {
-        if(count($attachFiles)>0){
-            foreach($attachFiles as $attachFile){
-                if(!file_exists($attachFile)) continue;
-                $FileName = $attachFile;
-                $contentType = "application/octetstream";
-                if (is_uploaded_file($attachFile)){
-                    foreach($_FILES as $n => $v){
-                        if($_FILES[$n]['tmp_name']==$attachFile) {
-                            $FileName = $_FILES[$n]['name'];
-                            $contentType = $_FILES[$n]['type'];
-                        }
-                    }
-                }
-                $patharray = explode(((strpos($FileName,"/")===false)? "\\":"/"), $FileName);
-                $FileName = $patharray[count($patharray)-1];
-                $this->mail->AddAttachment($attachFile,$FileName,"base64",$contentType);
-            }
+    public function attachFiles($filelist = array()) {
+        if (!$filelist) return;
+        $contentType = "application/octetstream";
+        foreach ($filelist as $file) {
+            $this->mail->AddAttachment($file['filepath'],$file['filename'],"base64",$contentType);
         }
     }
 
-    public function send($report, $attachments = array())
+    public function send($report)
     {
         //если отправлять некуда или незачем, то делаем вид, что отправили
         if (!$this->getCFGDef('to') || $this->getCFGDef('noemail')) {
@@ -79,8 +67,6 @@ class Mailer
         $this->addAddressToMailer("cc", $this->getCFGDef('cc'));
         $this->addAddressToMailer("bcc", $this->getCFGDef('bcc'));
 
-        //AttachFilesToMailer($modx->mail,$attachments);
-
         $result = $this->mail->send();
         if ($result) {
             $this->mail->ClearAllRecipients();
@@ -89,9 +75,7 @@ class Mailer
         return $result;
     }
 
-    public function getCFGDef($param) {
-        $out = '';
-        if (isset($this->config[$param]) && !empty($this->config[$param])) $out = $this->config[$param];
-        return $out;
+    public function getCFGDef($param, $default = null) {
+        return \APIhelpers::getkey($this->config, $param, $default);
     }
 }

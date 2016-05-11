@@ -99,10 +99,11 @@ abstract class Core
         if (!$this->isSubmitted) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         if ($this->setRequestParams(array_merge($_GET, $_POST))) {
             $this->setFields($this->_rq);
-            if ($this->getCFGDef('keepDefaults')) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
+            if ($this->getCFGDef('keepDefaults')) $this->setExternalFields($this->getCFGDef('defaultsSources','array')); //восстановить значения по умолчанию
         }
         $this->renderTpl = $this->formid ? $this->getCFGDef('formTpl') : '@CODE:'; //Шаблон по умолчанию
         $this->initCaptcha();
+        $this->runPrepare();
     }
 
     /**
@@ -202,8 +203,8 @@ abstract class Core
             $this->validateForm();
             if ($this->isValid()) {
                 $this->process();
-                if ($this->getCFGDef('saveForm',0))
-                    $this->saveFormData();
+                if ($this->getCFGDef('saveObject'))
+                    $this->saveObject();
             }
         }
         return $this->renderForm();
@@ -235,11 +236,20 @@ abstract class Core
      */
     public function renderForm($api = 0)
     {
-        if ($api) {
-            return json_encode($this->getFormData());
-        }
         $form = $this->parseChunk($this->renderTpl, $this->prerenderForm());
-        return $form;
+        /*
+         * Если api = 0, то возвращается шаблон
+         * Если api = 1, то возвращаются данные формы
+         * Если api = 2, то возвращаются данные формы и шаблон
+         */
+        if (!$api) {
+            $out = $form;
+        } else {
+            $out = $this->getFormData();
+            if ($api == 2) $out['output'] = $form;
+            $out = json_encode($out);
+        }
+        return $out;
     }
 
     /**
@@ -250,7 +260,11 @@ abstract class Core
     public function setFields($fields = array(),$prefix = '')
     {
         foreach ($fields as $key => $value) {
-            if ((!in_array($key,$this->forbiddenFields) || in_array($key,$this->allowedFields))&& !empty($value)) {
+            //список рарешенных полей существует и поле в него входит; или списка нет, тогда пофиг
+            $allowed = !empty($this->allowedFields) ? in_array($key, $this->allowedFields) : true;
+            //поле входит в список запрещенных полей
+            $forbidden = in_array($key,$this->forbiddenFields);
+            if (($allowed && !$forbidden) && !empty($value)) {
                 if ($prefix) $key = implode('.',array($prefix,$key));
                 $this->setField($key, $value);
             }
@@ -279,10 +293,8 @@ abstract class Core
         $validator = $this->initValidator();
         $this->getValidationRules();
         if (!$this->rules || is_null($validator)) {
-            return false;
+            return true;
         } //если правил нет, то не проверяем
-
-        $result = true;
 
         //применяем правила
         foreach ($this->rules as $field => $rules) {
@@ -290,7 +302,7 @@ abstract class Core
             $params = array($_field);
             foreach ($rules as $rule => $description) {
                 if (is_array($description)) {
-                    $params = array_merge($params,$description['params']);
+                    $params = array_merge($params,is_array($description['params']) ? $description['params'] : array($description['params']));
                     $message = isset($description['message']) ? $description['message'] : 'Заполнено неверно.';
                 } else {
                     $message = $description;
@@ -391,7 +403,7 @@ abstract class Core
      */
     public function fieldsToPlaceholders($fields = array(), $suffix = '', $split = false)
     {
-        $plh = array();
+        $plh = $fields;
         if (is_array($fields) && !empty($fields)) {
             foreach ($fields as $field => $value) {
                 $field = array($field, $suffix);
@@ -545,9 +557,34 @@ abstract class Core
         return !count($this->getFormData('errors'));
     }
 
-    public function saveFormData() {
-        if ($this->getFormData('status'))
-            $_SESSION[$this->getFormId()] = $this->getFormData('fields');
+    public function saveObject() {
+        $this->modx->setPlaceholder($this->getCFGDef('saveObject'),$this);
+    }
+
+    public function runPrepare() {
+        if (($prepare = $this->getCFGDef('prepare')) != '') {
+            if(is_scalar($prepare)){
+                $names = explode(",", $prepare);
+                foreach($names as $item){
+                    $this->callPrepare($item);
+                }
+            }else{
+                $this->callPrepare($prepare);
+            }
+        }
+    }
+
+    public function callPrepare($name) {
+        if (empty($name)) return;
+        if((is_object($name) && ($name instanceof Closure)) || is_callable($name)){
+            call_user_func($name, $this);
+        }else{
+            $params = array(
+                'modx' => $this->modx,
+                'FormLister' => $this
+            );
+            $this->modx->runSnippet($name, $params);
+        }
     }
 
     /**
