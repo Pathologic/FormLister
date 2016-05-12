@@ -113,7 +113,7 @@ abstract class Core
      * @param string $arrayParam название параметра с данными
      */
     public function setExternalFields($sources = 'array', $arrayParam = 'defaults') {
-        $sources = explode(',',$sources);
+        $sources = explode(';',$sources);
         $fields = array();
         foreach ($sources as $source) {
             switch ($source) {
@@ -432,8 +432,8 @@ abstract class Core
                 $classType = ($type == 'required') ? 'required' : 'error';
                 $plh[$field . '.error'] = $this->parseChunk($this->getCFGDef('errorTpl',
                     '@CODE:<div class="error">[+message+]</div>'), array('message' => $message));
-                $plh[$field . '.' . $classType . '.class'] = $this->getCFGDef($field . '.' . $classType . '.class',
-                    $this->getCFGDef($classType . '.class', $classType));
+                $plh[$field . '.' . $classType . 'Class'] = $this->getCFGDef($field . '.' . $classType . 'Class',
+                    $this->getCFGDef($classType . 'Class', $classType));
             }
         }
         return $plh;
@@ -484,14 +484,14 @@ abstract class Core
         $formMessages = $this->getFormData('messages');
         $formErrors = $this->getFormData('errors');
 
-        $requiredMessages = $filterMessages = array();
+        $requiredMessages = $errorMessages = array();
         if ($formErrors) {
             foreach ($formErrors as $field => $error) {
                 $type = key($error);
                 if ($type == 'required') {
                     $requiredMessages[] = $error[$type];
                 } else {
-                    $filterMessages[] = $error[$type];
+                    $errorMessages[] = $error[$type];
                 }
             }
         }
@@ -499,14 +499,18 @@ abstract class Core
         if (!empty($formMessages) || !empty($formErrors)) {
             $out = $this->parseChunk($wrapper,
                 array(
-                    'messages' => $this->renderMessagesGroup($formMessages, $this->getCFGDef('messagesOuterTpl', ''),
-                        $this->getCFGDef('messagesSplitter', '<br>')),
-                    'required' => $this->renderMessagesGroup($requiredMessages,
-                        $this->getCFGDef('messagesRequiredOuterTpl', ''),
-                        $this->getCFGDef('messagesRequiredSplitter', '<br>')),
-                    'filters'  => $this->renderMessagesGroup($filterMessages,
-                        $this->getCFGDef('messagesFiltersOuterTpl', ''),
-                        $this->getCFGDef('messagesFiltersSplitter', '<br>')),
+                    'messages' => $this->renderMessagesGroup(
+                        $formMessages,
+                        'messagesOuterTpl',
+                        'messagesSplitter'),
+                    'required' => $this->renderMessagesGroup(
+                        $requiredMessages,
+                        'messagesRequiredOuterTpl',
+                        'messagesRequiredSplitter'),
+                    'errors'  => $this->renderMessagesGroup(
+                        $errorMessages,
+                        'messagesErrorOuterTpl',
+                        'messagesErrorSplitter'),
                 ));
         }
         return $out;
@@ -516,7 +520,7 @@ abstract class Core
     {
         $out = '';
         if (is_array($messages) && !empty($messages)) {
-            $out = implode($splitter, $messages);
+            $out = implode($this->getCFGDef($splitter,'<br>'), $messages);
             $wrapperChunk = $this->getCFGDef($wrapper, '@CODE: [+messages+]');
             $out = $this->parseChunk($wrapperChunk, array('messages' => $out));
         }
@@ -600,7 +604,7 @@ abstract class Core
             if (!$this->getCFGDef('api',0)) $this->modx->sendRedirect($redirect, 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
         }
     }
-}
+
     /**
      * Обработка формы, определяется контроллерами
      *
