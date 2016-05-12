@@ -7,18 +7,25 @@ include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.
 include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
 class Login extends Core
 {
-    public function render()
+    public $user = null;
+    
+    public  function __construct($modx, array $cfg)
     {
+        parent::__construct($modx, $cfg);
+        $this->user = new \modUsers($this->modx); 
+    }
+
+    public function render() {
         if ($this->modx->getLoginUserID('web')) {
-            if ($redirect = $this->getCFGDef('redirectTo',false)) $this->modx->sendRedirect($this->modx->makeUrl($redirect), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
+            $this->redirect();
             $this->renderTpl = $this->getCFGDef('successTpl');
+            $this->setFormStatus(true);
         };
         return parent::render();
     }
 
     public function process() {
-        $_user = new \modUsers($this->modx);
-        $user = $_user->edit($this->getField($this->getCFGDef('loginField','username')));
+        $user = $this->user->edit($this->getField($this->getCFGDef('loginField','username')));
         if ($user !== false) {
             $uid = $user->getID();
             if ($user->checkBlock($uid)) {
@@ -32,9 +39,8 @@ class Login extends Core
             }
             $user->authUser($uid, true);
             $this->setFormStatus(true);
-            if (!$this->getCFGDef('api',0) && $redirect = $this->getCFGDef('redirectTo',false)) $this->modx->sendRedirect($this->modx->makeUrl($redirect), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
+            $this->redirect();
             $this->renderTpl = $this->getCFGDef('successTpl');
         }
-
     }
 }

@@ -235,8 +235,9 @@ abstract class Core
      * @param int $api
      * @return null|string
      */
-    public function renderForm($api = 0)
+    public function renderForm()
     {
+        $api = $this->getCFGDef('api',0);
         $form = $this->parseChunk($this->renderTpl, $this->prerenderForm());
         /*
          * Если api = 0, то возвращается шаблон
@@ -365,7 +366,7 @@ abstract class Core
 
     /**
      * Сохраняет значение поля в formData
-     * @param $field имя поля
+     * @param string $field имя поля
      * @param $value значение поля
      */
     public function setField($field, $value)
@@ -588,6 +589,18 @@ abstract class Core
         }
     }
 
+    /**
+     * @param string $param имя параметра с id документа для редиректа
+     * В api-режиме редирект не выполняется, но ссылка доступна в formData
+     */
+    public function redirect($param = 'redirectTo') {
+        if ($redirect = $this->getCFGDef($param,0)) {
+            $redirect = $this->modx->makeUrl($redirect,'','',full);
+            $this->setField($param, $redirect);
+            if (!$this->getCFGDef('api',0)) $this->modx->sendRedirect($redirect, 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
+        }
+    }
+}
     /**
      * Обработка формы, определяется контроллерами
      *

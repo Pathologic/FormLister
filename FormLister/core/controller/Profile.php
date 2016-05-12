@@ -67,7 +67,9 @@ class Profile extends Core {
             $result = $this->userdata->fromArray($this->getFormData('fields'))->save();
             if ($result) {
                 if (!empty($newpassword) && ($password !== $this->userdata->getpassword($newpassword))) $this->userdata->logOut();
-                $this->modx->sendRedirect($this->modx->makeUrl($this->getCFGDef('redirectTo',$this->modx->config['site_start'])));
+                $this->redirect();
+                $this->setFormStatus(true);
+                $this->redirect($this->getCFGDef('successTpl','@CODE:Данные успешно сохранены.'));
             } else {
                 $this->addMessage('Не удалось сохранить.');
             }

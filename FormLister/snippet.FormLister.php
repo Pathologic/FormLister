@@ -29,6 +29,6 @@ if (class_exists($classname, false) && $classname != 'FormLister') {
     $FormLister = new $classname($modx, $modx->Event->params, $_time);
     if (!$FormLister->getFormId()) return;
     $FormLister->initForm();
-    $out = $FormLister->render(\APIhelpers::getkey($modx->event->params,'api',0));
+    $out = $FormLister->render();
 }
 return $out;

@@ -204,11 +204,8 @@ class Form extends Core
             $this->setSubmitProtection();
             $this->sendCCSender();
             $this->sendAutosender();
-            if ($redirectTo = $this->getCFGDef('redirectTo',0)) {
-                $this->modx->sendRedirect($this->modx->makeUrl($redirectTo), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
-            } else {
-                $this->renderTpl = $this->getCFGDef('successTpl','@CODE:Форма успешно отправлена [+form.date.value+]');
-            }
+            $this->redirect();
+            $this->renderTpl = $this->getCFGDef('successTpl','@CODE:Форма успешно отправлена [+form.date.value+]');
         }
     }
 }

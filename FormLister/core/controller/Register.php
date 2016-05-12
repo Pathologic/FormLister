@@ -9,12 +9,19 @@ class Register extends Form {
 
     public function __construct($modx, $cfg = array()) {
         parent::__construct($modx, $cfg);
-        if ($this->modx->getLoginUserID()) {
-            if ($redirect = $this->getCFGDef('redirectTo',false)) $this->modx->sendRedirect($this->modx->makeUrl($redirect), 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
-            return;
-        };
         $this->user = new \modUsers($modx);
     }
+
+    public function render()
+    {
+        if ($this->modx->getLoginUserID('web')) {
+            $this->redirect();
+            $this->renderTpl = $this->getCFGDef('successTpl');
+            $this->setFormStatus(true);
+        };
+        return parent::render();
+    }
+
     public function validateForm() {
         $result = parent::validateForm();
         if ($result && !is_null($this->user)) {
