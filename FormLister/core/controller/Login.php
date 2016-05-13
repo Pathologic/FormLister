@@ -16,8 +16,12 @@ class Login extends Core
     }
 
     public function render() {
-        if ($this->modx->getLoginUserID('web')) {
+        if ($uid = $this->modx->getLoginUserID('web')) {
             $this->redirect();
+            $user = $this->user->edit($uid);
+            if ($user !== false) {
+                $this->setFields($user->toArray());
+            }
             $this->renderTpl = $this->getCFGDef('successTpl');
             $this->setFormStatus(true);
         };
@@ -25,22 +29,22 @@ class Login extends Core
     }
 
     public function process() {
-        $user = $this->user->edit($this->getField($this->getCFGDef('loginField','username')));
-        if ($user !== false) {
-            $uid = $user->getID();
-            if ($user->checkBlock($uid)) {
-                $this->addMessage('Пользователь заблокирован. Обратитесь к администратору сайта.');
-                return;
-            }
-            $auth = $user->testAuth($uid,$this->getField($this->getCFGDef('passwordField','password')),false);
-            if (!$auth) {
-                $this->addMessage('Неверное имя пользователя или пароль.');
-                return;
-            }
-            $user->authUser($uid, true);
-            $this->setFormStatus(true);
-            $this->redirect();
-            $this->renderTpl = $this->getCFGDef('successTpl');
+        $login = $this->getField($this->getCFGDef('loginField','username'));
+        $password = $this->getCFGDef('passwordField','password');
+        $remember = $this->getCFGDef('rememberField','rememberme');
+        if ($this->user->checkBlock($login)) {
+            $this->addMessage('Пользователь заблокирован. Обратитесь к администратору сайта.');
+            return;
         }
+        $auth = $this->user->testAuth($login,$this->getField($password),false);
+        if (!$auth) {
+            $this->addMessage('Неверное имя пользователя или пароль.');
+            return;
+        }
+        $this->user->authUser($login, $this->getField($remember),'WebLoginPE', true);
+        $this->setFormStatus(true);
+        $this->redirect();
+        $this->setFields($this->user->toArray());
+        $this->renderTpl = $this->getCFGDef('successTpl');
     }
 }

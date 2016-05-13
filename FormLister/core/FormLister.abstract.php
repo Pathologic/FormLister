@@ -77,6 +77,11 @@ abstract class Core
      */
     public $forbiddenFields = array();
 
+    /**
+     * Core constructor.
+     * @param \DocumentParser $modx
+     * @param array $cfg
+     */
     public function __construct($modx, $cfg = array())
     {
         $this->modx = $modx;
@@ -96,7 +101,7 @@ abstract class Core
     public function initForm() {
         $this->allowedFields = $this->getCFGDef('allowedFields') ? explode(',',$this->getCFGDef('allowedFields')) : array();
         if ($this->allowedFields) $this->allowedFields[] = 'formid';
-        $this->disallowedFields = $this->getCFGDef('forbiddenFields') ? explode(',',$this->getCFGDef('forbiddenFields')) : array();
+        $this->forbiddenFields = $this->getCFGDef('forbiddenFields') ? explode(',',$this->getCFGDef('forbiddenFields')) : array();
         if (!$this->isSubmitted) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         if ($this->setRequestParams(array_merge($_GET, $_POST))) {
             $this->setFields($this->_rq);
@@ -113,14 +118,14 @@ abstract class Core
      * @param string $arrayParam название параметра с данными
      */
     public function setExternalFields($sources = 'array', $arrayParam = 'defaults') {
-        $sources = explode(';',$sources);
         $fields = array();
+        $prefix = '';
+        $sources = explode(';',$sources);
         foreach ($sources as $source) {
             switch ($source) {
                 case 'array':
                     if ($arrayParam) {
                         $fields = array_merge($fields,$this->config->loadArray($this->getCFGDef($arrayParam)));
-                        $prefix = '';
                     }
                     break;
                 case 'session':
@@ -232,7 +237,6 @@ abstract class Core
     /**
      * Вывод шаблона
      *
-     * @param int $api
      * @return null|string
      */
     public function renderForm()
@@ -303,6 +307,7 @@ abstract class Core
             $_field = $this->getField($field);
             $params = array($_field);
             foreach ($rules as $rule => $description) {
+                $result = true;
                 if (is_array($description)) {
                     $params = array_merge($params,is_array($description['params']) ? $description['params'] : array($description['params']));
                     $message = isset($description['message']) ? $description['message'] : 'Заполнено неверно.';
@@ -312,9 +317,11 @@ abstract class Core
                 if (is_scalar($rule) && ($rule != 'custom') && method_exists($validator, $rule)) {
                     $result = call_user_func_array(array($validator, $rule), $params);
                 } else {
-                    if (isset($description['rule'])) $_rule = $description['rule'];
-                    if ((is_object($_rule) && ($_rule instanceof Closure)) || is_callable($_rule)) {
-                        $result = call_user_func_array($_rule, $params);
+                    if (isset($description['rule'])) {
+                        $_rule = $description['rule'];
+                        if ((is_object($_rule) && ($_rule instanceof \Closure)) || is_callable($_rule)) {
+                            $result = call_user_func_array($_rule, $params);
+                        }
                     }
                 }
                 if (!$result) {
@@ -367,7 +374,7 @@ abstract class Core
     /**
      * Сохраняет значение поля в formData
      * @param string $field имя поля
-     * @param $value значение поля
+     * @param $value
      */
     public function setField($field, $value)
     {
@@ -376,9 +383,9 @@ abstract class Core
 
     /**
      * Добавляет в formData информацию об ошибке
-     * @param $field имя поля
-     * @param $type тип ошибки
-     * @param $message сообщение об ошибке
+     * @param string $field имя поля
+     * @param string $type тип ошибки
+     * @param string $message сообщение об ошибке
      */
     public function addError($field, $type, $message)
     {
@@ -543,7 +550,6 @@ abstract class Core
             $wrapper = MODX_BASE_PATH . "assets/snippets/FormLister/lib/captcha/{$captcha}/wrapper.php";
             if ($this->fs->checkFile($wrapper)) {
                 include_once($wrapper);
-                $wrapper = $captcha.'Wrapper';
                 $captcha = new $wrapper ($this);
                 $this->rules[$this->getCFGDef('captchaField', 'vericode')] = $captcha->getRule();
                 $this->setField('captcha',$captcha->getPlaceholder());
@@ -582,7 +588,7 @@ abstract class Core
 
     public function callPrepare($name) {
         if (empty($name)) return;
-        if((is_object($name) && ($name instanceof Closure)) || is_callable($name)){
+        if((is_object($name) && ($name instanceof \Closure)) || is_callable($name)){
             call_user_func($name, $this);
         }else{
             $params = array(
@@ -599,7 +605,7 @@ abstract class Core
      */
     public function redirect($param = 'redirectTo') {
         if ($redirect = $this->getCFGDef($param,0)) {
-            $redirect = $this->modx->makeUrl($redirect,'','',full);
+            $redirect = $this->modx->makeUrl($redirect,'','','full');
             $this->setField($param, $redirect);
             if (!$this->getCFGDef('api',0)) $this->modx->sendRedirect($redirect, 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
         }

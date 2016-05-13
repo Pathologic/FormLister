@@ -66,7 +66,7 @@ class Form extends Core
 
     public function setSubmitProtection()
     {
-        if ($this->getCFGDef('submitLimit', 1)) {
+        if ($this->getCFGDef('protectSubmit', 1)) {
             $_SESSION[$this->formid . '_hash'] = $this->getFormHash();
         } //hash is set earlier
         if ($this->getCFGDef('submitLimit', 60) > 0) {
@@ -76,25 +76,25 @@ class Form extends Core
 
     public function getFormHash()
     {
-        $hash = '';
+        $hash = array();
         $protectSubmit = $this->getCFGDef('protectSubmit', 1);
         if (!is_numeric($protectSubmit)) { //supplied field names
             $protectSubmit = explode(',', $protectSubmit);
             foreach ($protectSubmit as $field) {
-                $hash .= $this->getField($field);
+                $hash[] = $this->getField(trim($field));
             }
         } else //all required fields
         {
             foreach ($this->rules as $field => $rules) {
                 foreach ($rules as $rule => $description) {
                     if ($rule == 'required') {
-                        $hash .= $this->getField($field);
+                        $hash[] = $this->getField($field);
                     }
                 }
             }
         }
         if ($hash) {
-            $hash = md5($hash);
+            $hash = md5(json_encode($hash));
         }
         return $hash;
     }
