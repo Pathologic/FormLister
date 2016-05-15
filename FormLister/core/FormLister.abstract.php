@@ -4,6 +4,7 @@ include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 include_once(MODX_BASE_PATH . 'assets/lib/Helpers/FS.php');
 require_once(MODX_BASE_PATH . "assets/snippets/DocLister/lib/DLTemplate.class.php");
 include_once(MODX_BASE_PATH . "assets/snippets/FormLister/lib/Config.php");
+include_once(MODX_BASE_PATH . "assets/snippets/FormLister/lib/Lexicon.php");
 
 /**
  * Class FormLister
@@ -77,6 +78,8 @@ abstract class Core
      */
     public $forbiddenFields = array();
 
+    protected $lexicon = null;
+
     /**
      * Core constructor.
      * @param \DocumentParser $modx
@@ -87,6 +90,7 @@ abstract class Core
         $this->modx = $modx;
         $this->config = new \Helpers\Config($cfg);
         $this->fs = \Helpers\FS::getInstance();
+        $this->lexicon = new \Helpers\Lexicon($modx, $cfg);
         if (isset($cfg['config'])) {
             $this->config->loadConfig($cfg['config']);
         }
@@ -304,13 +308,14 @@ abstract class Core
 
         //применяем правила
         foreach ($this->rules as $field => $rules) {
-            $_field = $this->getField($field);
-            $params = array($_field);
+            $params = array($this->getField($field));
             foreach ($rules as $rule => $description) {
+                $inverseFlag = substr($rule,0,1) == '!' ? true : false;
+                if ($inverseFlag) $rule = substr($rule,1);
                 $result = true;
                 if (is_array($description)) {
                     $params = array_merge($params,is_array($description['params']) ? $description['params'] : array($description['params']));
-                    $message = isset($description['message']) ? $description['message'] : 'Заполнено неверно.';
+                    $message = isset($description['message']) ? $description['message'] : '';
                 } else {
                     $message = $description;
                 }
@@ -324,6 +329,7 @@ abstract class Core
                         }
                     }
                 }
+                if ($inverseFlag) $result = !$result;
                 if (!$result) {
                     $this->addError(
                         $field,
@@ -538,6 +544,7 @@ abstract class Core
     {
         $out = null;
         $out = \DLTemplate::getInstance($this->modx)->parseChunk($name, $data, $parseDocumentSource);
+        if ($this->lexicon->isReady()) $out = $this->lexicon->parseLang($out);
         return $out;
     }
 
@@ -550,6 +557,7 @@ abstract class Core
             $wrapper = MODX_BASE_PATH . "assets/snippets/FormLister/lib/captcha/{$captcha}/wrapper.php";
             if ($this->fs->checkFile($wrapper)) {
                 include_once($wrapper);
+                $wrapper = $captcha.'Wrapper';
                 $captcha = new $wrapper ($this);
                 $this->rules[$this->getCFGDef('captchaField', 'vericode')] = $captcha->getRule();
                 $this->setField('captcha',$captcha->getPlaceholder());

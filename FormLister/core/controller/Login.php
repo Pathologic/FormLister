@@ -12,7 +12,8 @@ class Login extends Core
     public  function __construct($modx, array $cfg)
     {
         parent::__construct($modx, $cfg);
-        $this->user = new \modUsers($this->modx); 
+        $this->user = new \modUsers($this->modx);
+        $this->lexicon->loadLang('login');
     }
 
     public function render() {
@@ -30,18 +31,18 @@ class Login extends Core
 
     public function process() {
         $login = $this->getField($this->getCFGDef('loginField','username'));
-        $password = $this->getCFGDef('passwordField','password');
-        $remember = $this->getCFGDef('rememberField','rememberme');
+        $password = $this->getField($this->getCFGDef('passwordField','password'));
+        $remember = $this->getField($this->getCFGDef('rememberField','rememberme'));
         if ($this->user->checkBlock($login)) {
-            $this->addMessage('Пользователь заблокирован. Обратитесь к администратору сайта.');
+            $this->addMessage($this->lexicon->getMsg('login.user_blocked'));
             return;
         }
-        $auth = $this->user->testAuth($login,$this->getField($password),false);
+        $auth = $this->user->testAuth($login,$password,false,true);
         if (!$auth) {
-            $this->addMessage('Неверное имя пользователя или пароль.');
+            $this->addMessage($this->lexicon->getMsg('login.user_failed'));
             return;
         }
-        $this->user->authUser($login, $this->getField($remember),'WebLoginPE', true);
+        $this->user->authUser($login, $remember,'WebLoginPE', true);
         $this->setFormStatus(true);
         $this->redirect();
         $this->setFields($this->user->toArray());

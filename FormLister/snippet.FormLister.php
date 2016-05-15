@@ -25,8 +25,10 @@ if ($classname != 'FormLister' && file_exists($dir . $controller . ".php") && !c
     require_once($dir . $controller . ".php");
 }
 
+if (!isset($langDir)) $modx->event->params['langDir'] = 'assets/snippets/FormLister/core/lang/';
+
 if (class_exists($classname, false) && $classname != 'FormLister') {
-    $FormLister = new $classname($modx, $modx->Event->params, $_time);
+    $FormLister = new $classname($modx, $modx->event->params, $_time);
     if (!$FormLister->getFormId()) return;
     $FormLister->initForm();
     $out = $FormLister->render();

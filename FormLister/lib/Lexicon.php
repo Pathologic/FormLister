@@ -1,44 +1,43 @@
 <?php namespace Helpers;
 
-use DocumentParser;
-
-include_once (MODX_BASE_PATH . 'assets/lib/Helpers/APIHelpers.class.php');
+include_once (MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 
 class Lexicon
 {
     protected $modx = null;
-    protected $langDir = '';
+    protected $cfg = array();
     protected $_lang = array();
 
     /**
      * Lexicon constructor.
-     * @param DocumentParser $modx
+     * @param \DocumentParser $modx
      * @param array $cfg
      */
     public function __construct($modx, $cfg = array()) {
         $this->modx = $modx;
-        $this->langDir = isset($cfg['langDir']) ? MODX_BASE_PATH . $cfg['langDir'] : __DIR__."/lang/";
+        $this->cfg = $cfg;
     }
 
     /**
      * Загрузка языкового пакета
      *
-     * @param string $name ключ языкового пакета
+     * @param string $name файл языкового пакета
      * @param string $lang имя языкового пакета
      * @return array массив с лексиконом
      */
     public function loadLang($name = 'core', $lang = '')
     {
+        $langDir = MODX_BASE_PATH . \APIhelpers::getkey($this->cfg, 'langDir', 'lang/');
         if (empty($lang)) {
-            $lang = $this->modx->config['manager_language'];
+            $lang = \APIhelpers::getkey($this->cfg, 'lang', $this->modx->config['manager_language']);
         }
 
         if (is_scalar($name)) {
             $name = array($name);
         }
         foreach ($name as $n) {
-            if (file_exists($this->langDir . "{$lang}/{$n}.inc.php")) {
-                $tmp = include($this->langDir . "{$lang}/{$n}.inc.php");
+            if (file_exists($langDir . "{$lang}/{$n}.inc.php")) {
+                $tmp = include($langDir . "{$lang}/{$n}.inc.php");
                 if (is_array($tmp)) {
                     $this->_lang = array_merge($this->_lang, $tmp);
                 }
@@ -56,6 +55,39 @@ class Lexicon
      */
     public function getMsg($name, $def = '')
     {
-        return \APIhelpers::getkey($this->_lang, $name, $def);
+        $out = \APIhelpers::getkey($this->_lang, $name, $def);
+        if(class_exists('evoBabel', false) && isset($this->modx->snippetCache['lang'])){
+            $msg = $this->modx->runSnippet('lang', array('a' => $name));
+            if(!empty($msg)){
+                $out = $msg;
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Замена в шаблоне фраз из лексикона
+     *
+     * @param string $tpl HTML шаблон
+     * @return string
+     */
+    public function parseLang($tpl)
+    {
+        if (is_scalar($tpl) && !empty($tpl)) {
+            if (preg_match_all("/\[\%([a-zA-Z0-9\.\_\-]+)\%\]/", $tpl, $match)) {
+                $langVal = array();
+                foreach ($match[1] as $item) {
+                    $langVal[] = $this->getMsg($item);
+                }
+                $tpl = str_replace($match[0], $langVal, $tpl);
+            }
+        } else {
+            $tpl = '';
+        }
+        return $tpl;
+    }
+
+    public function isReady() {
+        return (bool)$this->_lang;
     }
 }

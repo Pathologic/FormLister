@@ -4,8 +4,14 @@ include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/lib/MailChimp/MailChimp.php');
 class MailChimp extends Form
 {
+    public function __construct(\DocumentParser $modx, array $cfg)
+    {
+        parent::__construct($modx, $cfg);
+        $this->lexicon->loadLang('mailchimp');
+    }
+
     public function process() {
-        $errorMessage = 'Не удалось выполнить подписку.';
+        $errorMessage = $this->lexicon->getMsg('mc.subscription_failed');
         if (!$this->getCFGDef('apiKey')) {
             $this->addMessage($errorMessage);
             return false;
@@ -16,7 +22,8 @@ class MailChimp extends Form
             $this->addMessage($errorMessage);
             return false;
         }
-        $result = $MailChimp->post("lists/$list_id/members", array(
+        
+        $MailChimp->post("lists/$list_id/members", array(
                 'email_address' => $this->getField('email'),
                 'merge_fields' => array('NAME'=>$this->getField('name')),
                 'status'        => 'pending',
@@ -25,7 +32,7 @@ class MailChimp extends Form
             $this->addMessage($errorMessage);
         } else {
             $this->setFormStatus(true);
-            $this->renderTpl = $this->getCFGDef('successTpl','@CODE:<p>Спасибо, что подписались на нашу рассылку.</p>');
+            $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('mc.default_successTpl'));
             return true;
         }
     }

@@ -11,6 +11,7 @@ class Profile extends Core {
 
     public function __construct($modx, $cfg = array()) {
         parent::__construct($modx, $cfg);
+        $this->lexicon->loadLang('profile');
         $uid = $modx->getLoginUserId();
         if ($uid) {
             $user = new \modUsers($modx);

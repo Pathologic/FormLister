@@ -10,6 +10,7 @@ class Register extends Form {
     public function __construct($modx, $cfg = array()) {
         parent::__construct($modx, $cfg);
         $this->user = new \modUsers($modx);
+        $this->lexicon->loadLang('register');
     }
 
     public function render()
@@ -31,7 +32,7 @@ class Register extends Form {
                 $this->addError(
                     "email",
                     "unique",
-                    "Вы не можете использовать этот e-mail"
+                    $this->lexicon->getMsg('register.email_in_use')
                 );
             }
             if ($username = $this->getField('username') != '') {
@@ -41,7 +42,7 @@ class Register extends Form {
                     $this->addError(
                         "username",
                         "unique",
-                        "Такой пользователь уже зарегистрирован"
+                        $this->lexicon->getMsg('register.username_in_use')
                     );
                 }
             }
@@ -57,7 +58,7 @@ class Register extends Form {
         if ($this->getField('password') == '') $this->setField('password',\APIHelpers::genPass(8));
         $result = $this->user->create($this->getFormData('fields'))->save(true);
         if (!$result) {
-            $this->addFormMessage('Не удалось зарегистрировать пользователя');
+            $this->addFormMessage($this->lexicon->getMsg('register.registration_failed'));
             $this->setFormStatus(false);
             return false;
         } else {

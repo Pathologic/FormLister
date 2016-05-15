@@ -12,9 +12,9 @@ class Form extends Core
      */
     public $mailConfig = array();
 
-    public function initForm()
+    public function __construct(\DocumentParser $modx, array $cfg)
     {
-        parent::initForm();
+        parent::__construct($modx, $cfg);
         $this->mailConfig = array(
             'isHtml' => $this->getCFGDef('isHtml',1),
             'to' => $this->getCFGDef('to'),
@@ -26,6 +26,7 @@ class Form extends Core
             'bcc' => $this->getCFGDef('bcc'),
             'noemail' => $this->getCFGDef('noemail',false)
         );
+        $this->lexicon->loadLang('form');
     }
 
     /**
@@ -39,7 +40,7 @@ class Form extends Core
             $hash = $this->getFormHash();
             if (isset($_SESSION[$this->formid . '_hash']) && $_SESSION[$this->formid . '_hash'] == $hash && $hash != '') {
                 $result = true;
-                $this->addMessage('Данные успешно отправлены. Нет нужды отправлять данные несколько раз.');
+                $this->addMessage($this->lexicon->getMsg('form.protectSubmit'));
             }
         }
         return $result;
@@ -56,7 +57,7 @@ class Form extends Core
         if ($submitLimit > 0) {
             if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
                 $result = true;
-                $this->addMessage('Вы уже отправляли эту форму, попробуйте еще раз через ' . round($submitLimit / 60, 0) . ' мин.');
+                $this->addMessage('[%form.submitLimit%] ' . round($submitLimit / 60, 0) . ' [%form.minutes%].');
             } else {
                 unset($_SESSION[$this->formid . '_limit'], $_SESSION[$this->formid . '_hash']);
             } //time expired
@@ -198,14 +199,14 @@ class Form extends Core
         //если сработала защита, то не отправляем
         if($this->checkSubmitProtection() || $this->checkSubmitLimit()) return false;
 
-        $this->setField('form.date',date($this->getCFGDef('dateFormat','m.d.Y в H:i:s')));
+        $this->setField('form.date',date($this->getCFGDef('dateFormat',$this->lexicon->getMsg('form.dateFormat'))));
         if ($this->sendReport()) {
             $this->setFormStatus(true);
             $this->setSubmitProtection();
             $this->sendCCSender();
             $this->sendAutosender();
             $this->redirect();
-            $this->renderTpl = $this->getCFGDef('successTpl','@CODE:Форма успешно отправлена [+form.date.value+]');
+            $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('form.default_successTpl'));
         }
     }
 }
