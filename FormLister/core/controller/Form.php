@@ -205,8 +205,14 @@ class Form extends Core
             $this->setSubmitProtection();
             $this->sendCCSender();
             $this->sendAutosender();
-            $this->redirect();
-            $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('form.default_successTpl'));
+            $this->postProcess();
+        } else {
+            $this->addMessage($this->lexicon->getMsg('form.form_failed'));
         }
+    }
+
+    public function postProcess() {
+        $this->redirect();
+        $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('form.default_successTpl'));
     }
 }

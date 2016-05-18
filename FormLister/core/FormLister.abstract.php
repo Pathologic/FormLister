@@ -60,12 +60,6 @@ abstract class Core
     protected $rules = array();
 
     /**
-     * Если данные из формы отправлены, то true
-     * @var bool
-     */
-    protected $isSubmitted = false;
-
-    /**
      * Массив с именами полей, которые можно отправлять в форме
      * По умолчанию все поля разрешены
      * @var array
@@ -103,15 +97,15 @@ abstract class Core
      * Загрузка капчи
      */
     public function initForm() {
-        $this->allowedFields = $this->getCFGDef('allowedFields') ? explode(',',$this->getCFGDef('allowedFields')) : array();
-        if ($this->allowedFields) $this->allowedFields[] = 'formid';
-        $this->forbiddenFields = $this->getCFGDef('forbiddenFields') ? explode(',',$this->getCFGDef('forbiddenFields')) : array();
-        if (!$this->isSubmitted) $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
-        if ($this->setRequestParams(array_merge($_GET, $_POST))) {
-            $this->setFields($this->_rq);
+        $this->allowedFields = array_filter(explode(',',$this->getCFGDef('allowedFields')));
+        $this->forbiddenFields = array_filter(explode(',',$this->getCFGDef('forbiddenFields')));
+        $this->setRequestParams(array_merge($_GET, $_POST));
+        if (!$this->isSubmitted()) {
+            $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
+        } else {
             if ($this->getCFGDef('keepDefaults')) $this->setExternalFields($this->getCFGDef('defaultsSources','array')); //восстановить значения по умолчанию
         }
-        $this->renderTpl = $this->formid ? $this->getCFGDef('formTpl') : '@CODE:'; //Шаблон по умолчанию
+        $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
         $this->initCaptcha();
         $this->runPrepare();
     }
@@ -122,71 +116,97 @@ abstract class Core
      * @param string $arrayParam название параметра с данными
      */
     public function setExternalFields($sources = 'array', $arrayParam = 'defaults') {
-        $fields = array();
+        $sources = array_filter(explode(';',$sources));
         $prefix = '';
-        $sources = explode(';',$sources);
         foreach ($sources as $source) {
-            switch ($source) {
+            $fields = array();
+            $_source = explode(':',$source);
+            switch ($_source[0]) {
                 case 'array':
                     if ($arrayParam) {
-                        $fields = array_merge($fields,$this->config->loadArray($this->getCFGDef($arrayParam)));
+                        $fields = $this->config->loadArray($this->getCFGDef($arrayParam));
                     }
                     break;
+                case 'param':{
+                    if (isset($_source[1])) $fields = $this->config->loadArray($this->getCFGDef($_source[1]));
+                    break;
+                }
                 case 'session':
-                    $_source = explode(':',$source);
                     $fields = isset($_source[1]) && isset($_SESSION[$_source[1]]) ?
-                        array_merge($fields,$_SESSION[$_source[1]]) :
-                        array_merge($fields, $_SESSION);
+                        $_SESSION[$_source[1]] :
+                        $_SESSION;
                     $prefix = 'session';
                     break;
                 case 'plh':
-                    $_source = explode(':',$source);
                     $fields = isset($_source[1]) && isset($this->modx->placeholders[$_source[1]]) ?
-                        array_merge($fields,$this->modx->placeholders[$_source[1]]) :
-                        array_merge($fields, $this->modx->placeholders);
+                        $this->modx->placeholders[$_source[1]] :
+                        $this->modx->placeholders;
                     $prefix = 'plh';
                     break;
                 case 'config':
-                    $fields = array_merge($fields,$this->modx->config);
+                    $fields = $this->modx->config;
                     $prefix = 'config';
                     break;
                 case 'cookie':
-                    $_source = explode(':',$source);
                     $fields = isset($_source[1]) && isset($_COOKIE[$_source[1]]) ?
-                        array_merge($fields,$_COOKIE[$_source[1]]) :
-                        array_merge($fields, $_COOKIE);
+                        $_COOKIE[$_source[1]] :
+                        $_COOKIE;
                     $prefix = 'cookie';
                     break;
                 default:
-                    $_source = explode(':',$source);
+                    if (empty($_source[0])) break;
                     $classname = $_source[0];
                     if (class_exists($classname) && isset($_source[1])) {
                         $obj = new $classname($this->modx);
                         if ($data = $obj->edit($_source[1])) {
-                            $fields = array_merge($fields,$data->toArray());
+                            $fields = $data->toArray();
                             $prefix = $classname;
                         }
                     }
             }
+            $prefix = $this->getCFGDef('extPrefix') ? $prefix : '';
+            $this->setFields($fields,$prefix);
         }
-        $this->setFields($fields,$this->getCFGDef('extPrefix') ? $prefix : '');
     }
 
     /**
-     * Сохранение массива $_REQUEST
+     * Сохранение массива $_REQUEST c фильтрацией полей
      * @param array $rq
-     * @return int результат сохранения
      */
-    public function setRequestParams($rq)
+    public function setRequestParams($rq = array())
     {
-        if (is_array($rq)) {
-            $this->_rq = array_merge($this->_rq, $rq);
-            $ret = count($this->_rq);
-        } else {
-            $ret = false;
+        $this->_rq = $rq;
+        $this->setField('formid',\APIhelpers::getkey($rq,'formid'));
+        $this->setFields($this->filterFields($rq,$this->allowedFields,$this->forbiddenFields));
+    }
+
+    /**
+     * Фильтрация полей по спискам разрешенных и запрещенных
+     * @param array $fields
+     * @param array $allowedFields
+     * @param array $forbiddenFields
+     * @return array
+     */
+    public function filterFields($fields = array(), $allowedFields = array(), $forbiddenFields = array()) {
+        $out = array();
+        foreach ($fields as $key => $value) {
+            //список рарешенных полей существует и поле в него входит; или списка нет, тогда пофиг
+            $allowed = !empty($allowedFields) ? in_array($key, $allowedFields) : true;
+            //поле входит в список запрещенных полей
+            $forbidden = !empty($forbiddenFields) ? in_array($key,$forbiddenFields): false;
+            if (($allowed && !$forbidden) && !empty($value)) {
+                $out[$key] = $value;
+            }
         }
-        $this->isSubmitted = isset($this->_rq['formid']) && $this->_rq['formid'] == $this->formid;
-        return $ret;
+        return $out;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isSubmitted() {
+        $out = $this->formid && ($this->getField('formid') === $this->formid);
+        return $out;
     }
 
     /**
@@ -209,12 +229,11 @@ abstract class Core
      */
     public function render()
     {
-        if ($this->isSubmitted) {
+        if ($this->isSubmitted()) {
             $this->validateForm();
             if ($this->isValid()) {
                 $this->process();
-                if ($this->getCFGDef('saveObject'))
-                    $this->saveObject();
+                $this->saveObject($this->getCFGDef('saveObject'));
             }
         }
         return $this->renderForm();
@@ -270,14 +289,8 @@ abstract class Core
     public function setFields($fields = array(),$prefix = '')
     {
         foreach ($fields as $key => $value) {
-            //список рарешенных полей существует и поле в него входит; или списка нет, тогда пофиг
-            $allowed = !empty($this->allowedFields) ? in_array($key, $this->allowedFields) : true;
-            //поле входит в список запрещенных полей
-            $forbidden = in_array($key,$this->forbiddenFields);
-            if (($allowed && !$forbidden) && !empty($value)) {
-                if ($prefix) $key = implode('.',array($prefix,$key));
-                $this->setField($key, $value);
-            }
+            if ($prefix) $key = "{$prefix}.{$key}";
+            $this->setField($key, $value);
         }
     }
 
@@ -314,18 +327,25 @@ abstract class Core
                 if ($inverseFlag) $rule = substr($rule,1);
                 $result = true;
                 if (is_array($description)) {
-                    $params = array_merge($params,is_array($description['params']) ? $description['params'] : array($description['params']));
+                    if (isset($description['params'])) {
+                        if (is_array($description['params'])) {
+                            $params = array_merge($params,$description['params']);
+                        } else {
+                            $params[] = $description['params'];
+                        }
+                    }
                     $message = isset($description['message']) ? $description['message'] : '';
                 } else {
                     $message = $description;
                 }
-                if (is_scalar($rule) && ($rule != 'custom') && method_exists($validator, $rule)) {
+                if (($rule != 'custom') && method_exists($validator, $rule)) {
                     $result = call_user_func_array(array($validator, $rule), $params);
                 } else {
-                    if (isset($description['rule'])) {
-                        $_rule = $description['rule'];
-                        if ((is_object($_rule) && ($_rule instanceof \Closure)) || is_callable($_rule)) {
-                            $result = call_user_func_array($_rule, $params);
+                    if (isset($description['function'])) {
+                        $rule = $description['function'];
+                        if ((is_object($rule) && ($rule instanceof \Closure)) || is_callable($rule)) {
+                            array_unshift($params,$this);
+                            $result = call_user_func_array($rule, $params);
                         }
                     }
                 }
@@ -374,7 +394,7 @@ abstract class Core
      */
     public function getField($field)
     {
-        return isset($this->formData['fields'][$field]) ? $this->formData['fields'][$field] : '';
+        return \APIhelpers::getkey($this->formData['fields'],$field);
     }
 
     /**
@@ -384,7 +404,7 @@ abstract class Core
      */
     public function setField($field, $value)
     {
-        $this->formData['fields'][$field] = $value;
+        if (!empty($value)) $this->formData['fields'][$field] = $value;
     }
 
     /**
@@ -577,8 +597,11 @@ abstract class Core
         return !count($this->getFormData('errors'));
     }
 
-    public function saveObject() {
-        $this->modx->setPlaceholder($this->getCFGDef('saveObject'),$this);
+    /**
+     * @param string $name
+     */
+    public function saveObject($name = '') {
+        if ($name) $this->modx->setPlaceholder($this->getCFGDef($name),$this);
     }
 
     public function runPrepare() {

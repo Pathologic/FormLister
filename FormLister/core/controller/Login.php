@@ -19,11 +19,7 @@ class Login extends Core
     public function render() {
         if ($uid = $this->modx->getLoginUserID('web')) {
             $this->redirect();
-            $user = $this->user->edit($uid);
-            if ($user !== false) {
-                $this->setFields($user->toArray());
-            }
-            $this->renderTpl = $this->getCFGDef('successTpl');
+            $this->renderTpl = $this->getCFGDef('skipTpl',$this->lexicon->getMsg('login.default_skipTpl'));
             $this->setFormStatus(true);
         };
         return parent::render();

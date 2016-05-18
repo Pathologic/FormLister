@@ -15,39 +15,55 @@ class Register extends Form {
 
     public function render()
     {
-        if ($this->modx->getLoginUserID('web')) {
-            $this->redirect();
-            $this->renderTpl = $this->getCFGDef('successTpl');
-            $this->setFormStatus(true);
+        if ($uid = $this->modx->getLoginUserID('web')) {
+            $this->redirect('exitTo');
+            $this->renderTpl = $this->getCFGDef('skipTpl',$this->lexicon->getMsg('register.default_skipTpl'));
         };
         return parent::render();
     }
-
-    public function validateForm() {
-        $result = parent::validateForm();
-        if ($result && !is_null($this->user)) {
-            $this->user->set('email', $this->getField('email'));
-            $checkEmail = $this->user->checkUnique('web_user_attributes', 'email', 'internalKey');
-            if (!$checkEmail) {
-                $this->addError(
-                    "email",
-                    "unique",
-                    $this->lexicon->getMsg('register.email_in_use')
-                );
-            }
-            if ($username = $this->getField('username') != '') {
-                $this->user->set('username',$username);
-                $checkUser = $this->user->checkUnique('web_users', 'username');
-                if (!$checkUser) {
-                    $this->addError(
-                        "username",
-                        "unique",
-                        $this->lexicon->getMsg('register.username_in_use')
-                    );
-                }
-            }
+    
+    public function getValidationRules()
+    {
+        parent::getValidationRules();
+        $rules = &$this->rules;
+        if (isset($rules['password']) && isset($rules['repeatPassword']) && !empty($this->getField('password'))) {
+            $rules['repeatPassword']['equals'] = array(
+                'params' => array($this->getField('password')),
+                'message'=> $this->lexicon->getMsg('register.passwords_not_equal')
+            );
         }
-        return $this->isValid();
+    }
+
+    /**
+     * Custom validation rule
+     * Проверяет уникальность email
+     * @param $fl
+     * @param $value
+     * @return bool
+     */
+    public static function uniqueEmail ($fl,$value) {
+        $result = true;
+        if (!is_null($fl->user)) {
+            $fl->user->set('email',$value);
+            $result = $fl->user->checkUnique('web_user_attributes', 'email', 'internalKey');
+        }
+        return $result;
+    }
+
+    /**
+     * Custom validation rule
+     * Проверяет уникальность имени пользователя
+     * @param $fl
+     * @param $value
+     * @return bool
+     */
+    public static function uniqueUsername ($fl,$value) {
+        $result = true;
+        if (!is_null($fl->user)) {
+            $fl->user->set('username', $value);
+            $result = $fl->user->checkUnique('web_users', 'username');
+        }
+        return $result;
     }
 
     public function process() {
@@ -55,18 +71,28 @@ class Register extends Form {
         //регистрация без логина, по емейлу
         if ($this->getField('username') == '') $this->setField('username', $this->getField('email'));
         //регистрация со случайным паролем
-        if ($this->getField('password') == '') $this->setField('password',\APIHelpers::genPass(8));
+        if ($this->getField('password') == '' && !isset($this->rules['password'])) $this->setField('password',\APIhelpers::genPass(6));
         $result = $this->user->create($this->getFormData('fields'))->save(true);
         if (!$result) {
-            $this->addFormMessage($this->lexicon->getMsg('register.registration_failed'));
-            $this->setFormStatus(false);
-            return false;
+            $this->addMessage($this->lexicon->getMsg('register.registration_failed'));
         } else {
             $this->addWebUserToGroups($this->user->getID(),$this->getCFGDef('userGroups'));
             parent::process();
         }
     }
 
+    public function postProcess()
+    {
+        $this->redirect();
+        $this->setFormStatus(true); //результат отправки писем значения не имеет
+        $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('register.default_successTpl'));
+    }
+
+    /**
+     * Добавляет пользователя в группы
+     * @param int $uid
+     * @param string $groups
+     */
     public function addWebUserToGroups($uid = 0, $groups = '') {
         if ($groups == '' || !$uid) return;
         $groups = explode('||',$groups);

@@ -10,7 +10,8 @@ if (!defined('MODX_BASE_PATH')) {die();}
 setlocale(LC_ALL, 'ru_RU.UTF-8');
 
 $_lang = array();
-$_lang['register.email_in_use'] = 'Этот email уже используется.';
-$_lang['register.username_in_use'] = 'Это имя пользователя уже занято.';
 $_lang['register.registration_failed'] = 'Не удалось зарегистрировать пользователя.';
+$_lang['register.default_successTpl'] = '@CODE:Пользователь успешно зарегистрирован.';
+$_lang['register.default_skipTpl'] = '@CODE:Вы уже зарегистрированы.';
+
 return $_lang;

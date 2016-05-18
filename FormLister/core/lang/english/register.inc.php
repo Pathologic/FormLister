@@ -8,7 +8,7 @@
 if (!defined('MODX_BASE_PATH')) {die();}
 
 $_lang = array();
-$_lang['register.email_in_use'] = 'This email is already in use.';
-$_lang['register.username_in_use'] = 'This name is already in use.';
 $_lang['register.registration_failed'] = 'User registration failed.';
+$_lang['register.default_successTpl'] = '@CODE:User has been registered successfully.';
+$_lang['register.default_skipTpl'] = '@CODE:You are already registered.';
 return $_lang;
