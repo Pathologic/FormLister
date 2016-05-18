@@ -23,16 +23,17 @@ class Lexicon
      *
      * @param string $name файл языкового пакета
      * @param string $lang имя языкового пакета
+     * @param string $langDir папка с языковыми пакетами
      * @return array массив с лексиконом
      */
-    public function loadLang($name = 'core', $lang = '')
+    public function loadLang($name = 'core', $lang = '', $langDir = '')
     {
-        $langDir = MODX_BASE_PATH . \APIhelpers::getkey($this->cfg, 'langDir', 'lang/');
+        $langDir = empty($langDir) ? MODX_BASE_PATH . \APIhelpers::getkey($this->cfg, 'langDir', 'lang/') : MODX_BASE_PATH . $langDir;
         if (empty($lang)) {
             $lang = \APIhelpers::getkey($this->cfg, 'lang', $this->modx->config['manager_language']);
         }
 
-        if (is_scalar($name)) {
+        if (is_scalar($name) && !empty($name)) {
             $name = array($name);
         }
         foreach ($name as $n) {

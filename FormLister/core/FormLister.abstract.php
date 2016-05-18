@@ -84,19 +84,23 @@ abstract class Core
         $this->modx = $modx;
         $this->config = new \Helpers\Config($cfg);
         $this->fs = \Helpers\FS::getInstance();
-        $this->lexicon = new \Helpers\Lexicon($modx, $cfg);
         if (isset($cfg['config'])) {
             $this->config->loadConfig($cfg['config']);
         }
+        $this->lexicon = new \Helpers\Lexicon($modx, array(
+            'langDir' => 'assets/snippets/FormLister/core/lang/',
+            'lang'  => $this->getCFGDef('lang')
+        ));
         $this->formid = $this->getCFGDef('formid');
     }
 
     /**
-     * Установка значений в formData
+     * Установка значений в formData, загрузка пользовательских лексиконов
      * Установка шаблона формы
      * Загрузка капчи
      */
     public function initForm() {
+        $this->lexicon->loadLang($this->getCFGDef('lexicon'),$this->getCFGDef('lang'),$this->getCFGDef('langDir'));
         $this->allowedFields = array_filter(explode(',',$this->getCFGDef('allowedFields')));
         $this->forbiddenFields = array_filter(explode(',',$this->getCFGDef('forbiddenFields')));
         $this->setRequestParams(array_merge($_GET, $_POST));
@@ -343,7 +347,7 @@ abstract class Core
                 } else {
                     if (isset($description['function'])) {
                         $rule = $description['function'];
-                        if ((is_object($rule) && ($rule instanceof \Closure)) || is_callable($rule)) {
+                        if (is_callable($rule)) {
                             array_unshift($params,$this);
                             $result = call_user_func_array($rule, $params);
                         }
