@@ -2,6 +2,7 @@
 /**
  * Контроллер для обычных форм с отправкой, типа обратной связи
  */
+if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Mailer.php');
 class Form extends Core

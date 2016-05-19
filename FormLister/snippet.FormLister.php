@@ -21,13 +21,13 @@ if (isset($controller)) {
 $classname = '\FormLister\\'.$controller;
 
 $dir = isset($dir) ? MODX_BASE_PATH.$dir : $FLDir . "core/controller/";
-if ($classname != 'FormLister' && file_exists($dir . $controller . ".php") && !class_exists($classname, false)) {
+if ($classname != '\FormLister\Core' && file_exists($dir . $controller . ".php") && !class_exists($classname, false)) {
     require_once($dir . $controller . ".php");
 }
 
 if (!isset($langDir)) $modx->event->params['langDir'] = 'assets/snippets/FormLister/core/lang/';
 
-if (class_exists($classname, false) && $classname != 'FormLister') {
+if (class_exists($classname, false) && $classname != '\FormLister\Core') {
     $FormLister = new $classname($modx, $modx->event->params, $_time);
     if (!$FormLister->getFormId()) return;
     $FormLister->initForm();

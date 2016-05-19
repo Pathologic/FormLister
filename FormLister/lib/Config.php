@@ -1,4 +1,6 @@
 <?php namespace Helpers;
+
+if (!defined('MODX_BASE_PATH')) {die();}
 include_once(MODX_BASE_PATH . 'assets/lib/Helpers/FS.php');
 include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 require_once(MODX_BASE_PATH . "assets/snippets/DocLister/lib/jsonHelper.class.php");

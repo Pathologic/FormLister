@@ -1,5 +1,6 @@
 <?php namespace Helpers;
 
+if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 
 class Lexicon
@@ -35,6 +36,8 @@ class Lexicon
 
         if (is_scalar($name) && !empty($name)) {
             $name = array($name);
+        } else {
+            return $this->_lang;
         }
         foreach ($name as $n) {
             if (file_exists($langDir . "{$lang}/{$n}.inc.php")) {

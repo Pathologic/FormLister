@@ -1,5 +1,6 @@
 <?php namespace FormLister;
 
+if (!defined('MODX_BASE_PATH')) {die();}
 include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 include_once(MODX_BASE_PATH . 'assets/lib/Helpers/FS.php');
 require_once(MODX_BASE_PATH . "assets/snippets/DocLister/lib/DLTemplate.class.php");
@@ -88,10 +89,10 @@ abstract class Core
             $this->config->loadConfig($cfg['config']);
         }
         $this->lexicon = new \Helpers\Lexicon($modx, array(
-            'langDir' => 'assets/snippets/FormLister/core/lang/',
-            'lang'  => $this->getCFGDef('lang')
+            'langDir' => 'assets/snippets/FormLister/core/lang/'
         ));
         $this->formid = $this->getCFGDef('formid');
+        $this->_rq = array_merge($_GET, $_POST);
     }
 
     /**
@@ -103,15 +104,11 @@ abstract class Core
         $this->lexicon->loadLang($this->getCFGDef('lexicon'),$this->getCFGDef('lang'),$this->getCFGDef('langDir'));
         $this->allowedFields = array_filter(explode(',',$this->getCFGDef('allowedFields')));
         $this->forbiddenFields = array_filter(explode(',',$this->getCFGDef('forbiddenFields')));
-        $this->setRequestParams(array_merge($_GET, $_POST));
-        if (!$this->isSubmitted()) {
-            $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
-        } else {
-            if ($this->getCFGDef('keepDefaults')) $this->setExternalFields($this->getCFGDef('defaultsSources','array')); //восстановить значения по умолчанию
-        }
+        $this->setRequestParams();
+        $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
         $this->initCaptcha();
-        $this->runPrepare();
+        $this->runPrepare('prepare');
     }
 
     /**
@@ -120,6 +117,9 @@ abstract class Core
      * @param string $arrayParam название параметра с данными
      */
     public function setExternalFields($sources = 'array', $arrayParam = 'defaults') {
+        $keepDefaults = $this->getCFGDef('keepDefaults',0);
+        $submitted = $this->isSubmitted();
+        if ($submitted && !$keepDefaults) return;
         $sources = array_filter(explode(';',$sources));
         $prefix = '';
         foreach ($sources as $source) {
@@ -132,44 +132,53 @@ abstract class Core
                     }
                     break;
                 case 'param':{
-                    if (isset($_source[1])) $fields = $this->config->loadArray($this->getCFGDef($_source[1]));
+                    if (!empty($_source[1])) {
+                        $fields = $this->config->loadArray($this->getCFGDef($_source[1]));
+                        if (isset($_source[2])) $prefix = $_source[2];
+                    }
                     break;
                 }
                 case 'session':
-                    $fields = isset($_source[1]) && isset($_SESSION[$_source[1]]) ?
-                        $_SESSION[$_source[1]] :
-                        $_SESSION;
-                    $prefix = 'session';
+                    if (!empty($_source[1]) && isset($_SESSION[$_source[1]])) {
+                        $fields = $_SESSION[$_source[1]];
+                        if (isset($_source[2])) $prefix = $_source[2];
+                    }
                     break;
                 case 'plh':
-                    $fields = isset($_source[1]) && isset($this->modx->placeholders[$_source[1]]) ?
-                        $this->modx->placeholders[$_source[1]] :
-                        $this->modx->placeholders;
-                    $prefix = 'plh';
+                    if (!empty($_source[1]) && isset($this->modx->placeholders[$_source[1]])) {
+                        $fields = $this->modx->placeholders[$_source[1]];
+                        if (isset($_source[2])) $prefix = $_source[2];
+                    }
                     break;
                 case 'config':
                     $fields = $this->modx->config;
-                    $prefix = 'config';
+                    if (isset($_source[1])) $prefix = $_source[1];
                     break;
                 case 'cookie':
-                    $fields = isset($_source[1]) && isset($_COOKIE[$_source[1]]) ?
-                        $_COOKIE[$_source[1]] :
-                        $_COOKIE;
-                    $prefix = 'cookie';
+                    if (!empty($_source[1]) && isset($_COOKIE[$_source[1]])) {
+                        $fields = $_COOKIE[$_source[1]];
+                        if (isset($_source[2])) $prefix = $_source[2];
+                    }
                     break;
                 default:
-                    if (empty($_source[0])) break;
-                    $classname = $_source[0];
-                    if (class_exists($classname) && isset($_source[1])) {
-                        $obj = new $classname($this->modx);
-                        if ($data = $obj->edit($_source[1])) {
-                            $fields = $data->toArray();
-                            $prefix = $classname;
+                    if (!empty($_source[0])) {
+                        $classname = $_source[0];
+                        if (class_exists($classname) && isset($_source[1])) {
+                            $obj = new $classname($this->modx);
+                            if ($data = $obj->edit($_source[1])) {
+                                $fields = $data->toArray();
+                                if (isset($_source[2])) $prefix = $_source[2];
+                            }
                         }
                     }
             }
-            $prefix = $this->getCFGDef('extPrefix') ? $prefix : '';
-            $this->setFields($fields,$prefix);
+            if (is_array($fields)) {
+                if (!is_numeric($keepDefaults)) {
+                    $allowed = explode(',',$keepDefaults);
+                    $fields = $this->filterFields($fields,$allowed);
+                }
+                $this->setFields($fields,$prefix);
+            }
         }
     }
 
@@ -177,11 +186,10 @@ abstract class Core
      * Сохранение массива $_REQUEST c фильтрацией полей
      * @param array $rq
      */
-    public function setRequestParams($rq = array())
+    public function setRequestParams()
     {
-        $this->_rq = $rq;
-        $this->setField('formid',\APIhelpers::getkey($rq,'formid'));
-        $this->setFields($this->filterFields($rq,$this->allowedFields,$this->forbiddenFields));
+        $this->setField('formid',\APIhelpers::getkey($this->_rq,'formid'));
+        $this->setFields($this->filterFields($this->_rq,$this->allowedFields,$this->forbiddenFields));
     }
 
     /**
@@ -235,6 +243,7 @@ abstract class Core
     {
         if ($this->isSubmitted()) {
             $this->validateForm();
+            $this->callPrepare('prepareProcess');
             if ($this->isValid()) {
                 $this->process();
                 $this->saveObject($this->getCFGDef('saveObject'));
@@ -293,6 +302,7 @@ abstract class Core
     public function setFields($fields = array(),$prefix = '')
     {
         foreach ($fields as $key => $value) {
+            if (is_int($key)) continue;
             if ($prefix) $key = "{$prefix}.{$key}";
             $this->setField($key, $value);
         }
@@ -608,28 +618,34 @@ abstract class Core
         if ($name) $this->modx->setPlaceholder($this->getCFGDef($name),$this);
     }
 
-    public function runPrepare() {
-        if (($prepare = $this->getCFGDef('prepare')) != '') {
+    /**
+     * Вызов prepare-сниппетов
+     * @param string $paramName
+     */
+    public function runPrepare($paramName = 'prepare') {
+        if (($prepare = $this->getCFGDef($paramName)) != '') {
+            $params = $this->getFormData('fields');
             if(is_scalar($prepare)){
                 $names = explode(",", $prepare);
                 foreach($names as $item){
-                    $this->callPrepare($item);
+                    $this->callPrepare($item, $params);
                 }
             }else{
-                $this->callPrepare($prepare);
+                $this->callPrepare($prepare, $params);
             }
         }
     }
 
-    public function callPrepare($name) {
+    public function callPrepare($name, $params = array()) {
         if (empty($name)) return;
+        $params = array(
+            'modx'=>$this->modx,
+            'FormLister'=>$this,
+            'data'=>$params
+        );
         if((is_object($name) && ($name instanceof \Closure)) || is_callable($name)){
-            call_user_func($name, $this);
+            call_user_func_array($name, $params);
         }else{
-            $params = array(
-                'modx' => $this->modx,
-                'FormLister' => $this
-            );
             $this->modx->runSnippet($name, $params);
         }
     }

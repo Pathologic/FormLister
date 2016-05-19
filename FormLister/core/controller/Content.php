@@ -2,10 +2,13 @@
 /**
  * Контроллер для создания записей
  */
+if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
 
 class Content extends Form
 {
+    protected $mode = 'create';
+    protected $id = 0;
     public $content = null;
 
     public function __construct($modx, $cfg = array())
@@ -15,6 +18,17 @@ class Content extends Form
         $classname = $this->getCFGDef('contentClass','modResource');
         if ($this->loadContentClass()) {
             $this->content = new $classname($modx);
+        }
+        $idField = $this->getCFGDef('idField','id');
+        if (!$this->getCFGDef($idField) && isset($_REQUEST[$idField]) && is_scalar($_REQUEST[$idField]) && $_REQUEST[$idField] > 0) {
+            $this->id = $_REQUEST[$idField];
+            $this->mode = 'edit';
+            $data = $this->content->edit($this->id)->toArray();
+            $this->config->setConfig(array(
+                'defaults'=>$data,
+            ));
+            $this->mailConfig['noemail'] = 1;
+            $this->lexicon->loadLang('edit');
         }
     }
 
@@ -27,16 +41,38 @@ class Content extends Form
                 include_once(MODX_BASE_PATH . $classPath);
                 $out = class_exists($classname);
             }
-        }  
+        }
         return $out;
     }
-    
+
     public function render() {
-        if (!$uid = $this->modx->getLoginUserID('web')) {
+        $uid = $this->modx->getLoginUserID('web');
+        $mode = $this->mode;
+        if (!$uid && $this->getCFGDef('onlyUsers',1) && $mode == 'create') {
             $this->redirect('exitTo');
-            $this->renderTpl=$this->getCFGDef('skipTpl','@CODE:Только зарегистрированные пользователи могут создавать записи.');
+            $this->renderTpl=$this->getCFGDef('skipTpl',$this->lexicon->getMsg('create.default_skipTpl'));
+            //TODO: проверка разрешенных групп
         }
-        //TODO: проверка разрешенных групп
+        if (!$uid && $mode == 'edit') {
+            $this->redirect('exitTo');
+            $this->renderTpl=$this->getCFGDef('skipEditTpl',$this->lexicon->getMsg('edit.default_skipEditTpl'));
+            //TODO: проверка разрешенных групп
+        }
+        if ($mode == 'edit') {
+            $owner = $this->getCFGDef('ownerField');
+            $cid = $this->content->getID();
+            if ($cid) {
+                if ($this->getCFGDef('onlyAuthors',1) && ($this->content->get($owner) && $this->content->get($owner) != $uid)) {
+                    $this->redirect('badOwnerTo');
+                    $this->renderTpl = $this->getCFGDef('badOwnerTpl',$this->lexicon->getMsg('edit.default_badOwnerTpl'));
+                } else {
+                    return parent::render();
+                }
+            } else {
+                $this->redirect('badRecordTo');
+                $this->renderTpl = $this->getCFGDef('badRecordTpl',$this->lexicon->getMsg('edit.badRecordTpl'));
+            }
+        }
         return parent::render();
     }
 
@@ -45,10 +81,20 @@ class Content extends Form
         $fields = $this->getContentFields();
         $result = false;
         if ($fields  && !is_null($this->content)) {
-            $result = $this->content->create($fields)->save(true,true);
+            $clearCache = $this->getCFGDef('clearCache',false);
+            switch ($this->mode) {
+                case 'create':
+                    $result = $this->content->create($fields)->save(true,$clearCache);
+                    break;
+                case 'edit':
+                    $result = $this->content->fromArray($fields)->save(true,$clearCache);
+                    break;
+                default:
+                    break;
+            }
         }
         if (!$result) {
-            $this->addMessage('Не удалось сохранить.');
+            $this->addMessage($this->lexicon->getMsg('edit.update_fail'));
         } else {
             parent::process();
         }
@@ -57,8 +103,12 @@ class Content extends Form
     public function postProcess()
     {
         $this->setFormStatus(true);
-        $this->redirect();
-        $this->renderTpl = $this->getCFGDef('successTpl','Успешно сохранено');
+        if ($this->mode == 'create') {
+            $this->redirect();
+            $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('create.default_successTpl'));
+        } else {
+            $this->addMessage($this->lexicon->getMsg('edit.update_success'));
+        }
     }
 
     /**

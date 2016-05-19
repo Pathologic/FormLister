@@ -2,6 +2,7 @@
 /**
  * Контроллер для регистрации пользователя
  */
+if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
 include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
 class Register extends Form {
