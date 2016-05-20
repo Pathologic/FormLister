@@ -25,10 +25,9 @@ class Content extends Form
             $this->mode = 'edit';
             $data = $this->content->edit($this->id)->toArray();
             $this->config->setConfig(array(
-                'defaults'=>$data,
+                'defaults'=>$data
             ));
             $this->mailConfig['noemail'] = 1;
-            $this->lexicon->loadLang('edit');
         }
     }
 
@@ -122,5 +121,9 @@ class Content extends Form
             if (!empty($formField)) $fields[$field] = $formField;
         }
         return $fields;
+    }
+
+    public function getMode() {
+        return $this->mode;
     }
 }

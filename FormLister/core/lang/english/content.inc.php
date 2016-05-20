@@ -9,10 +9,10 @@ if (!defined('MODX_BASE_PATH')) {die();}
 
 $_lang = array();
 $_lang['create.default_skipTpl'] = '@CODE:Only registered users can create new records.';
-$_lang['create.default_successTpl'] = '@CODE:Data save is successfull.';
+$_lang['create.default_successTpl'] = '@CODE:Data is saved successfully.';
 $_lang['edit.default_badOwnerTpl'] = '@CODE:Only author can edit this record.';
 $_lang['edit.default_badRecordTpl'] = '@CODE:You cannot edit this record.';
 $_lang['edit.default_skipEditTpl'] = '@CODE:Only registered users can edit records.';
 $_lang['edit.update_fail'] = 'Data save failed.';
-$_lang['edit.update_success'] = 'Data save is successfull.';
+$_lang['edit.update_success'] = 'Data is saved successfully.';
 return $_lang;

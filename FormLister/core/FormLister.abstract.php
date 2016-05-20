@@ -174,7 +174,7 @@ abstract class Core
             }
             if (is_array($fields)) {
                 if (!is_numeric($keepDefaults)) {
-                    $allowed = explode(',',$keepDefaults);
+                    $allowed = $submitted ? explode(',',$keepDefaults) : array();
                     $fields = $this->filterFields($fields,$allowed);
                 }
                 $this->setFields($fields,$prefix);
@@ -184,7 +184,6 @@ abstract class Core
 
     /**
      * Сохранение массива $_REQUEST c фильтрацией полей
-     * @param array $rq
      */
     public function setRequestParams()
     {
