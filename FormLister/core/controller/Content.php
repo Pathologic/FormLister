@@ -69,14 +69,13 @@ class Content extends Form
                 }
             } else {
                 $this->redirect('badRecordTo');
-                $this->renderTpl = $this->getCFGDef('badRecordTpl',$this->lexicon->getMsg('edit.badRecordTpl'));
+                $this->renderTpl = $this->getCFGDef('badRecordTpl',$this->lexicon->getMsg('edit.default_badRecordTpl'));
             }
         }
         return parent::render();
     }
 
     public function process() {
-        if($this->checkSubmitProtection() || $this->checkSubmitLimit()) return false;
         $fields = $this->getContentFields();
         $result = false;
         if ($fields  && !is_null($this->content)) {

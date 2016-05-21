@@ -81,7 +81,7 @@ class Config
 
     public function getCFGDef($name, $def = null)
     {
-        return \APIHelpers::getkey($this->_cfg, $name, $def);
+        return \APIhelpers::getkey($this->_cfg, $name, $def);
     }
 
     public function loadArray($arr)

@@ -37,7 +37,7 @@ class Form extends Core
     public function checkSubmitProtection()
     {
         $result = false;
-        if ($protectSubmit = $this->getCFGDef('protectSubmit', 1)) {
+        if ($this->isSubmitted() && $protectSubmit = $this->getCFGDef('protectSubmit', 1)) {
             $hash = $this->getFormHash();
             if (isset($_SESSION[$this->formid . '_hash']) && $_SESSION[$this->formid . '_hash'] == $hash && $hash != '') {
                 $result = true;
@@ -55,7 +55,7 @@ class Form extends Core
     {
         $submitLimit = $this->getCFGDef('submitLimit', 60);
         $result = false;
-        if ($submitLimit > 0) {
+        if ($this->isSubmitted() && $submitLimit > 0) {
             if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
                 $result = true;
                 $this->addMessage('[%form.submitLimit%] ' . round($submitLimit / 60, 0) . ' [%form.minutes%].');
@@ -196,10 +196,15 @@ class Form extends Core
         }
     }
 
-    public function process() {
-        //если сработала защита, то не отправляем
-        if($this->checkSubmitProtection() || $this->checkSubmitLimit()) return false;
+    public function render()
+    {
+        //если сработала защита, то запрещаем обработку формы
+        $formProtect = $this->checkSubmitProtection() || $this->checkSubmitLimit();
+        $this->setValid(!$formProtect);
+        return parent::render();
+    }
 
+    public function process() {
         $this->setField('form.date',date($this->getCFGDef('dateFormat',$this->lexicon->getMsg('form.dateFormat'))));
         if ($this->sendReport()) {
             $this->setFormStatus(true);

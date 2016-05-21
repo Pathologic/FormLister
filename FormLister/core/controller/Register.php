@@ -28,10 +28,9 @@ class Register extends Form {
         parent::getValidationRules();
         $rules = &$this->rules;
         if (isset($rules['password']) && isset($rules['repeatPassword']) && !empty($this->getField('password'))) {
-            $rules['repeatPassword']['equals'] = array(
-                'params' => array($this->getField('password')),
-                'message'=> $this->lexicon->getMsg('register.passwords_not_equal')
-            );
+            if (isset($rules['repeatPassword']['equals'])) {
+                $rules['repeatPassword']['equals']['params'] = $this->getField('password');
+            }
         }
     }
 
@@ -68,7 +67,6 @@ class Register extends Form {
     }
 
     public function process() {
-        if($this->checkSubmitProtection() || $this->checkSubmitLimit()) return false;
         //регистрация без логина, по емейлу
         if ($this->getField('username') == '') $this->setField('username', $this->getField('email'));
         //регистрация со случайным паролем

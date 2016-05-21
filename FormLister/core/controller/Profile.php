@@ -18,7 +18,6 @@ class Profile extends Core {
             $user = new \modUsers($modx);
             $this->userdata = $user->edit($uid);
             $userdata = $this->userdata->toArray();
-            $userdata['password'] = '';
             $this->config->setConfig(array(
                 'defaults'=>$userdata
             ));
@@ -41,7 +40,9 @@ class Profile extends Core {
             if (isset($this->rules['password'])) unset($this->rules['password']);
             if (isset($this->rules['repeatPassword'])) unset($this->rules['repeatPassword']);
         } else {
-            if (isset($this->rules['repeatPassword']['equals']['params'])) $this->rules['repeatPassword']['equals']['params'] = array($password);
+            if (isset($rules['repeatPassword']['equals'])) {
+                $rules['repeatPassword']['equals']['params'] = $this->getField('password');
+            }
         }
     }
 
@@ -59,9 +60,12 @@ class Profile extends Core {
         $password = $this->userdata->get('password');
         $result = $this->userdata->fromArray($this->getFormData('fields'))->save(true);
         if ($result) {
-            if (!empty($newpassword) && ($password !== $this->userdata->getPassword($newpassword))) $this->userdata->logOut('WebLoginPE', true);
-            $this->redirect();
             $this->setFormStatus(true);
+            if (!empty($newpassword) && ($password !== $this->userdata->getPassword($newpassword))) {
+                $this->userdata->logOut('WebLoginPE', true);
+                $this->redirect('exitTo');
+            }
+            $this->redirect();
             if ($successTpl = $this->getCFGDef('successTpl')) {
                 $this->renderTpl= $successTpl;
             } else {

@@ -1,5 +1,9 @@
 <?php namespace FormLister;
 
+use Helpers\Config;
+use Helpers\FS;
+use Helpers\Lexicon;
+
 if (!defined('MODX_BASE_PATH')) {die();}
 include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 include_once(MODX_BASE_PATH . 'assets/lib/Helpers/FS.php');
@@ -52,6 +56,12 @@ abstract class Core
         'status'   => false
     );
 
+    /**
+     * Разрешает обработку формы
+     * @var bool
+     */
+    private $valid = true;
+
     protected $validator = null;
 
     /**
@@ -75,20 +85,21 @@ abstract class Core
 
     protected $lexicon = null;
 
+
     /**
      * Core constructor.
      * @param \DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct($modx, $cfg = array())
+    public function __construct(\DocumentParser $modx, $cfg = array())
     {
         $this->modx = $modx;
-        $this->config = new \Helpers\Config($cfg);
-        $this->fs = \Helpers\FS::getInstance();
+        $this->config = new Config($cfg);
+        $this->fs = FS::getInstance();
         if (isset($cfg['config'])) {
             $this->config->loadConfig($cfg['config']);
         }
-        $this->lexicon = new \Helpers\Lexicon($modx, array(
+        $this->lexicon = new Lexicon($modx, array(
             'langDir' => 'assets/snippets/FormLister/core/lang/'
         ));
         $this->formid = $this->getCFGDef('formid');
@@ -515,7 +526,7 @@ abstract class Core
      */
     public function getValidationRules()
     {
-        $rules = $this->getCFGDef('rules', '');
+        $rules = $this->getCFGDef('rules');
         $rules = $this->config->loadArray($rules);
         if ($rules) $this->rules = array_merge($this->rules,$rules);
     }
@@ -542,6 +553,8 @@ abstract class Core
             }
         }
         $wrapper = $this->getCFGDef('messagesTpl', '@CODE:<div class="form-messages">[+messages+]</div>');
+        $formMessages = array_filter($formMessages);
+        $formErrors = array_filter($formErrors);
         if (!empty($formMessages) || !empty($formErrors)) {
             $out = $this->parseChunk($wrapper,
                 array(
@@ -607,7 +620,8 @@ abstract class Core
     }
 
     public function isValid() {
-        return !count($this->getFormData('errors'));
+        $this->setValid(!count($this->getFormData('errors')));
+        return $this->valid;
     }
 
     /**
@@ -667,4 +681,13 @@ abstract class Core
      * @return mixed
      */
     abstract public function process();
+
+    /**
+     * @param boolean $valid
+     * @return Core
+     */
+    public function setValid($valid)
+    {
+        $this->valid &= $valid;
+    }
 }
