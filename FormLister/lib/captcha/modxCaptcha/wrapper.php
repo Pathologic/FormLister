@@ -12,8 +12,8 @@ class modxCaptchaWrapper
     public function __construct(FormLister\Core $FL)
     {
         $this->FL = $FL;
-        $width = $this->FL->getCFGDef('captchaWidth',200);
-        $height = $this->FL->getCFGDef('captchaHeight',160);
+        $width = $this->FL->getCFGDef('captchaWidth',100);
+        $height = $this->FL->getCFGDef('captchaHeight',60);
         $this->captcha = new \modxCaptcha($FL->getMODX(), $width, $height);
     }
 

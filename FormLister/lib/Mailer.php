@@ -59,9 +59,9 @@ class Mailer
             return false;
         }
 
-        $this->mail->IsHTML($this->getCFGDef('isHtml'));
-        $this->mail->From = $this->getCFGDef('from');
-        $this->mail->FromName = $this->getCFGDef('fromName');
+        $this->mail->IsHTML($this->getCFGDef('isHtml',1));
+        $this->mail->From = $this->getCFGDef('from',$this->modx->config['site_name']);
+        $this->mail->FromName = $this->getCFGDef('fromName',$this->modx->config['emailsender']);
         $this->mail->Subject = $this->getCFGDef('subject');
         $this->mail->Body = $report;
         $this->addAddressToMailer("replyTo", $this->getCFGDef('replyTo'));

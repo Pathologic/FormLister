@@ -26,6 +26,8 @@ abstract class Core
     protected $modx = null;
 
     protected $fs = null;
+    
+    public $debug = null;
 
     /**
      * Идентификатор формы
@@ -113,8 +115,8 @@ abstract class Core
      */
     public function initForm() {
         $this->lexicon->loadLang($this->getCFGDef('lexicon'),$this->getCFGDef('lang'),$this->getCFGDef('langDir'));
-        $this->allowedFields = array_filter(explode(',',$this->getCFGDef('allowedFields')));
-        $this->forbiddenFields = array_filter(explode(',',$this->getCFGDef('forbiddenFields')));
+        $this->allowedFields = array_merge($this->allowedFields,array_filter(explode(',',$this->getCFGDef('allowedFields'))));
+        $this->forbiddenFields = array_merge($this->allowedFields,array_filter(explode(',',$this->getCFGDef('forbiddenFields'))));
         $this->setRequestParams();
         $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
@@ -189,6 +191,7 @@ abstract class Core
                     $fields = $this->filterFields($fields,$allowed);
                 }
                 $this->setFields($fields,$prefix);
+                $this->log('Set external fields from '.$source[0],$fields);
             }
         }
     }
@@ -198,8 +201,8 @@ abstract class Core
      */
     public function setRequestParams()
     {
-        $this->setField('formid',\APIhelpers::getkey($this->_rq,'formid'));
-        $this->setFields($this->filterFields($this->_rq,$this->allowedFields,$this->forbiddenFields));
+        $this->setFields($this->_rq);
+        $this->log('Set fields from $_REQUEST',$this->_rq);
     }
 
     /**
@@ -256,7 +259,7 @@ abstract class Core
             $this->callPrepare('prepareProcess');
             if ($this->isValid()) {
                 $this->process();
-                $this->saveObject($this->getCFGDef('saveObject'));
+                $this->log('Form procession complete',$this->getFormData());
             }
         }
         return $this->renderForm();
@@ -288,7 +291,9 @@ abstract class Core
     public function renderForm()
     {
         $api = $this->getCFGDef('api',0);
-        $form = $this->parseChunk($this->renderTpl, $this->prerenderForm());
+        $plh = $this->prerenderForm();
+        $this->log('Render output',array('template'=>$this->renderTpl,'data'=>$plh));
+        $form = $this->parseChunk($this->renderTpl, $plh);
         /*
          * Если api = 0, то возвращается шаблон
          * Если api = 1, то возвращаются данные формы
@@ -342,7 +347,8 @@ abstract class Core
         if (!$this->rules || is_null($validator)) {
             return true;
         } //если правил нет, то не проверяем
-
+        $this->log('Prepare to validate fields',$this->getFormData('fields'));
+        $this->log('Validation rules',$this->rules);
         //применяем правила
         foreach ($this->rules as $field => $rules) {
             $params = array($this->getField($field));
@@ -384,6 +390,7 @@ abstract class Core
                 }
             }
         }
+        $this->log('Validation results',$this->getFormData('errors'));
         return $this->isValid();
     }
 
@@ -412,6 +419,15 @@ abstract class Core
     }
 
     /**
+     * Возращвет статус формы
+     * @return boolean
+     */
+    public function getFormStatus()
+    {
+        return $this->formData['status'];
+    }
+
+    /**
      * Возвращает значение поля из formData
      * @param $field
      * @return string
@@ -428,7 +444,15 @@ abstract class Core
      */
     public function setField($field, $value)
     {
-        if (!empty($value)) $this->formData['fields'][$field] = $value;
+        if (!empty($value) || $this->getCFGDef('allowEmptyFields',1)) $this->formData['fields'][$field] = $value;
+    }
+
+    /**
+     * Удаляет поле из formData
+     * @param $field
+     */
+    public function unsetField($field) {
+        if (isset($this->formData['fields'][$field])) unset($this->formData['fields'][$field]);
     }
 
     /**
@@ -625,13 +649,6 @@ abstract class Core
     }
 
     /**
-     * @param string $name
-     */
-    public function saveObject($name = '') {
-        if ($name) $this->modx->setPlaceholder($this->getCFGDef($name),$this);
-    }
-
-    /**
      * Вызов prepare-сниппетов
      * @param string $paramName
      */
@@ -646,6 +663,7 @@ abstract class Core
             }else{
                 $this->callPrepare($prepare, $params);
             }
+            $this->log('Prepare finished',$this->getFormData('fields'));
         }
     }
 
@@ -671,6 +689,7 @@ abstract class Core
         if ($redirect = $this->getCFGDef($param,0)) {
             $redirect = $this->modx->makeUrl($redirect,'','','full');
             $this->setField($param, $redirect);
+            $this->log('Redirect ('.$param.') to' . $redirect, $this->getFormData('fields'));
             if (!$this->getCFGDef('api',0)) $this->modx->sendRedirect($redirect, 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
         }
     }
@@ -689,5 +708,11 @@ abstract class Core
     public function setValid($valid)
     {
         $this->valid &= $valid;
+    }
+    
+    public function log($message, $data) {
+        if (!is_null($this->debug)) {
+            $this->debug->log($message, $data);
+        }
     }
 }

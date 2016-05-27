@@ -33,4 +33,11 @@ if (class_exists($classname, false) && $classname != '\FormLister\Core') {
     $FormLister->initForm();
     $out = $FormLister->render();
 }
+if ($FormLister->getFormStatus() && isset($saveObject) && is_scalar($saveObject)) {
+    $modx->setPlaceholder($saveObject,$FormLister);
+}
+
+if (!is_null($FormLister->debug)) {
+    $FormLister->debug->saveLog();
+}
 return $out;

@@ -198,16 +198,17 @@ class Form extends Core
 
     public function render()
     {
-        //если сработала защита, то запрещаем обработку формы
-        $formProtect = $this->checkSubmitProtection() || $this->checkSubmitLimit();
-        $this->setValid(!$formProtect);
+        if ($this->isSubmitted() && $this->checkSubmitLimit()) {
+            return $this->renderForm();
+        }
         return parent::render();
     }
 
     public function process() {
         $this->setField('form.date',date($this->getCFGDef('dateFormat',$this->lexicon->getMsg('form.dateFormat'))));
+        //если защита сработала, то ничего не отправляем
+        if ($this->checkSubmitProtection()) $this->postProcess();
         if ($this->sendReport()) {
-            $this->setFormStatus(true);
             $this->setSubmitProtection();
             $this->sendCCSender();
             $this->sendAutosender();
@@ -218,6 +219,7 @@ class Form extends Core
     }
 
     public function postProcess() {
+        $this->setFormStatus(true);
         $this->redirect();
         $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('form.default_successTpl'));
     }

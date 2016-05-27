@@ -4,7 +4,7 @@
  * Контроллер для авторизации пользователя
  */
 if (!defined('MODX_BASE_PATH')) {die();}
-include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
+include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
 include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
 class Login extends Core
 {

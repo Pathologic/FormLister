@@ -10,7 +10,6 @@ if (!defined('MODX_BASE_PATH')) {die();}
 $_lang = array();
 $_lang['reminder.default_skipTpl'] = '@CODE:You have to log out to restore your password.';
 $_lang['reminder.default_reportTpl'] = '@CODE:To restore your password proceed the link: <a href="[+reset.url+]">[+reset.url+]</a>';
-$_lang['reminder.default_resetReportTpl'] = '@CODE:Your new password: [+newpassword+]';
 $_lang['reminder.users_only'] = 'Only registered users can restore passwords.';
 $_lang['reminder.update_fail'] = 'Failed to process.';
 $_lang['reminder.default_successTpl'] = '@CODE:The link to restore your password has been mailed.';

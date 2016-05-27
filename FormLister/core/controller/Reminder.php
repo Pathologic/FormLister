@@ -34,7 +34,8 @@ class Reminder extends Form {
             $this->mode = 'reset';
             $this->config->setConfig(array(
                 'rules' => $this->getCFGDef('resetRules'),
-                'reportTpl' => $this->getCFGDef('resetReportTpl')
+                'reportTpl' => $this->getCFGDef('resetReportTpl'),
+                'submitLimit' => 0
             ));
         }
     }
@@ -92,7 +93,7 @@ class Reminder extends Form {
      */
     public function getUserHash($uid) {
         $userdata = $this->user->edit($uid)->toArray();
-        $hash = $userdata ? md5(json_encode($userdata)) : false;
+        $hash = $userdata['id'] ? md5(json_encode($userdata)) : false;
         return $hash;
     }
 

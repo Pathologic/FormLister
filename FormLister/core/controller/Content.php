@@ -90,6 +90,9 @@ class Content extends Form
                 default:
                     break;
             }
+            //чтобы не получился косяк, когда плагины обновят поля
+            $this->content->close();
+            $this->setFields($this->content->edit($this->getField('id'))->toArray());
         }
         if (!$result) {
             $this->addMessage($this->lexicon->getMsg('edit.update_fail'));
@@ -117,7 +120,7 @@ class Content extends Form
         $contentFields = $this->config->loadArray($this->getCFGDef('contentFields'));
         foreach ($contentFields as $field => $formField) {
             $formField = $this->getField($formField);
-            if (!empty($formField)) $fields[$field] = $formField;
+            if (!empty($formField) || $this->getCFGDef('allowEmptyFields',1)) $fields[$field] = $formField;
         }
         return $fields;
     }

@@ -12,6 +12,7 @@ class Register extends Form {
         parent::__construct($modx, $cfg);
         $this->user = new \modUsers($modx);
         $this->lexicon->loadLang('register');
+        $this->allowedFields = array('username','email','password');
     }
 
     public function render()
@@ -68,10 +69,16 @@ class Register extends Form {
 
     public function process() {
         //регистрация без логина, по емейлу
-        if ($this->getField('username') == '') $this->setField('username', $this->getField('email'));
+        if ($this->getField('username') == '') {
+            $this->setField('username', $this->getField('email'));
+        }
+        if ($this->checkSubmitLimit() || $this->checkSubmitProtection()) return;
         //регистрация со случайным паролем
-        if ($this->getField('password') == '' && !isset($this->rules['password'])) $this->setField('password',\APIhelpers::genPass(6));
-        $result = $this->user->create($this->getFormData('fields'))->save(true);
+        if ($this->getField('password') == '' && !isset($this->rules['password'])) {
+            $this->setField('password',\APIhelpers::genPass(6));
+        }
+        $fields = $this->filterFields($this->getFormData('fields'),$this->allowedFields,$this->forbiddenFields);
+        $result = $this->user->create($fields)->save(true);
         if (!$result) {
             $this->addMessage($this->lexicon->getMsg('register.registration_failed'));
         } else {

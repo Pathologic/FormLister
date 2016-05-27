@@ -21,6 +21,7 @@ class Profile extends Core {
             $this->config->setConfig(array(
                 'defaults'=>$userdata
             ));
+            $this->allowedFields = array('password','email');
         }
     }
 
@@ -58,7 +59,8 @@ class Profile extends Core {
     public function process() {
         $newpassword = $this->getField('password');
         $password = $this->userdata->get('password');
-        $result = $this->userdata->fromArray($this->getFormData('fields'))->save(true);
+        $fields = $this->filterFields($this->getFormData('fields'),$this->allowedFields,$this->forbiddenFields);
+        $result = $this->userdata->fromArray($fields)->save(true);
         if ($result) {
             $this->setFormStatus(true);
             if (!empty($newpassword) && ($password !== $this->userdata->getPassword($newpassword))) {

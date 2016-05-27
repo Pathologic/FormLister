@@ -12,7 +12,6 @@ setlocale(LC_ALL, 'ru_RU.UTF-8');
 $_lang = array();
 $_lang['reminder.default_skipTpl'] = '@CODE:Авторизованные пользователи не могут восстанавливать пароль.';
 $_lang['reminder.default_reportTpl'] = '@CODE:Для восстановления пароля перейдите по ссылке: <a href="[+reset.url+]">[+reset.url+]</a>';
-$_lang['reminder.default_resetReportTpl'] = '@CODE:Ваш новый пароль: [+newpassword+]';
 $_lang['reminder.users_only'] = 'Только зарегистрированные пользователи могут восстанавливать пароли.';
 $_lang['reminder.update_fail'] = 'Не удалось сохранить данные.';
 $_lang['reminder.default_successTpl'] = '@CODE:Вам отправлено письмо со ссылкой для восстановления пароля.';
