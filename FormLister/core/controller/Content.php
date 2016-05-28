@@ -9,12 +9,16 @@ class Content extends Form
 {
     protected $mode = 'create';
     protected $id = 0;
+    /**
+     * @var \autoTable $content
+     */
     public $content = null;
 
     public function __construct($modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
-        $this->lexicon->loadLang('content');
+        $lang = $this->lexicon->loadLang('content');
+        if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
         $classname = $this->getCFGDef('contentClass','modResource');
         if ($this->loadContentClass()) {
             $this->content = new $classname($modx);
@@ -29,6 +33,7 @@ class Content extends Form
             ));
             $this->mailConfig['noemail'] = 1;
         }
+        $this->log('Content mode is '.$this->mode);
     }
 
     public function loadContentClass() {
@@ -41,6 +46,7 @@ class Content extends Form
                 $out = class_exists($classname);
             }
         }
+        $this->log('Load content class '.$classname,array('result'=>$out));
         return $out;
     }
 
@@ -83,9 +89,11 @@ class Content extends Form
             switch ($this->mode) {
                 case 'create':
                     $result = $this->content->create($fields)->save(true,$clearCache);
+                    $this->log('Create record',array('data'=>$fields,'result'=>$result));
                     break;
                 case 'edit':
                     $result = $this->content->fromArray($fields)->save(true,$clearCache);
+                    $this->log('Update record',array('data'=>$fields,'result'=>$result));
                     break;
                 default:
                     break;
@@ -93,6 +101,7 @@ class Content extends Form
             //чтобы не получился косяк, когда плагины обновят поля
             $this->content->close();
             $this->setFields($this->content->edit($this->getField('id'))->toArray());
+            $this->log('Update form data',array('data'=>$this->getFormData('fields')));
         }
         if (!$result) {
             $this->addMessage($this->lexicon->getMsg('edit.update_fail'));

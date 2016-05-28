@@ -27,7 +27,8 @@ class Form extends Core
             'bcc' => $this->getCFGDef('bcc'),
             'noemail' => $this->getCFGDef('noemail',false)
         );
-        $this->lexicon->loadLang('form');
+        $lang = $this->lexicon->loadLang('form');
+        if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
     }
 
     /**
@@ -42,6 +43,7 @@ class Form extends Core
             if (isset($_SESSION[$this->formid . '_hash']) && $_SESSION[$this->formid . '_hash'] == $hash && $hash != '') {
                 $result = true;
                 $this->addMessage($this->lexicon->getMsg('form.protectSubmit'));
+                $this->log('Submit protection enabled');
             }
         }
         return $result;
@@ -59,6 +61,7 @@ class Form extends Core
             if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
                 $result = true;
                 $this->addMessage('[%form.submitLimit%] ' . round($submitLimit / 60, 0) . ' [%form.minutes%].');
+                $this->log('Submit limit enabled');
             } else {
                 unset($_SESSION[$this->formid . '_limit'], $_SESSION[$this->formid . '_hash']);
             } //time expired
@@ -149,8 +152,9 @@ class Form extends Core
             $this->mailConfig,
             array('subject'=>$this->renderSubject())
         ));
-        $out = $mailer->send($this->renderReport());
-        //TODO debug
+        $report = $this->renderReport();
+        $out = $mailer->send($report);
+        $this->log('Mail report',array('report'=>$report,'mailer_config'=>$mailer->config,'result'=>$out));
         return $out;
     }
 
@@ -169,8 +173,9 @@ class Form extends Core
                     'fromName' => $this->getCFGDef('autosenderFromName',$this->modx->config['site_name'])
                 )
             ));
-            $out = $mailer->send($this->renderReport('automessageTpl'));
-            //TODO debug
+            $report = $this->renderReport('automessageTpl');
+            $out = $mailer->send($report);
+            $this->log('Mail autosender report',array('report'=>$report,'mailer_config'=>$mailer->config,'result'=>$out));
             return $out;
         }
     }
@@ -190,8 +195,9 @@ class Form extends Core
                     'fromName' => $this->getCFGDef('ccSenderFromName',$this->modx->config['site_name'])
                 )
             ));
-            $out = $mailer->send($this->renderReport('ccSenderTpl'));
-            //TODO debug
+            $report = $this->renderReport('ccSenderTpl');
+            $out = $mailer->send($report);
+            $this->log('Mail CC report',array('report'=>$report,'mailer_config'=>$mailer->config,'result'=>$out));
             return $out;
         }
     }

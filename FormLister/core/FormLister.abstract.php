@@ -24,7 +24,9 @@ abstract class Core
     protected $_rq = array();
 
     protected $modx = null;
-
+    /**
+     * @var FS $fs
+     */
     protected $fs = null;
     
     public $debug = null;
@@ -101,6 +103,12 @@ abstract class Core
         if (isset($cfg['config'])) {
             $this->config->loadConfig($cfg['config']);
         }
+        if (isset($cfg['debug'])) {
+            include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Debug.php');
+            $this->debug = new \Helpers\Debug($modx, array(
+                'caller' => 'FormLister\\\\'.$cfg['controller']
+            ));
+        }
         $this->lexicon = new Lexicon($modx, array(
             'langDir' => 'assets/snippets/FormLister/core/lang/'
         ));
@@ -114,9 +122,10 @@ abstract class Core
      * Загрузка капчи
      */
     public function initForm() {
-        $this->lexicon->loadLang($this->getCFGDef('lexicon'),$this->getCFGDef('lang'),$this->getCFGDef('langDir'));
+        $lang = $this->lexicon->loadLang($this->getCFGDef('lexicon'),$this->getCFGDef('lang'),$this->getCFGDef('langDir'));
+        if ($lang && $this->getCFGDef('lexicon')) $this->log('Custom lexicon loaded',array('lexicon'=>$lang));
         $this->allowedFields = array_merge($this->allowedFields,array_filter(explode(',',$this->getCFGDef('allowedFields'))));
-        $this->forbiddenFields = array_merge($this->allowedFields,array_filter(explode(',',$this->getCFGDef('forbiddenFields'))));
+        $this->forbiddenFields = array_merge($this->forbiddenFields,array_filter(explode(',',$this->getCFGDef('forbiddenFields'))));
         $this->setRequestParams();
         $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
@@ -177,6 +186,7 @@ abstract class Core
                     if (!empty($_source[0])) {
                         $classname = $_source[0];
                         if (class_exists($classname) && isset($_source[1])) {
+                            /** @var \autoTable $obj */
                             $obj = new $classname($this->modx);
                             if ($data = $obj->edit($_source[1])) {
                                 $fields = $data->toArray();
@@ -191,7 +201,7 @@ abstract class Core
                     $fields = $this->filterFields($fields,$allowed);
                 }
                 $this->setFields($fields,$prefix);
-                $this->log('Set external fields from '.$source[0],$fields);
+                if ($fields) $this->log('Set external fields from '.$source[0],$fields);
             }
         }
     }
@@ -219,7 +229,7 @@ abstract class Core
             $allowed = !empty($allowedFields) ? in_array($key, $allowedFields) : true;
             //поле входит в список запрещенных полей
             $forbidden = !empty($forbiddenFields) ? in_array($key,$forbiddenFields): false;
-            if (($allowed && !$forbidden) && !empty($value)) {
+            if (($allowed && !$forbidden) && ($value !== '')) {
                 $out[$key] = $value;
             }
         }
@@ -306,6 +316,7 @@ abstract class Core
             if ($api == 2) $out['output'] = $form;
             $out = json_encode($out);
         }
+        $this->log('Output',$out);
         return $out;
     }
 
@@ -347,8 +358,7 @@ abstract class Core
         if (!$this->rules || is_null($validator)) {
             return true;
         } //если правил нет, то не проверяем
-        $this->log('Prepare to validate fields',$this->getFormData('fields'));
-        $this->log('Validation rules',$this->rules);
+        $this->log('Prepare to validate fields',array('fields'=>$this->getFormData('fields'),'rules'=>$this->rules));
         //применяем правила
         foreach ($this->rules as $field => $rules) {
             $params = array($this->getField($field));
@@ -390,7 +400,7 @@ abstract class Core
                 }
             }
         }
-        $this->log('Validation results',$this->getFormData('errors'));
+        if ($this->getFormData('errors')) $this->log('Validation errors',$this->getFormData('errors'));
         return $this->isValid();
     }
 
@@ -444,7 +454,7 @@ abstract class Core
      */
     public function setField($field, $value)
     {
-        if (!empty($value) || $this->getCFGDef('allowEmptyFields',1)) $this->formData['fields'][$field] = $value;
+        if ($value !== '' || $this->getCFGDef('allowEmptyFields',1)) $this->formData['fields'][$field] = $value;
     }
 
     /**
@@ -530,7 +540,7 @@ abstract class Core
         $formControls = explode(',',$this->getCFGDef('formControls'));
         foreach ($formControls as $field) {
             $value = $this->getField($field);
-            if (empty($value)) {
+            if ($value === '') {
                 continue;
             } elseif (is_array($value)) {
                 foreach ($value as $_value) {
@@ -628,6 +638,7 @@ abstract class Core
             if ($this->fs->checkFile($wrapper)) {
                 include_once($wrapper);
                 $wrapper = $captcha.'Wrapper';
+                /** @var \modxCaptchaWrapper $captcha */
                 $captcha = new $wrapper ($this);
                 $this->rules[$this->getCFGDef('captchaField', 'vericode')] = $captcha->getRule();
                 $this->setField('captcha',$captcha->getPlaceholder());
@@ -689,7 +700,7 @@ abstract class Core
         if ($redirect = $this->getCFGDef($param,0)) {
             $redirect = $this->modx->makeUrl($redirect,'','','full');
             $this->setField($param, $redirect);
-            $this->log('Redirect ('.$param.') to' . $redirect, $this->getFormData('fields'));
+            $this->log('Redirect ('.$param.') to' . $redirect, array('data'=>$this->getFormData('fields')));
             if (!$this->getCFGDef('api',0)) $this->modx->sendRedirect($redirect, 0, 'REDIRECT_HEADER', 'HTTP/1.1 307 Temporary Redirect');
         }
     }
@@ -710,7 +721,7 @@ abstract class Core
         $this->valid &= $valid;
     }
     
-    public function log($message, $data) {
+    public function log($message, $data = array()) {
         if (!is_null($this->debug)) {
             $this->debug->log($message, $data);
         }

@@ -11,7 +11,8 @@ class Register extends Form {
     public function __construct($modx, $cfg = array()) {
         parent::__construct($modx, $cfg);
         $this->user = new \modUsers($modx);
-        $this->lexicon->loadLang('register');
+        $lang = $this->lexicon->loadLang('register');
+        if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
         $this->allowedFields = array('username','email','password');
     }
 
@@ -79,6 +80,7 @@ class Register extends Form {
         }
         $fields = $this->filterFields($this->getFormData('fields'),$this->allowedFields,$this->forbiddenFields);
         $result = $this->user->create($fields)->save(true);
+        $this->log('Register user',array('data'=>$fields,'result'=>$result));
         if (!$result) {
             $this->addMessage($this->lexicon->getMsg('register.registration_failed'));
         } else {

@@ -20,16 +20,14 @@ class Reminder extends Form {
     {
         parent::__construct($modx, $cfg);
         $this->user = new \modUsers($modx);
-        $this->lexicon->loadLang('reminder');
+        $lang = $this->lexicon->loadLang('reminder');
+        if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
         $hashField = $this->getCFGDef('hashField','hash');
         $uidField = $this->getCFGDef('uidField','id');
         $userField = $this->getCFGDef('userField','email');
         $this->hashField = $hashField;
         $this->uidField = $uidField;
         $this->userField = $userField;
-        $this->config->setConfig(array(
-            'allowedFields' => implode(',',array($uidField,$userField,$hashField,$this->getCFGDef('allowedFields')))
-        ));
         if ((isset($_REQUEST[$hashField]) && !empty($_REQUEST[$hashField])) && (isset($_REQUEST[$uidField]) && !empty($_REQUEST[$uidField]))) {
             $this->mode = 'reset';
             $this->config->setConfig(array(
@@ -38,6 +36,7 @@ class Reminder extends Form {
                 'submitLimit' => 0
             ));
         }
+        $this->log('Reminder mode is '.$this->mode);
     }
 
     public function render() {
@@ -124,7 +123,9 @@ class Reminder extends Form {
                 $hash = $this->getField($this->hashField);
                 if ($hash && $hash == $this->getUserHash($uid)) {
                     if ($this->getField('password') == '' && !isset($this->rules['password'])) $this->setField('password',\APIhelpers::genPass(6));
-                    $result = $this->user->edit($uid)->fromArray($this->getFormData('fields'))->save(true);
+                    $fields = $this->filterFields($this->getFormData('fields'),array('password'));
+                    $result = $this->user->edit($uid)->fromArray($fields)->save(true);
+                    $this->log('Update password',array('data'=>$fields,'result'=>$result));
                     if (!$result) {
                         $this->addMessage($this->lexicon->getMsg('reminder.update_failed'));
                     } else {

@@ -14,7 +14,8 @@ class Login extends Core
     {
         parent::__construct($modx, $cfg);
         $this->user = new \modUsers($this->modx);
-        $this->lexicon->loadLang('login');
+        $lang = $this->lexicon->loadLang('login');
+        if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
     }
 
     public function render() {

@@ -86,7 +86,6 @@ class Config
 
     public function loadArray($arr)
     {
-        //TODO debug
         if (is_scalar($arr)) {
             return \jsonHelper::jsonDecode($arr, array('assoc' => true));
         } elseif (is_array($arr)) {

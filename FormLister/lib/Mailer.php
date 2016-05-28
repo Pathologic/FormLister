@@ -5,13 +5,22 @@ include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 
 class Mailer
 {
+    /**
+     * @var \PHPMailer $mail
+     */
     protected $mail = null;
     protected $modx = null;
     public $config = array();
     protected $debug = false;
 
 
-    public function __construct($modx, $cfg, $debug = false) {
+    /**
+     * Mailer constructor.
+     * @param \DocumentParser $modx
+     * @param $cfg
+     * @param bool $debug
+     */
+    public function __construct(\DocumentParser $modx, $cfg, $debug = false) {
         $this->modx = $modx;
         $modx->loadExtension('MODxMailer');
         $this->mail = $modx->mail;

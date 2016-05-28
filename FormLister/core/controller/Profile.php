@@ -12,7 +12,8 @@ class Profile extends Core {
 
     public function __construct($modx, $cfg = array()) {
         parent::__construct($modx, $cfg);
-        $this->lexicon->loadLang('profile');
+        $lang = $this->lexicon->loadLang('profile');
+        if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
         $uid = $modx->getLoginUserId();
         if ($uid) {
             $user = new \modUsers($modx);
@@ -36,10 +37,12 @@ class Profile extends Core {
 
     public function getValidationRules() {
         parent::getValidationRules();
+        $rules = &$this->rules;
         $password = $this->getField('password');
         if (empty($password)) {
-            if (isset($this->rules['password'])) unset($this->rules['password']);
-            if (isset($this->rules['repeatPassword'])) unset($this->rules['repeatPassword']);
+            $this->forbiddenFields[] = 'password';
+            if (isset($rules['password'])) unset($rules['password']);
+            if (isset($rules['repeatPassword'])) unset($rules['repeatPassword']);
         } else {
             if (isset($rules['repeatPassword']['equals'])) {
                 $rules['repeatPassword']['equals']['params'] = $this->getField('password');
@@ -61,6 +64,7 @@ class Profile extends Core {
         $password = $this->userdata->get('password');
         $fields = $this->filterFields($this->getFormData('fields'),$this->allowedFields,$this->forbiddenFields);
         $result = $this->userdata->fromArray($fields)->save(true);
+        $this->log('Update profile',array('data'=>$fields,'result'=>$result));
         if ($result) {
             $this->setFormStatus(true);
             if (!empty($newpassword) && ($password !== $this->userdata->getPassword($newpassword))) {
