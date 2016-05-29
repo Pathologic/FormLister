@@ -41,9 +41,8 @@ class Profile extends Core {
         return parent::render();
     }
 
-    public function getValidationRules() {
-        parent::getValidationRules();
-        $rules = &$this->rules;
+    public function getValidationRules($param = 'rules') {
+        $rules = parent::getValidationRules($param);
         $password = $this->getField('password');
         if (empty($password)) {
             $this->forbiddenFields[] = 'password';
@@ -54,6 +53,7 @@ class Profile extends Core {
                 $rules['repeatPassword']['equals']['params'] = $this->getField('password');
             }
         }
+        return $rules;
     }
 
     public static function uniqueEmail ($fl,$value) {

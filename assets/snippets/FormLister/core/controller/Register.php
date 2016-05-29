@@ -25,15 +25,15 @@ class Register extends Form {
         return parent::render();
     }
     
-    public function getValidationRules()
+    public function getValidationRules($param = 'rules')
     {
-        parent::getValidationRules();
-        $rules = &$this->rules;
+        $rules = parent::getValidationRules($param);
         if (isset($rules['password']) && isset($rules['repeatPassword']) && !empty($this->getField('password'))) {
             if (isset($rules['repeatPassword']['equals'])) {
                 $rules['repeatPassword']['equals']['params'] = $this->getField('password');
             }
         }
+        return $rules;
     }
 
     /**

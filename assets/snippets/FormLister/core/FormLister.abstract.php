@@ -345,47 +345,61 @@ abstract class Core
     }
 
     /**
-     * Загружает класс-валидатор и создает его экземпляр
-     * @return Validator|null
+     * Возвращает результат проверки формы
+     * @return bool
      */
-    public function initValidator() {
+    public function validateForm() {
         $validator = $this->getCFGDef('validator','\FormLister\Validator');
         if (!class_exists($validator)) {
             include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Validator.php');
         }
-        $this->validator = new $validator();
-        return $this->validator;
+        $validator = new $validator();
+        $fields = $this->getFormData('fields');
+        $rules = $this->getValidationRules();
+        $this->rules = array_merge($this->rules,$rules);
+        $this->log('Prepare to validate fields',array('fields'=>$fields,'rules'=>$this->rules));
+        $result = $this->validate($validator, $this->rules, $fields);
+        if ($result !== true) {
+            foreach ($result as $item) {
+                $this->addError($item[0],$item[1],$item[2]);
+            }
+            $this->log('Validation errors',$this->getFormData('errors'));
+        }
+        return $this->isValid();
     }
 
     /**
-     * Возвращает результат проверки полей
-     * @return bool
+     * Возвращает результаты выполнения правил валидации
+     * @param object $validator
+     * @param array $rules
+     * @param  array $fields
+     * @return array
      */
-    public function validateForm()
+    public function validate($validator, $rules, $fields)
     {
-        $validator = $this->initValidator();
-        $this->getValidationRules();
-        if (!$this->rules || is_null($validator)) {
+        if (empty($rules) || is_null($validator)) {
             return true;
         } //если правил нет, то не проверяем
-        $this->log('Prepare to validate fields',array('fields'=>$this->getFormData('fields'),'rules'=>$this->rules));
         //применяем правила
-        foreach ($this->rules as $field => $rules) {
-            $params = array($this->getField($field));
-            foreach ($rules as $rule => $description) {
+        $errors = array();
+        foreach ($rules as $field => $ruleSet) {
+            $value = \APIHelpers::getkey($fields,$field);
+            foreach ($ruleSet as $rule => $description) {
                 $inverseFlag = substr($rule,0,1) == '!' ? true : false;
                 if ($inverseFlag) $rule = substr($rule,1);
                 $result = true;
                 if (is_array($description)) {
                     if (isset($description['params'])) {
                         if (is_array($description['params'])) {
-                            $params = array_merge($params,$description['params']);
+                            $params = $description['params'];
+                            $params = array_merge(array($value),$params);
                         } else {
-                            $params[] = $description['params'];
+                            $params = array($value,$description['params']);
                         }
                     }
                     $message = isset($description['message']) ? $description['message'] : '';
                 } else {
+                    $params = array($value, $description);
                     $message = $description;
                 }
                 if (($rule != 'custom') && method_exists($validator, $rule)) {
@@ -401,7 +415,7 @@ abstract class Core
                 }
                 if ($inverseFlag) $result = !$result;
                 if (!$result) {
-                    $this->addError(
+                    $errors[] = array(
                         $field,
                         $rule,
                         $message
@@ -410,8 +424,7 @@ abstract class Core
                 }
             }
         }
-        if ($this->getFormData('errors')) $this->log('Validation errors',$this->getFormData('errors'));
-        return $this->isValid();
+        return $errors;
     }
 
     /**
@@ -568,12 +581,11 @@ abstract class Core
     /**
      * Загрузка правил валидации
      */
-    public function getValidationRules()
+    public function getValidationRules($param = 'rules')
     {
-        $rules = $this->getCFGDef('rules');
+        $rules = $this->getCFGDef($param);
         $rules = $this->config->loadArray($rules);
-        if ($rules) $this->rules = array_merge($this->rules,$rules);
-        return $this->rules;
+        return is_array($rules) ? $rules : array();
     }
 
     /**

@@ -13,9 +13,24 @@ class Form extends Core
      */
     public $mailConfig = array();
 
+    /**
+     * Правила валидации файлов
+     * @var array
+     */
+    protected $fileRules = array();
+
+    /**
+     * Массив с данными о файлах
+     * @var array
+     */
+    protected $files = array();
+
     public function __construct(\DocumentParser $modx, array $cfg)
     {
         parent::__construct($modx, $cfg);
+        if ($files = $this->getCFGDef('attachments')) {
+            $this->files = $this->filesToArray($_FILES,explode(',',$files));
+        }
         $this->mailConfig = array(
             'isHtml' => $this->getCFGDef('isHtml',1),
             'to' => $this->getCFGDef('to'),
@@ -105,6 +120,55 @@ class Form extends Core
     }
 
     /**
+     * @param array $_files
+     * @return array
+     */
+    public function filesToArray(array $_files, array $allowed, $flag = true) {
+        $files = array();
+        foreach($_files as $name=>$file){
+            if (!in_array($name, $allowed) && !is_int($name)) continue;
+            if($flag) $sub_name = $file['name'];
+            else    $sub_name = $name;
+            if(is_array($sub_name)){
+                foreach(array_keys($sub_name) as $key){
+                    $files[$name][$key] = array(
+                        'name'     => $file['name'][$key],
+                        'type'     => $file['type'][$key],
+                        'tmp_name' => $file['tmp_name'][$key],
+                        'error'    => $file['error'][$key],
+                        'size'     => $file['size'][$key],
+                    );
+                    $files[$name] = $this->filesToArray($files[$name], $allowed, false);
+                }
+            }else{
+                $files[$name] = $file;
+            }
+        }
+        return $files;
+    }
+
+    public function validateForm() {
+        parent::validateForm();
+        $validator = $this->getCFGDef('fileValidator','\FormLister\FileValidator');
+        if (!class_exists($validator)) {
+            include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/FileValidator.php');
+        }
+        $validator = new $validator();
+        $fields = $this->files;
+        $rules = $this->getValidationRules('fileRules');
+        $this->fileRules = array_merge($this->fileRules,$rules);
+        $this->log('Prepare to validate files',array('fields'=>$fields,'rules'=>$this->fileRules));
+        $result = $this->validate($validator, $this->fileRules, $fields);
+        if ($result !== true) {
+            foreach ($result as $item) {
+                $this->addError($item[0],$item[1],$item[2]);
+            }
+            $this->log('File validation errors',$this->getFormData('errors'));
+        }
+        return $this->isValid();
+    }
+
+    /**
      * Формирует текст письма для отправки
      * Если основной шаблон письма не задан, то формирует список полей формы
      * @param string $tplParam имя параметра с шаблоном письма
@@ -138,7 +202,14 @@ class Form extends Core
     }
 
     public function getAttachments() {
-        return array(); //TODO
+        $attachments = array();
+        foreach ($this->files as $files) {
+            if (is_null($files[0])) $files = array($files);
+            foreach ($files as $file) {
+                $attachments[] = array('filepath'=>$file['tmp_name'],'filename'=>$file['name']);
+            }
+        }
+        return $attachments;
     }
 
     /**
@@ -150,6 +221,13 @@ class Form extends Core
             $this->mailConfig,
             array('subject'=>$this->renderSubject())
         ));
+        $attachments = $this->getAttachments();
+        if ($attachments) {
+            $mailer->attachFiles($attachments);
+            $field = array();
+            foreach ($attachments as $file) $field[] = $file['filename'];
+            $this->setField('attachments',$field);
+        }
         $report = $this->renderReport();
         $out = $mailer->send($report);
         $this->log('Mail report',array('report'=>$report,'mailer_config'=>$mailer->config,'result'=>$out));

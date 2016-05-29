@@ -143,7 +143,17 @@ class Content extends Form
         if (!$result) {
             $this->addMessage($this->lexicon->getMsg('edit.update_fail'));
         } else {
-            if ($this->mode == 'create') $this->setField('content.url',$this->modx->makeUrl($result,'','','full'));
+            if ($this->mode == 'create'){
+                $url = '';
+                $evtOut = $this->modx->invokeEvent('OnMakeDocUrl',array(
+                    'id'=>$result,
+                    'data'=>$this->getFormData('fields')
+                ));
+                if (is_array($evtOut) && count($evtOut) > 0){
+                    $url = array_pop($evtOut);
+                }
+                if ($url) $this->setField('content.url',$url);
+            }
             parent::process();
         }
     }

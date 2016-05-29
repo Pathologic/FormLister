@@ -1,5 +1,4 @@
-<?php
-namespace FormLister;
+<?php namespace FormLister;
 
 class Validator
 {
@@ -37,6 +36,11 @@ class Validator
         return $value === $allowed;
     }
 
+    /**
+     * @param $value
+     * @param array $allowed
+     * @return bool
+     */
     public function in($value, $allowed)
     {
         return in_array($value, $allowed, true);
@@ -124,15 +128,15 @@ class Validator
         return ($length >= $minLength && $length <= $maxLength);
     }
 
-    public function minSize($value, $minSize) {
+    public function minCount($value, $minSize) {
         return count($value) >= $minSize;
     }
 
-    public function maxSize($value, $maxSize) {
+    public function maxCount($value, $maxSize) {
         return count($value) <= $maxSize;
     }
 
-    public function sizeBetween($value, $minSize, $maxSize) {
+    public function countBetween($value, $minSize, $maxSize) {
         return (count($value) >= $minSize && count($value) <= $maxSize);
     }
 
