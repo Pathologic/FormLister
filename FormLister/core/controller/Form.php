@@ -38,7 +38,7 @@ class Form extends Core
     public function checkSubmitProtection()
     {
         $result = false;
-        if ($this->isSubmitted() && $protectSubmit = $this->getCFGDef('protectSubmit', 1)) {
+        if ($this->isSubmitted() && $this->getCFGDef('protectSubmit', 1)) {
             $hash = $this->getFormHash();
             if (isset($_SESSION[$this->formid . '_hash']) && $_SESSION[$this->formid . '_hash'] == $hash && $hash != '') {
                 $result = true;
@@ -63,7 +63,7 @@ class Form extends Core
                 $this->addMessage('[%form.submitLimit%] ' . round($submitLimit / 60, 0) . ' [%form.minutes%].');
                 $this->log('Submit limit enabled');
             } else {
-                unset($_SESSION[$this->formid . '_limit'], $_SESSION[$this->formid . '_hash']);
+                unset($_SESSION[$this->formid . '_limit']);
             } //time expired
         }
         return $result;
@@ -112,16 +112,14 @@ class Form extends Core
      */
     public function renderReport($tplParam = 'reportTpl')
     {
-        $out = '';
         $tpl = $this->getCFGDef($tplParam);
         if (empty($tpl) && $tplParam == 'reportTpl') {
             $tpl = '@CODE:';
             foreach($this->getFormData('fields') as $key => $value) {
                 $tpl .= "[+{$key}+]: [+{$key}.value+]".PHP_EOL;
             }
-        } else {
-            $out = $this->parseChunk($tpl, $this->prerenderForm(true));
         }
+        $out = $this->parseChunk($tpl, $this->prerenderForm(true));
         return $out;
     }
 
@@ -132,7 +130,7 @@ class Form extends Core
     public function renderSubject() {
         $subject = $this->getCFGDef('subjectTpl');
         if (!empty($subject)) {
-            $subject = $this->parseChunk($subject,$this->getFormData('fields'));
+            $subject = $this->parseChunk($subject,$this->prerenderForm(true));
         } else {
             $subject = $this->getCFGDef('subject');
         }
@@ -213,7 +211,7 @@ class Form extends Core
     public function process() {
         $this->setField('form.date',date($this->getCFGDef('dateFormat',$this->lexicon->getMsg('form.dateFormat'))));
         //если защита сработала, то ничего не отправляем
-        if ($this->checkSubmitProtection()) $this->postProcess();
+        if ($this->checkSubmitProtection()) return;
         if ($this->sendReport()) {
             $this->setSubmitProtection();
             $this->sendCCSender();

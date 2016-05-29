@@ -82,10 +82,12 @@ abstract class Core
     public $allowedFields = array();
 
     /**
-     * Массив с именами полей, которые запрещено отправлять в форме
+     * Значения для пустых элементов управления, например чекбоксов
      * @var array
      */
     public $forbiddenFields = array();
+
+    protected $emptyFormControls = array();
 
     protected $lexicon = null;
 
@@ -126,6 +128,7 @@ abstract class Core
         if ($lang && $this->getCFGDef('lexicon')) $this->log('Custom lexicon loaded',array('lexicon'=>$lang));
         $this->allowedFields = array_merge($this->allowedFields,array_filter(explode(',',$this->getCFGDef('allowedFields'))));
         $this->forbiddenFields = array_merge($this->forbiddenFields,array_filter(explode(',',$this->getCFGDef('forbiddenFields'))));
+        $this->emptyFormControls = array_merge($this->emptyFormControls,$this->config->loadArray($this->getCFGDef('emptyFormControls')));
         $this->setRequestParams();
         $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
@@ -201,7 +204,7 @@ abstract class Core
                     $fields = $this->filterFields($fields,$allowed);
                 }
                 $this->setFields($fields,$prefix);
-                if ($fields) $this->log('Set external fields from '.$source[0],$fields);
+                if ($fields) $this->log('Set external fields from '.$_source[0],$fields);
             }
         }
     }
@@ -212,6 +215,13 @@ abstract class Core
     public function setRequestParams()
     {
         $this->setFields($this->_rq);
+        if ($emptyFields = $this->emptyFormControls) {
+            foreach ($emptyFields as $field => $value) {
+                if (!isset($this->_rq[$field])) {
+                    $this->setField($field,$value);
+                }
+            }
+        }
         $this->log('Set fields from $_REQUEST',$this->_rq);
     }
 
@@ -563,6 +573,7 @@ abstract class Core
         $rules = $this->getCFGDef('rules');
         $rules = $this->config->loadArray($rules);
         if ($rules) $this->rules = array_merge($this->rules,$rules);
+        return $this->rules;
     }
 
     /**

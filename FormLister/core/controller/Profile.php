@@ -19,7 +19,13 @@ class Profile extends Core {
             $user = new \modUsers($modx);
             $this->userdata = $user->edit($uid);
             $userdata = $this->userdata->toArray();
+            if ($ds = $this->getCFGDef('defaultsSources')) {
+                $defaultsSources = "{$ds};array";
+            } else {
+                $defaultsSources = 'array';
+            }
             $this->config->setConfig(array(
+                'defaultSources'=>$defaultsSources,
                 'defaults'=>$userdata
             ));
             $this->allowedFields = array('password','email');

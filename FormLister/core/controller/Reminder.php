@@ -122,7 +122,7 @@ class Reminder extends Form {
                 $uid = $this->getField($this->uidField);
                 $hash = $this->getField($this->hashField);
                 if ($hash && $hash == $this->getUserHash($uid)) {
-                    if ($this->getField('password') == '' && !isset($this->rules['password'])) $this->setField('password',\APIhelpers::genPass(6));
+                    if ($this->getField('password') == '' && !isset($this->rules['password'])) $this->setField('password',\APIhelpers::genPass($this->getCFGDef('passwordLength',6)));
                     $fields = $this->filterFields($this->getFormData('fields'),array('password'));
                     $result = $this->user->edit($uid)->fromArray($fields)->save(true);
                     $this->log('Update password',array('data'=>$fields,'result'=>$result));

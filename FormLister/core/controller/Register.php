@@ -73,10 +73,10 @@ class Register extends Form {
         if ($this->getField('username') == '') {
             $this->setField('username', $this->getField('email'));
         }
-        if ($this->checkSubmitLimit() || $this->checkSubmitProtection()) return;
+        if ($this->checkSubmitProtection()) return;
         //регистрация со случайным паролем
         if ($this->getField('password') == '' && !isset($this->rules['password'])) {
-            $this->setField('password',\APIhelpers::genPass(6));
+            $this->setField('password',\APIhelpers::genPass($this->getCFGDef('passwordLength',6)));
         }
         $fields = $this->filterFields($this->getFormData('fields'),$this->allowedFields,$this->forbiddenFields);
         $result = $this->user->create($fields)->save(true);
