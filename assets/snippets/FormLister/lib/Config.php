@@ -51,6 +51,7 @@ class Config
                 $config = array_merge($config, \jsonHelper::jsonDecode($json, array('assoc' => true), true));
             }
         }
+        $this->setConfig($config);
         return $config;
     }
 
