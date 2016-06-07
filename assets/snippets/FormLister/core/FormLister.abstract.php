@@ -100,11 +100,12 @@ abstract class Core
     public function __construct(\DocumentParser $modx, $cfg = array())
     {
         $this->modx = $modx;
-        $this->config = new Config($cfg);
+        $this->config = new Config();
         $this->fs = FS::getInstance();
         if (isset($cfg['config'])) {
             $this->config->loadConfig($cfg['config']);
         }
+        $this->config->setConfig($cfg);
         if (isset($cfg['debug'])) {
             include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Debug.php');
             $this->debug = new \Helpers\Debug($modx, array(
