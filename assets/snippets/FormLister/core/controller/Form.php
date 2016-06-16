@@ -206,7 +206,8 @@ class Form extends Core
         foreach ($this->files as $files) {
             if (is_null($files[0])) $files = array($files);
             foreach ($files as $file) {
-                $attachments[] = array('filepath'=>$file['tmp_name'],'filename'=>$file['name']);
+                if ($file['error'] === 0)
+                    $attachments[] = array('filepath'=>$file['tmp_name'],'filename'=>$file['name']);
             }
         }
         return $attachments;
