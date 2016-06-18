@@ -13,7 +13,6 @@ class Register extends Form {
         $this->user = new \modUsers($modx);
         $lang = $this->lexicon->loadLang('register');
         if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
-        $this->allowedFields = array('username','email','password');
     }
 
     public function render()

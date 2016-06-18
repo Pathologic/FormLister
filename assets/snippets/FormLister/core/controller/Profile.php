@@ -28,7 +28,6 @@ class Profile extends Core {
                 'defaultSources'=>$defaultsSources,
                 'defaults'=>$userdata
             ));
-            $this->allowedFields = array('password','email');
         }
     }
 
