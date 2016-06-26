@@ -119,36 +119,9 @@ class Form extends Core
         return $hash;
     }
 
-    /**
-     * @param array $_files
-     * @return array
-     */
-    public function filesToArray(array $_files, array $allowed, $flag = true) {
-        $files = array();
-        foreach($_files as $name=>$file){
-            if (!in_array($name, $allowed) && !is_int($name)) continue;
-            if($flag) $sub_name = $file['name'];
-            else    $sub_name = $name;
-            if(is_array($sub_name)){
-                foreach(array_keys($sub_name) as $key){
-                    $files[$name][$key] = array(
-                        'name'     => $file['name'][$key],
-                        'type'     => $file['type'][$key],
-                        'tmp_name' => $file['tmp_name'][$key],
-                        'error'    => $file['error'][$key],
-                        'size'     => $file['size'][$key],
-                    );
-                    $files[$name] = $this->filesToArray($files[$name], $allowed, false);
-                }
-            }else{
-                $files[$name] = $file;
-            }
-        }
-        return $files;
-    }
-
     public function validateForm() {
         parent::validateForm();
+        if (!$this->getCFGDef('attachments')) return $this->isValid();
         $validator = $this->getCFGDef('fileValidator','\FormLister\FileValidator');
         if (!class_exists($validator)) {
             include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/FileValidator.php');

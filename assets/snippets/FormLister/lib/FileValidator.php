@@ -16,7 +16,7 @@ class FileValidator
         }
         return $flag;
     }
-    
+
     public function optional($value) {
         if (!$this->isArray($value)) $value = array($value);
         $flag = false;

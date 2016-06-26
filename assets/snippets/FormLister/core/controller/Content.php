@@ -4,7 +4,7 @@
  */
 if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
-include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
+
 class Content extends Form
 {
     protected $mode = 'create';
@@ -21,11 +21,15 @@ class Content extends Form
         parent::__construct($modx, $cfg);
         $lang = $this->lexicon->loadLang('content');
         if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
-        $classname = $this->getCFGDef('contentClass','modResource');
-        if ($this->loadContentClass()) {
-            $this->content = new $classname($modx);
-        }
-        $this->user = new \modUsers($modx);
+        $this->content = $this->loadModel(
+            $this->getCFGDef('model','\modResource'),
+            $this->getCFGDef('modelPath','assets/lib/MODxAPI/modResource.php')
+        );
+        if (is_null($this->content)) return;
+        $this->user = $this->loadModel(
+            $this->getCFGDef('userModel','\modUsers'),
+            $this->getCFGDef('userModelPath','assets/lib/MODxAPI/modUsers.php')
+        );
         $idField = $this->getCFGDef('idField','id');
         if ($idField && isset($_REQUEST[$idField]) && is_scalar($_REQUEST[$idField]) && $_REQUEST[$idField] > 0) {
             $this->id = $_REQUEST[$idField];
@@ -45,20 +49,6 @@ class Content extends Form
             $this->mailConfig['noemail'] = 1;
         }
         $this->log('Content mode is '.$this->mode, array('data'=>$data));
-    }
-
-    public function loadContentClass() {
-        $out = false;
-        $classname = $this->getCFGDef('contentClass','modResource');
-        if (!class_exists($classname)) {
-            $classPath = $this->getCFGDef('classPath','assets/lib/MODxAPI/modResource.php');
-            if ($this->fs->checkFile($classPath)) {
-                include_once(MODX_BASE_PATH . $classPath);
-                $out = class_exists($classname);
-            }
-        }
-        $this->log('Load content class '.$classname,array('result'=>$out));
-        return $out;
     }
 
     public function render() {
@@ -89,7 +79,7 @@ class Content extends Form
             }
         }
 
-        if ($uid) {
+        if ($uid && !is_null($this->user)) {
             $this->owner = $uid; //владелец документа
             $userdata = $this->user->edit($uid)->toArray();
             if ($userdata['id']) {
@@ -99,7 +89,7 @@ class Content extends Form
         }
 
         if ($mode == 'edit') {
-            $cid = $this->content->getID();
+            $cid = is_null($this->content) ? false : $this->content->getID();
             if ($cid) {
                 if ($this->getCFGDef('onlyAuthors',1) && ($this->content->get($owner) && $this->content->get($owner) != $uid)) {
                     $this->redirect('badOwnerTo');
@@ -188,7 +178,7 @@ class Content extends Form
 
     public function checkUserGroups($uid, $groups = '') {
         $flag = true;
-        if (is_scalar($groups) && !empty($groups)) {
+        if (is_scalar($groups) && !empty($groups) && !is_null($this->user)) {
             $groups = explode(';', $groups);
             if (!empty($groups)) {
                 $userGroups = $this->user->getUserGroups($uid);

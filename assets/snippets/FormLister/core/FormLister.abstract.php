@@ -189,10 +189,9 @@ abstract class Core
                 default:
                     if (!empty($_source[0])) {
                         $classname = $_source[0];
-                        if (class_exists($classname) && isset($_source[1])) {
+                        if (!is_null($model = $this->loadModel($classname)) && isset($_source[1])) {
                             /** @var \autoTable $obj */
-                            $obj = new $classname($this->modx);
-                            if ($data = $obj->edit($_source[1])) {
+                            if ($data = $model->edit($_source[1])) {
                                 $fields = $data->toArray();
                                 if (isset($_source[2])) $prefix = $_source[2];
                             }
@@ -351,10 +350,7 @@ abstract class Core
      */
     public function validateForm() {
         $validator = $this->getCFGDef('validator','\FormLister\Validator');
-        if (!class_exists($validator)) {
-            include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Validator.php');
-        }
-        $validator = new $validator();
+        $validator = $this->loadModel($validator,'assets/snippets/FormLister/lib/Validator.php');
         $fields = $this->getFormData('fields');
         $rules = $this->getValidationRules();
         $this->rules = array_merge($this->rules,$rules);
@@ -523,6 +519,7 @@ abstract class Core
         $plh = $fields;
         if (is_array($fields) && !empty($fields)) {
             foreach ($fields as $field => $value) {
+                if (strlen($field) > 6 && substr($field,-6) == '.value') continue;
                 $field = array($field, $suffix);
                 $field = implode('.', array_filter($field));
                 if ($split && is_array($value)) {
@@ -744,10 +741,60 @@ abstract class Core
     {
         $this->valid &= $valid;
     }
-    
+
+    /**
+     * @param $message
+     * @param array $data
+     */
     public function log($message, $data = array()) {
         if (!is_null($this->debug)) {
             $this->debug->log($message, $data);
         }
+    }
+
+    /**
+     * @param $model
+     * @param string $path
+     * @return object
+     */
+    public function loadModel($model,$path = '') {
+        $out = null;
+        if (class_exists($model)) {
+            $out = new $model($this->modx);
+        } else {
+            if ($path && $this->fs->checkFile($path)) {
+                include_once ($path);
+                $out = new $model($this->modx);    
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * @param array $_files
+     * @return array
+     */
+    public function filesToArray(array $_files, array $allowed, $flag = true) {
+        $files = array();
+        foreach($_files as $name=>$file){
+            if (!in_array($name, $allowed) && !is_int($name)) continue;
+            if($flag) $sub_name = $file['name'];
+            else    $sub_name = $name;
+            if(is_array($sub_name)){
+                foreach(array_keys($sub_name) as $key){
+                    $files[$name][$key] = array(
+                        'name'     => $file['name'][$key],
+                        'type'     => $file['type'][$key],
+                        'tmp_name' => $file['tmp_name'][$key],
+                        'error'    => $file['error'][$key],
+                        'size'     => $file['size'][$key],
+                    );
+                    $files[$name] = $this->filesToArray($files[$name], $allowed, false);
+                }
+            }else{
+                $files[$name] = $file;
+            }
+        }
+        return $files;
     }
 }

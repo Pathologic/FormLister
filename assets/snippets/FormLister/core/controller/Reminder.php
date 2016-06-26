@@ -6,7 +6,6 @@
 if (!defined('MODX_BASE_PATH')) die();
 
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
-include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
 
 class Reminder extends Form {
     protected $user = null;
@@ -19,7 +18,10 @@ class Reminder extends Form {
     public function __construct(\DocumentParser $modx, array $cfg)
     {
         parent::__construct($modx, $cfg);
-        $this->user = new \modUsers($modx);
+        $this->user = $this->loadModel(
+            $this->getCFGDef('model','\modUsers'),
+            $this->getCFGDef('modelPath','assets/lib/MODxAPI/modUsers.php')
+        );
         $lang = $this->lexicon->loadLang('reminder');
         if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
         $hashField = $this->getCFGDef('hashField','hash');
@@ -91,8 +93,12 @@ class Reminder extends Form {
      * @return bool|string
      */
     public function getUserHash($uid) {
-        $userdata = $this->user->edit($uid)->toArray();
-        $hash = $userdata['id'] ? md5(json_encode($userdata)) : false;
+        if (is_null($this->user)) {
+            $hash = false;
+        } else {
+            $userdata = $this->user->edit($uid)->toArray();
+            $hash = $userdata['id'] ? md5(json_encode($userdata)) : false;
+        }
         return $hash;
     }
 

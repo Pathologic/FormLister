@@ -4,13 +4,16 @@
  */
 if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
-include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
+
 class Register extends Form {
     public $user = null;
 
     public function __construct($modx, $cfg = array()) {
         parent::__construct($modx, $cfg);
-        $this->user = new \modUsers($modx);
+        $this->user = $this->loadModel(
+            $this->getCFGDef('model','\modUsers'),
+            $this->getCFGDef('modelPath','assets/lib/MODxAPI/modUsers.php')
+        );
         $lang = $this->lexicon->loadLang('register');
         if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
     }
