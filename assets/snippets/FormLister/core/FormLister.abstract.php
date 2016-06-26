@@ -27,7 +27,7 @@ abstract class Core
     /**
      * @var FS $fs
      */
-    protected $fs = null;
+    public $fs = null;
     
     public $debug = null;
 
@@ -57,6 +57,7 @@ abstract class Core
         'fields'   => array(),
         'errors'   => array(),
         'messages' => array(),
+        'files'    => array(),
         'status'   => false
     );
 
@@ -86,6 +87,8 @@ abstract class Core
      * @var array
      */
     public $forbiddenFields = array();
+
+    protected $placeholders = array();
 
     protected $emptyFormControls = array();
 
@@ -276,8 +279,8 @@ abstract class Core
     {
         if ($this->isSubmitted()) {
             $this->validateForm();
-            $this->callPrepare('prepareProcess');
             if ($this->isValid()) {
+                $this->runPrepare('prepareProcess');
                 $this->process();
                 $this->log('Form procession complete',$this->getFormData());
             }
@@ -380,7 +383,10 @@ abstract class Core
         //применяем правила
         $errors = array();
         foreach ($rules as $field => $ruleSet) {
+            $skipFlag = substr($field,0,1) == '!' ? true : false;
+            if ($skipFlag) $field = substr($field,1);
             $value = \APIHelpers::getkey($fields,$field);
+            if ($skipFlag && empty($value)) continue;
             foreach ($ruleSet as $rule => $description) {
                 $inverseFlag = substr($rule,0,1) == '!' ? true : false;
                 if ($inverseFlag) $rule = substr($rule,1);
@@ -399,7 +405,7 @@ abstract class Core
                     $params = array($value, $description);
                     $message = $description;
                 }
-                if (($rule != 'custom') && method_exists($validator, $rule)) {
+                if (method_exists($validator, $rule)) {
                     $result = call_user_func_array(array($validator, $rule), $params);
                 } else {
                     if (isset($description['function'])) {
@@ -477,6 +483,14 @@ abstract class Core
         if ($value !== '' || $this->getCFGDef('allowEmptyFields',1)) $this->formData['fields'][$field] = $value;
     }
 
+    public function setPlaceholder($placeholder, $value) {
+        $this->placeholders[$placeholder] = $value;
+    }
+
+    public function getPlaceholder($placeholder) {
+        return \APIhelpers::getkey($this->placeholders,$placeholder);
+    }
+
     /**
      * Удаляет поле из formData
      * @param $field
@@ -519,7 +533,6 @@ abstract class Core
         $plh = $fields;
         if (is_array($fields) && !empty($fields)) {
             foreach ($fields as $field => $value) {
-                if (strlen($field) > 6 && substr($field,-6) == '.value') continue;
                 $field = array($field, $suffix);
                 $field = implode('.', array_filter($field));
                 if ($split && is_array($value)) {
@@ -529,6 +542,7 @@ abstract class Core
                 $plh[$field] = \APIhelpers::e($value);
             }
         }
+        if (!empty($this->placeholders)) $plh = array_merge($plh,$this->placeholders);
         return $plh;
     }
 
@@ -740,6 +754,10 @@ abstract class Core
     public function setValid($valid)
     {
         $this->valid &= $valid;
+    }
+
+    public function setFiles($files) {
+        if (is_array($files)) $this->formData['files'] = $files;
     }
 
     /**

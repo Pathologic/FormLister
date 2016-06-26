@@ -3,9 +3,9 @@
  * Контроллер для редактирования профиля
  */
 if (!defined('MODX_BASE_PATH')) {die();}
-include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
+include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
 
-class Profile extends Core {
+class Profile extends Form {
 
     public $userdata = null;
 

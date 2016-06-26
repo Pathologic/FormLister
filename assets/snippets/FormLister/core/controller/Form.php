@@ -19,17 +19,11 @@ class Form extends Core
      */
     protected $fileRules = array();
 
-    /**
-     * Массив с данными о файлах
-     * @var array
-     */
-    protected $files = array();
-
     public function __construct(\DocumentParser $modx, array $cfg)
     {
         parent::__construct($modx, $cfg);
         if ($files = $this->getCFGDef('attachments')) {
-            $this->files = $this->filesToArray($_FILES,explode(',',$files));
+            $this->setFiles($this->filesToArray($_FILES,explode(',',$files)));
         }
         $this->mailConfig = array(
             'isHtml' => $this->getCFGDef('isHtml',1),
@@ -127,7 +121,7 @@ class Form extends Core
             include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/FileValidator.php');
         }
         $validator = new $validator();
-        $fields = $this->files;
+        $fields = $this->getFormData('files');
         $rules = $this->getValidationRules('fileRules');
         $this->fileRules = array_merge($this->fileRules,$rules);
         $this->log('Prepare to validate files',array('fields'=>$fields,'rules'=>$this->fileRules));
@@ -176,7 +170,7 @@ class Form extends Core
 
     public function getAttachments() {
         $attachments = array();
-        foreach ($this->files as $files) {
+        foreach ($this->getFormData('files') as $files) {
             if (is_null($files[0])) $files = array($files);
             foreach ($files as $file) {
                 if ($file['error'] === 0)
