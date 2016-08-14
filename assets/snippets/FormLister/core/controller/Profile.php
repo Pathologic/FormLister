@@ -19,7 +19,6 @@ class Profile extends Form {
                 $this->getCFGDef('model','\modUsers'),
                 $this->getCFGDef('modelPath','assets/lib/MODxAPI/modUsers.php')
             );
-            if (is_null($user)) return;
             $this->userdata = $user->edit($uid);
             $userdata = $this->userdata->toArray();
             if ($ds = $this->getCFGDef('defaultsSources')) {

@@ -31,6 +31,7 @@ class Reminder extends Form {
         $this->uidField = $uidField;
         $this->userField = $userField;
         if ((isset($_REQUEST[$hashField]) && !empty($_REQUEST[$hashField])) && (isset($_REQUEST[$uidField]) && !empty($_REQUEST[$uidField]))) {
+            $this->setFields($_REQUEST);
             $this->mode = 'reset';
             $this->config->setConfig(array(
                 'rules' => $this->getCFGDef('resetRules'),

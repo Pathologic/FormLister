@@ -65,7 +65,7 @@ class Config
     }
 
     /**
-     * Сохранение настроек вызова сниппета
+     * Сохранение массива настроек
      * @param array $cfg массив настроек
      * @return int результат сохранения настроек
      */
@@ -85,10 +85,22 @@ class Config
         return \APIhelpers::getkey($this->_cfg, $name, $def);
     }
 
-    public function loadArray($arr)
+    /**
+     * Преобразует json или строку с разделителем в массив.
+     *
+     * @param $arr
+     * @param string $sep
+     * @return array|mixed|\xNop
+     */
+    public function loadArray($arr, $sep = ',')
     {
+
         if (is_scalar($arr)) {
-            return \jsonHelper::jsonDecode($arr, array('assoc' => true));
+            $out = \jsonHelper::jsonDecode($arr, array('assoc' => true));
+            if (is_null($out) && $sep) {
+                $out = array_filter(explode($sep,$arr));
+            }
+            return $out;
         } elseif (is_array($arr)) {
             return $arr;
         } else {

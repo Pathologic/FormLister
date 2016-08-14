@@ -12,20 +12,7 @@ class FileValidator
         if (!$this->isArray($value)) $value = array($value);
         $flag = false;
         foreach ($value as $file) {
-            $flag = !$file['error'] && is_uploaded_file($file['tmp_name']);
-        }
-        return $flag;
-    }
-
-    public function optional($value) {
-        if (!$this->isArray($value)) $value = array($value);
-        $flag = false;
-        foreach ($value as $file) {
-            if ($file['error'] === 4) {
-                $flag = true;
-            } else {
-                $flag = !$file['error'] && is_uploaded_file($file['tmp_name']);
-            }
+            $flag = isset($file['error']) && !$file['error'] && is_uploaded_file($file['tmp_name']);
         }
         return $flag;
     }
@@ -34,12 +21,8 @@ class FileValidator
         if (!$this->isArray($value)) $value = array($value);
         $flag = false;
         foreach ($value as $file) {
-            if ($file['error'] === 4) {
-                $flag = true;
-            } else {
-                $ext = strtolower(array_pop(explode('.', $file['name'])));
-                $flag = in_array($ext, $allowed);
-            }
+            $ext = strtolower(array_pop(explode('.',$file['name'])));
+            $flag = in_array($ext,$allowed);
         }
         return $flag;
     }
@@ -62,12 +45,8 @@ class FileValidator
         if (!$this->isArray($value)) $value = array($value);
         $flag = false;
         foreach ($value as $file) {
-            if ($file['error'] === 4) {
-                $flag = true;
-            } else {
-                $size = round($file['size'] / 1024, 0);
-                $flag = $size > $min;
-            }
+            $size = round($file['size'] / 1024,0);
+            $flag = $size > $min;
         }
         return $flag;
     }
@@ -76,12 +55,8 @@ class FileValidator
         if (!$this->isArray($value)) $value = array($value);
         $flag = false;
         foreach ($value as $file) {
-            if ($file['error'] === 4) {
-                $flag = true;
-            } else {
-                $size = round($file['size'] / 1024, 0);
-                $flag = $size > $min && $size < $max;
-            }
+            $size = round($file['size'] / 1024,0);
+            $flag = $size > $min && $size < $max;
         }
         return $flag;
     }

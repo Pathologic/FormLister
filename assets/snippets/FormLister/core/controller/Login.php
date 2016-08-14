@@ -5,7 +5,6 @@
  */
 if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
-
 class Login extends Core
 {
     public $user = null;
