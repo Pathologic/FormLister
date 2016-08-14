@@ -119,7 +119,7 @@ abstract class Core
             'langDir' => 'assets/snippets/FormLister/core/lang/'
         ));
         $this->formid = $this->getCFGDef('formid');
-        $this->_rq = array_merge($_GET, $_POST);
+        $this->_rq = strtolower($this->getCFGDef('formMethod','post')) == 'post' ? $_POST : $_GET;
     }
 
     /**
@@ -128,11 +128,20 @@ abstract class Core
      * Загрузка капчи
      */
     public function initForm() {
-        $lang = $this->lexicon->loadLang($this->getCFGDef('lexicon'),$this->getCFGDef('lang'),$this->getCFGDef('langDir'));
-        if ($lang && $this->getCFGDef('lexicon')) $this->log('Custom lexicon loaded',array('lexicon'=>$lang));
-        $this->allowedFields = array_merge($this->allowedFields,array_filter(explode(',',$this->getCFGDef('allowedFields'))));
-        $this->forbiddenFields = array_merge($this->forbiddenFields,array_filter(explode(',',$this->getCFGDef('forbiddenFields'))));
-        $this->emptyFormControls = array_merge($this->emptyFormControls,$this->config->loadArray($this->getCFGDef('emptyFormControls')));
+        $lexicon = $this->getCFGDef('lexicon');
+        if ($lexicon) {
+            $_lexicon = $this->config->fromArray($lexicon);
+            if (is_array($_lexicon)) {
+                $lang = $this->lexicon->fromArray($_lexicon);
+            } else {
+                $lang = $this->lexicon->loadLang($lexicon, $this->getCFGDef('lang'),
+                    $this->getCFGDef('langDir'));
+            }
+            if ($lang) $this->log('Custom lexicon loaded',array('lexicon'=>$lang));
+        }
+        $this->allowedFields = array_merge($this->allowedFields,$this->config->loadArray($this->getCFGDef('allowedFields')));
+        $this->forbiddenFields = array_merge($this->forbiddenFields,$this->config->loadArray($this->getCFGDef('forbiddenFields')));
+        $this->emptyFormControls = array_merge($this->emptyFormControls,$this->config->loadArray($this->getCFGDef('emptyFormControls'),''));
         $this->setRequestParams();
         $this->setExternalFields($this->getCFGDef('defaultsSources','array'));
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
@@ -149,7 +158,7 @@ abstract class Core
         $keepDefaults = $this->getCFGDef('keepDefaults',0);
         $submitted = $this->isSubmitted();
         if ($submitted && !$keepDefaults) return;
-        $sources = array_filter(explode(';',$sources));
+        $sources = $this->config->loadArray($sources,';');
         $prefix = '';
         foreach ($sources as $source) {
             $fields = array();
@@ -203,7 +212,7 @@ abstract class Core
             }
             if (is_array($fields)) {
                 if (!is_numeric($keepDefaults)) {
-                    $allowed = $submitted ? explode(',',$keepDefaults) : array();
+                    $allowed = $submitted ? $this->config->loadArray($keepDefaults) : array();
                     $fields = $this->filterFields($fields,$allowed);
                 }
                 $this->setFields($fields,$prefix);
@@ -572,7 +581,7 @@ abstract class Core
     public function controlsToPlaceholders()
     {
         $plh = array();
-        $formControls = explode(',',$this->getCFGDef('formControls'));
+        $formControls = $this->config->loadArray($this->getCFGDef('formControls'));
         foreach ($formControls as $field) {
             $value = $this->getField($field);
             if ($value === '') {
@@ -596,7 +605,7 @@ abstract class Core
     public function getValidationRules($param = 'rules')
     {
         $rules = $this->getCFGDef($param);
-        $rules = $this->config->loadArray($rules);
+        $rules = $this->config->loadArray($rules,'');
         return is_array($rules) ? $rules : array();
     }
 
@@ -674,8 +683,19 @@ abstract class Core
                 include_once($wrapper);
                 $wrapper = $captcha.'Wrapper';
                 /** @var \modxCaptchaWrapper $captcha */
-                $captcha = new $wrapper ($this);
-                $this->rules[$this->getCFGDef('captchaField', 'vericode')] = $captcha->getRule();
+                $captcha = new $wrapper ($this->modx,array(
+                    'id' => $this->getFormId(),
+                    'width' => $this->getCFGDef('captchaWidth',100),
+                    'height'=> $this->getCFGDef('captchaHeight',60),
+                    'inline'=> $this->getCFGDef('captchaInline')
+                ));
+                $this->rules[$this->getCFGDef('captchaField', 'vericode')] = array(
+                    "required" => $this->getCFGDef('captchaRequiredMessage', 'Введите проверочный код'),
+                    "equals"   => array(
+                        "params"  => array($captcha->getValue()),
+                        "message" => $this->getCFGDef('captchaErrorMessage', 'Неверный проверочный код')
+                    )
+                );
                 $this->setField('captcha',$captcha->getPlaceholder());
             }
         }
@@ -701,13 +721,9 @@ abstract class Core
     public function runPrepare($paramName = 'prepare') {
         if (($prepare = $this->getCFGDef($paramName)) != '') {
             $params = $this->getFormData('fields');
-            if(is_scalar($prepare)){
-                $names = explode(",", $prepare);
-                foreach($names as $item){
-                    $this->callPrepare($item, $params);
-                }
-            }else{
-                $this->callPrepare($prepare, $params);
+            $names = $this->config->loadArray($prepare);
+            foreach($names as $item) {
+                $this->callPrepare($item, $params);
             }
             $this->log('Prepare finished',$this->getFormData('fields'));
         }

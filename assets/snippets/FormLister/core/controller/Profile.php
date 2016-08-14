@@ -4,8 +4,9 @@
  */
 if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
+include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
 
-class Profile extends Form {
+class Profile extends Core {
 
     public $userdata = null;
 
@@ -15,11 +16,7 @@ class Profile extends Form {
         if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
         $uid = $modx->getLoginUserId();
         if ($uid) {
-            $user = $this->loadModel(
-                $this->getCFGDef('model','\modUsers'),
-                $this->getCFGDef('modelPath','assets/lib/MODxAPI/modUsers.php')
-            );
-            if (is_null($user)) return;
+            $user = new \modUsers($modx);
             $this->userdata = $user->edit($uid);
             $userdata = $this->userdata->toArray();
             if ($ds = $this->getCFGDef('defaultsSources')) {
@@ -31,6 +28,7 @@ class Profile extends Form {
                 'defaultSources'=>$defaultsSources,
                 'defaults'=>$userdata
             ));
+            $this->allowedFields = array('password','email');
         }
     }
 

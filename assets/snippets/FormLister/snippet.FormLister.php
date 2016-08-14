@@ -13,7 +13,6 @@ if (!defined('MODX_BASE_PATH')) {
     die('HACK???');
 }
 if (!isset($formid)) return;
-
 $out = '';
 $FLDir = MODX_BASE_PATH . 'assets/snippets/FormLister/';
 if (isset($controller)) {

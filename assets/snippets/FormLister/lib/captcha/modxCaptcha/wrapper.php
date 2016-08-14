@@ -6,15 +6,26 @@ include_once ('modxCaptcha.php');
 
 class modxCaptchaWrapper
 {
-    protected $FL = null;
+    /**
+     * @var array $cfg
+     * id
+     * width
+     * height
+     * inline
+     * connectorDir
+     */
+    protected $cfg = null;
     protected $captcha = null;
 
-    public function __construct(FormLister\Core $FL)
+    public function __construct($modx, $cfg)
     {
-        $this->FL = $FL;
-        $width = $this->FL->getCFGDef('captchaWidth',100);
-        $height = $this->FL->getCFGDef('captchaHeight',60);
-        $this->captcha = new \modxCaptcha($FL->getMODX(), $width, $height);
+        $cfg['id'] = isset($cfg['id']) ? $cfg['id'] : 'modx';
+        $cfg['width'] = isset($cfg['width']) ? $cfg['width'] : 100;
+        $cfg['height'] = isset($cfg['height']) ? $cfg['height'] : 60;
+        $cfg['inline'] = isset($cfg['inline']) ? $cfg['inline'] : 1;
+        $cfg['connectorDir'] = isset($cfg['connectorDir']) ? $cfg['connectorDir'] : 'assets/snippets/FormLister/lib/captcha/modxCaptcha/';
+        $this->cfg = $cfg;
+        $this->captcha = new \modxCaptcha($modx, $cfg['width'], $cfg['height']);
     }
 
     /**
@@ -22,7 +33,7 @@ class modxCaptchaWrapper
      * @return mixed
      */
     public function getValue() {
-        $formid = $this->FL->getFormId();
+        $formid = $this->cfg['id'];
         $out = $_SESSION[$formid.'.captcha'];
         $_SESSION[$formid.'.captcha'] = $this->captcha->word;
         return $out;
@@ -34,27 +45,13 @@ class modxCaptchaWrapper
      * @return string
      */
     public function getPlaceholder() {
-        if ($this->FL->getCFGDef('captchaInline',1)) {
+        if ($this->cfg['inline']) {
             $out = $this->captcha->output_image(true);
         } else {
-            $out = MODX_BASE_URL . 'assets/snippets/FormLister/lib/captcha/modxCaptcha/connector.php?formid=' . $this->FL->getFormId();
-            $out .= '&w=' . $this->FL->getCFGDef('captchaWidth',200);
-            $out .= '&h=' . $this->FL->getCFGDef('captchaHeight',160);
+            $out = MODX_BASE_URL . $this->cfg['connectorDir'] . 'connector.php?formid=' . $this->cfg['id'];
+            $out .= '&w=' . $this->cfg['width'];
+            $out .= '&h=' . $this->cfg['height'];
         }
         return $out;
-    }
-
-    /**
-     * Установка правила валидации поля с капчей
-     * @return array
-     */
-    public function getRule() {
-        return array(
-            "required" => $this->FL->getCFGDef('captchaRequiredMessage', 'Введите проверочный код'),
-            "equals"   => array(
-                "params"  => array($this->getValue()),
-                "message" => $this->FL->getCFGDef('captchaErrorMessage', 'Неверный проверочный код')
-            )
-        );
     }
 }

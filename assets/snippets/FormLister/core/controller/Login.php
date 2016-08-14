@@ -5,7 +5,7 @@
  */
 if (!defined('MODX_BASE_PATH')) {die();}
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
-
+include_once (MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
 class Login extends Core
 {
     public $user = null;
@@ -13,10 +13,7 @@ class Login extends Core
     public  function __construct($modx, array $cfg)
     {
         parent::__construct($modx, $cfg);
-        $this->user = $this->loadModel(
-            $this->getCFGDef('model','\modUsers'),
-            $this->getCFGDef('modelPath','assets/lib/MODxAPI/modUsers.php')
-        );
+        $this->user = new \modUsers($this->modx);
         $lang = $this->lexicon->loadLang('login');
         if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
     }
@@ -31,10 +28,6 @@ class Login extends Core
     }
 
     public function process() {
-        if (is_null($this->user)) {
-            $this->addMessage($this->lexicon->getMsg('login.user_failed'));
-            return;
-        }
         $login = $this->getField($this->getCFGDef('loginField','username'));
         $password = $this->getField($this->getCFGDef('passwordField','password'));
         $remember = $this->getField($this->getCFGDef('rememberField','rememberme'));
