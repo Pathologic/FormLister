@@ -23,7 +23,7 @@ class Form extends Core
     {
         parent::__construct($modx, $cfg);
         if ($files = $this->getCFGDef('attachments')) {
-            $this->setFiles($this->filesToArray($_FILES,$this->config->loadArray($files)));
+            $this->setFiles($this->filesToArray($_FILES,explode(',',$files)));
         }
         $this->mailConfig = array(
             'isHtml' => $this->getCFGDef('isHtml',1),
@@ -69,11 +69,7 @@ class Form extends Core
         if ($this->isSubmitted() && $submitLimit > 0) {
             if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
                 $result = true;
-                $this->addMessage('[%form.submitLimit%] ' .
-                    ($submitLimit >=60
-                    ? round($submitLimit / 60, 0) . ' [%form.minutes%].'
-                    : $submitLimit . ' [%form.seconds%].'
-                ));
+                $this->addMessage('[%form.submitLimit%] ' . round($submitLimit / 60, 0) . ' [%form.minutes%].');
                 $this->log('Submit limit enabled');
             } else {
                 unset($_SESSION[$this->formid . '_limit']);
@@ -97,7 +93,7 @@ class Form extends Core
         $hash = array();
         $protectSubmit = $this->getCFGDef('protectSubmit', 1);
         if (!is_numeric($protectSubmit)) { //supplied field names
-            $protectSubmit = $this->config->loadArray($protectSubmit);
+            $protectSubmit = explode(',', $protectSubmit);
             foreach ($protectSubmit as $field) {
                 $hash[] = $this->getField(trim($field));
             }

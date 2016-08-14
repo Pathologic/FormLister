@@ -51,19 +51,6 @@ class Lexicon
     }
 
     /**
-     * Получение строк из массива
-     *
-     * @param $lang
-     * @return array
-     */
-    public function fromArray($lang) {
-        if (is_array($lang) && $lang) {
-            $this->_lang = array_merge($this->_lang, $lang);
-        }
-        return $this->_lang;
-    }
-
-    /**
      * Получение строки из языкового пакета
      *
      * @param string $name имя записи в языковом пакете

@@ -35,11 +35,16 @@ class Content extends Form
             $this->id = $_REQUEST[$idField];
             $this->mode = 'edit';
             $data = $this->content->edit($this->id)->toArray();
-            $defaultsSources = $this->config->loadArray($this->getCFGDef('defaultsSources'));
-            $defaultsSources[] = 'array';
+            if ($ds = $this->getCFGDef('defaultsSources')) {
+                $defaultsSources = "{$ds};array";
+            } else {
+                $defaultsSources = 'array';
+            }
             $this->config->setConfig(array(
                 'defaultsSources' => $defaultsSources,
-                'defaults' => $data
+                'defaults' => $data,
+                'submitLimit' => 0,
+                'protectSubmit' => 0
             ));
             $this->mailConfig['noemail'] = 1;
         }
@@ -108,7 +113,7 @@ class Content extends Form
             $clearCache = $this->getCFGDef('clearCache',false);
             switch ($this->mode) {
                 case 'create':
-                    if ($this->checkSubmitProtection() || $this->checkSubmitLimit()) return;
+                    if ($this->checkSubmitProtection()) return;
                     if ($this->owner) $fields[$owner] = $this->owner;
                     $result = $this->content->create($fields)->save(true,$clearCache);
                     $this->log('Create record',array('data'=>$fields,'result'=>$result));
@@ -122,7 +127,7 @@ class Content extends Form
             }
             //чтобы не получился косяк, когда плагины обновят поля
             $this->content->close();
-            $this->setFields($this->content->edit($this->id)->toArray());
+            $this->setFields($this->content->edit($this->getField('id'))->toArray());
             $this->log('Update form data',array('data'=>$this->getFormData('fields')));
         }
         if (!$result) {

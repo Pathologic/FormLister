@@ -1,7 +1,7 @@
 <?php namespace FormLister;
 
 if (!defined('MODX_BASE_PATH')) {die();}
-include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
+include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
 include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/lib/MailChimp/MailChimp.php');
 class MailChimp extends Core
 {

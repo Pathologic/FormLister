@@ -6,6 +6,11 @@ class Validator
         return !in_array($value, array(null, ''), true);
     }
 
+    public function date($value, $format) {
+        $d = \DateTime::createFromFormat($format, $value);
+        return $d && $d->format($format) == $value;
+    }
+
     public function min($value, $min)
     {
         return $value >= $min;
