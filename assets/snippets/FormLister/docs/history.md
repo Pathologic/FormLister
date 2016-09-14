@@ -1,5 +1,8 @@
 ##History
 
+###1.4.1
+* [Refactor] Больше рандома в modxCaptcha.
+
 ###1.4.0
 * [Refactor] Класс modxCaptchaWrapper больше не привязан к FormLister (Core, modxCaptchaWrapper).
 * [Enhancement] Убрано принудительное отключение параметров submitLimit и protectSubmit (Content).

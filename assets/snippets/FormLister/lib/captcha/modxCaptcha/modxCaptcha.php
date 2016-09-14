@@ -48,7 +48,8 @@ class modxCaptcha
         // set default words
         $words="MODX,Access,Better,BitCode,Chunk,Cache,Desc,Design,Excell,Enjoy,URLs,TechView,Gerald,Griff,Humphrey,Holiday,Intel,Integration,Joystick,Join(),Oscope,Genetic,Light,Likeness,Marit,Maaike,Niche,Netherlands,Ordinance,Oscillo,Parser,Phusion,Query,Question,Regalia,Righteous,Snippet,Sentinel,Template,Thespian,Unity,Enterprise,Verily,Veri,Website,WideWeb,Yap,Yellow,Zebra,Zygote";
         $words = $this->modx->config['captcha_words'] ? $this->modx->config['captcha_words'] : $words;
-        $arr_words = array_filter(array_map('trim', explode(',', $words)));
+        $word = str_replace(array(' ',',,'),array('',','),$word);
+        $arr_words = explode(',', $words);
 
         /* pick one randomly for text verification */
         return (string) $arr_words[array_rand($arr_words)].rand(10,999);
@@ -64,44 +65,48 @@ class modxCaptcha
         }
         $dir->close();
         $text_font = (string) $fontstmp[array_rand($fontstmp)];
-
+        $chars = str_split($this->word);
         /* angle for text inclination */
-        $text_angle = rand(-9,9);
         /* initial text size */
-        $text_size  = 30;
-        /* calculate text width and height */
-        $box        = imagettfbbox ( $text_size, $text_angle, $text_font, $this->word);
-        $text_width = $box[2]-$box[0]; //text width
-        /* adjust text size */
-        $text_size  = round((20 * $this->im_width)/$text_width);
-
-        /* recalculate text width and height */
-        $box        = imagettfbbox ( $text_size, $text_angle, $text_font, $this->word);
-        $text_width = $box[2]-$box[0]; //text width
-        $text_height= $box[5]-$box[3]; //text height
-
-        /* calculate center position of text */
-        $text_x         = ($this->im_width - $text_width)/2;
-        $text_y         = ($this->im_height - $text_height)/2;
-
         /* create canvas for text drawing */
-        $im_text        = imagecreate ($this->im_width, $this->im_height);
-        $bg_color       = imagecolorallocate ($im_text, 255, 255, 255);
+        $im_text = imagecreate($this->im_width, $this->im_height);
+        $bg_color = imagecolorallocate($im_text, 255, 255, 255);
 
-        /* pick color for text */
-        $text_color     = imagecolorallocate ($im_text, 0, 51, 153);
+        $len = count($chars);
+        foreach ($chars as $index => $value) {
+            $text_angle = rand(-30, 30);
+            /* initial text size */
+            $text_size  = 30;
+            /* calculate text width and height */
+            $box = imagettfbbox($text_size, $text_angle, $text_font, $this->word);
+            $text_width = $box[2] - $box[0]; //text width
+            /* adjust text size */
+            $text_size = round((30 * $this->im_width) /$text_width);
+            /* recalculate text width and height */
+            $box = imagettfbbox($text_size, $text_angle, $text_font, $this->word);
+            $text_width = ($box[2] - $box[0]) / $len; //text width
+            $text_height = $box[5] - $box[3]; //text height
 
-        /* draw text into canvas */
-        imagettftext    (
-            $im_text,
-            $text_size,
-            $text_angle,
-            $text_x,
-            $text_y,
-            $text_color,
-            $text_font,
-            $this->word);
+            /* calculate center position of text */
+            $text_x = ($this->im_width - $len * $text_width)/2 + $index * $text_width;
+            $text_y = ($this->im_height - $text_height) / 2;
 
+
+
+            /* pick color for text */
+            $text_color = imagecolorallocate($im_text, rand(10, 200), rand(10, 200), rand(10, 200));
+
+            /* draw text into canvas */
+            imagettftext(
+                $im_text,
+                $text_size,
+                $text_angle,
+                $text_x,
+                $text_y,
+                $text_color,
+                $text_font,
+                $value);
+        }
         /* remove background color */
         imagecolortransparent($im_text, $bg_color);
         return $im_text;
