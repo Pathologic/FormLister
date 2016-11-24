@@ -5,7 +5,6 @@
  * Date: 21.05.2016
  * Time: 11:51
  */
-if (!defined('MODX_BASE_PATH')) {die();}
 
 setlocale(LC_ALL, 'ru_RU.UTF-8');
 
@@ -16,4 +15,5 @@ $_lang['reminder.users_only'] = 'Только зарегистрированны
 $_lang['reminder.update_fail'] = 'Не удалось сохранить данные.';
 $_lang['reminder.default_successTpl'] = '@CODE:Вам отправлено письмо со ссылкой для восстановления пароля.';
 $_lang['reminder.default_resetSuccessTpl'] = '@CODE:Вам отправлено письмо с новым паролем.';
+
 return $_lang;

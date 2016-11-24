@@ -5,10 +5,10 @@
  * Date: 15.05.2016
  * Time: 3:26
  */
-if (!defined('MODX_BASE_PATH')) {die();}
 
 $_lang = array();
 $_lang['register.registration_failed'] = 'User registration failed.';
 $_lang['register.default_successTpl'] = '@CODE:User has been registered successfully.';
 $_lang['register.default_skipTpl'] = '@CODE:You are already registered.';
+
 return $_lang;

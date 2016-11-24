@@ -5,7 +5,6 @@
  * Date: 15.05.2016
  * Time: 1:26
  */
-if (!defined('MODX_BASE_PATH')) {die();}
 
 setlocale(LC_ALL, 'ru_RU.UTF-8');
 
@@ -19,4 +18,5 @@ $_lang['create.default_badGroupTpl'] = '@CODE:У вас нет разрешен�
 $_lang['edit.default_badGroupTpl'] = '@CODE:У вас нет разрешения редактировать записи.';
 $_lang['edit.update_fail'] = 'Не удалось сохранить данные.';
 $_lang['edit.update_success'] = 'Данные успешно сохранены.';
+
 return $_lang;
