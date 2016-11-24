@@ -19,6 +19,11 @@ if ($e->name == 'OnWebPageInit' || $e->name == 'OnPageNotFound') {
     if ($modx->getLoginUserID('web')) {
         if (isset($_REQUEST[$logoutKey])) {
             $user->logOut('WebLoginPE', true);
+            $page = $modx->config['site_url'] . (isset($_REQUEST['q']) ? $_REQUEST['q'] : '');
+            $query = $_GET;
+            unset($query[$logoutKey], $query['q']);
+            if ($query) $page . '?' . http_build_query($query);
+            $modx->sendRedirect($page);
         }
     } else {
         $user->AutoLogin();

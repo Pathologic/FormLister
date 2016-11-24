@@ -1,10 +1,18 @@
 <?php namespace FormLister;
+
+use Helpers\Mailer;
+
 /**
  * Контроллер для обычных форм с отправкой, типа обратной связи
  */
-if (!defined('MODX_BASE_PATH')) {die();}
-include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
-include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/lib/Mailer.php');
+
+include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
+include_once(MODX_BASE_PATH . 'assets/lib/Helpers/Mailer.php');
+
+/**
+ * Class Form
+ * @package FormLister
+ */
 class Form extends Core
 {
     /**
@@ -19,25 +27,32 @@ class Form extends Core
      */
     protected $fileRules = array();
 
-    public function __construct(\DocumentParser $modx, array $cfg)
+    /**
+     * Form constructor.
+     * @param \DocumentParser $modx
+     * @param array $cfg
+     */
+    public function __construct(\DocumentParser $modx, array $cfg = array())
     {
         parent::__construct($modx, $cfg);
         if ($files = $this->getCFGDef('attachments')) {
-            $this->setFiles($this->filesToArray($_FILES,$this->config->loadArray($files)));
+            $this->setFiles($this->filesToArray($_FILES, $this->config->loadArray($files)));
         }
         $this->mailConfig = array(
-            'isHtml' => $this->getCFGDef('isHtml',1),
-            'to' => $this->getCFGDef('to'),
-            'from' => $this->getCFGDef('from',$this->modx->config['emailsender']),
-            'fromName' => $this->getCFGDef('fromName',$this->modx->config['site_name']),
-            'subject' => $this->getCFGDef('subject'),
-            'replyTo' => $this->getCFGDef('replyTo'),
-            'cc' => $this->getCFGDef('cc'),
-            'bcc' => $this->getCFGDef('bcc'),
-            'noemail' => $this->getCFGDef('noemail',false)
+            'isHtml'   => $this->getCFGDef('isHtml', 1),
+            'to'       => $this->getCFGDef('to'),
+            'from'     => $this->getCFGDef('from', $this->modx->config['emailsender']),
+            'fromName' => $this->getCFGDef('fromName', $this->modx->config['site_name']),
+            'subject'  => $this->getCFGDef('subject'),
+            'replyTo'  => $this->getCFGDef('replyTo'),
+            'cc'       => $this->getCFGDef('cc'),
+            'bcc'      => $this->getCFGDef('bcc'),
+            'noemail'  => $this->getCFGDef('noemail', false)
         );
         $lang = $this->lexicon->loadLang('form');
-        if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
+        if ($lang) {
+            $this->log('Lexicon loaded', array('lexicon' => $lang));
+        }
     }
 
     /**
@@ -55,6 +70,7 @@ class Form extends Core
                 $this->log('Submit protection enabled');
             }
         }
+
         return $result;
     }
 
@@ -70,18 +86,22 @@ class Form extends Core
             if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
                 $result = true;
                 $this->addMessage('[%form.submitLimit%] ' .
-                    ($submitLimit >=60
-                    ? round($submitLimit / 60, 0) . ' [%form.minutes%].'
-                    : $submitLimit . ' [%form.seconds%].'
-                ));
+                    ($submitLimit >= 60
+                        ? round($submitLimit / 60, 0) . ' [%form.minutes%].'
+                        : $submitLimit . ' [%form.seconds%].'
+                    ));
                 $this->log('Submit limit enabled');
             } else {
                 unset($_SESSION[$this->formid . '_limit']);
             } //time expired
         }
+
         return $result;
     }
 
+    /**
+     * @return $this
+     */
     public function setSubmitProtection()
     {
         if ($this->getCFGDef('protectSubmit', 1)) {
@@ -90,8 +110,13 @@ class Form extends Core
         if ($this->getCFGDef('submitLimit', 60) > 0) {
             $_SESSION[$this->formid . '_limit'] = time();
         }
+
+        return $this;
     }
 
+    /**
+     * @return array|string
+     */
     public function getFormHash()
     {
         $hash = array();
@@ -114,28 +139,36 @@ class Form extends Core
         if ($hash) {
             $hash = md5(json_encode($hash));
         }
+
         return $hash;
     }
 
-    public function validateForm() {
+    /**
+     * @return bool
+     */
+    public function validateForm()
+    {
         parent::validateForm();
-        if (!$this->getCFGDef('attachments')) return $this->isValid();
-        $validator = $this->getCFGDef('fileValidator','\FormLister\FileValidator');
+        if (!$this->getCFGDef('attachments')) {
+            return $this->isValid();
+        }
+        $validator = $this->getCFGDef('fileValidator', '\FormLister\FileValidator');
         if (!class_exists($validator)) {
             include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/FileValidator.php');
         }
         $validator = new $validator();
         $fields = $this->getFormData('files');
         $rules = $this->getValidationRules('fileRules');
-        $this->fileRules = array_merge($this->fileRules,$rules);
-        $this->log('Prepare to validate files',array('fields'=>$fields,'rules'=>$this->fileRules));
+        $this->fileRules = array_merge($this->fileRules, $rules);
+        $this->log('Prepare to validate files', array('fields' => $fields, 'rules' => $this->fileRules));
         $result = $this->validate($validator, $this->fileRules, $fields);
         if ($result !== true) {
             foreach ($result as $item) {
-                $this->addError($item[0],$item[1],$item[2]);
+                $this->addError($item[0], $item[1], $item[2]);
             }
-            $this->log('File validation errors',$this->getFormData('errors'));
+            $this->log('File validation errors', $this->getFormData('errors'));
         }
+
         return $this->isValid();
     }
 
@@ -150,11 +183,12 @@ class Form extends Core
         $tpl = $this->getCFGDef($tplParam);
         if (empty($tpl) && $tplParam == 'reportTpl') {
             $tpl = '@CODE:';
-            foreach($this->getFormData('fields') as $key => $value) {
-                $tpl .= "[+{$key}+]: [+{$key}.value+]".PHP_EOL;
+            foreach ($this->getFormData('fields') as $key => $value) {
+                $tpl .= "[+{$key}+]: [+{$key}.value+]" . PHP_EOL;
             }
         }
         $out = $this->parseChunk($tpl, $this->prerenderForm(true));
+
         return $out;
     }
 
@@ -162,25 +196,35 @@ class Form extends Core
      * Получает тему письма из шаблона или строки
      * @return mixed|null|string
      */
-    public function renderSubject() {
+    public function renderSubject()
+    {
         $subject = $this->getCFGDef('subjectTpl');
         if (!empty($subject)) {
-            $subject = $this->parseChunk($subject,$this->prerenderForm(true));
+            $subject = $this->parseChunk($subject, $this->prerenderForm(true));
         } else {
             $subject = $this->getCFGDef('subject');
         }
+
         return $subject;
     }
 
-    public function getAttachments() {
+    /**
+     * @return array
+     */
+    public function getAttachments()
+    {
         $attachments = array();
         foreach ($this->getFormData('files') as $files) {
-            if (is_null($files[0])) $files = array($files);
+            if (is_null($files[0])) {
+                $files = array($files);
+            }
             foreach ($files as $file) {
-                if ($file['error'] === 0)
-                    $attachments[] = array('filepath'=>$file['tmp_name'],'filename'=>$file['name']);
+                if ($file['error'] === 0) {
+                    $attachments[] = array('filepath' => $file['tmp_name'], 'filename' => $file['name']);
+                }
             }
         }
+
         return $attachments;
     }
 
@@ -188,21 +232,25 @@ class Form extends Core
      * Оправляет письмо
      * @return mixed
      */
-    public function sendReport() {
-        $mailer = new \Helpers\Mailer($this->modx,array_merge(
+    public function sendReport()
+    {
+        $mailer = new Mailer($this->modx, array_merge(
             $this->mailConfig,
-            array('subject'=>$this->renderSubject())
+            array('subject' => $this->renderSubject())
         ));
         $attachments = $this->getAttachments();
         if ($attachments) {
             $mailer->attachFiles($attachments);
             $field = array();
-            foreach ($attachments as $file) $field[] = $file['filename'];
-            $this->setField('attachments',$field);
+            foreach ($attachments as $file) {
+                $field[] = $file['filename'];
+            }
+            $this->setField('attachments', $field);
         }
         $report = $this->renderReport();
         $out = $mailer->send($report);
-        $this->log('Mail report',array('report'=>$report,'mailer_config'=>$mailer->config,'result'=>$out));
+        $this->log('Mail report', array('report' => $report, 'mailer_config' => $mailer->config, 'result' => $out));
+
         return $out;
     }
 
@@ -210,71 +258,105 @@ class Form extends Core
      * Оправляет копию письма на указанный адрес
      * @return mixed
      */
-    public function sendAutosender() {
+    public function sendAutosender()
+    {
         $to = $this->getCFGDef('autosender');
-        if (!empty($to)) {
-            $mailer = new \Helpers\Mailer($this->modx,array_merge(
-                $this->mailConfig,
-                array(
-                    'subject'=>$this->renderSubject(),
-                    'to' => $to,
-                    'fromName' => $this->getCFGDef('autosenderFromName',$this->modx->config['site_name'])
-                )
-            ));
+        if (empty($to)) {
+            $out = true;
+        } else {
+            $mailer = new Mailer($this->modx, $this->getMailSendConfig($to, 'autosenderFromName'));
             $report = $this->renderReport('automessageTpl');
             $out = $mailer->send($report);
-            $this->log('Mail autosender report',array('report'=>$report,'mailer_config'=>$mailer->config,'result'=>$out));
-            return $out;
+            $this->log('Mail autosender report', array(
+                    'report'        => $report,
+                    'mailer_config' => $mailer->config,
+                    'result'        => $out
+                )
+            );
         }
+
+        return $out;
     }
 
     /**
      * Отправляет копию письма на адрес из поля email
      * @return mixed
      */
-    public function sendCCSender() {
-        $to = $this->getField($this->getCFGDef('ccSenderField','email'));
-        if (!empty($to) && $this->getCFGDef('ccSender',0)) {
-            $mailer = new \Helpers\Mailer($this->modx,array_merge(
-                $this->mailConfig,
-                array(
-                    'subject'=>$this->renderSubject(),
-                    'to' => $to,
-                    'fromName' => $this->getCFGDef('ccSenderFromName',$this->modx->config['site_name'])
-                )
-            ));
-            $report = $this->renderReport('ccSenderTpl');
-            $out = $mailer->send($report);
-            $this->log('Mail CC report',array('report'=>$report,'mailer_config'=>$mailer->config,'result'=>$out));
-            return $out;
+    public function sendCCSender()
+    {
+        $to = $this->getField($this->getCFGDef('ccSenderField', 'email'));
+        if (empty($to)) {
+            $out = true;
+        } else {
+            if ($this->getCFGDef('ccSender', 0)) {
+                $mailer = new Mailer($this->modx, $this->getMailSendConfig($to, 'ccSenderFromName'));
+                $report = $this->renderReport('ccSenderTpl');
+                $out = $mailer->send($report);
+                $this->log('Mail CC report',
+                    array('report' => $report, 'mailer_config' => $mailer->config, 'result' => $out));
+            } else {
+                $out = true;
+            }
         }
+
+        return $out;
     }
 
+    /**
+     * @return null|string
+     */
     public function render()
     {
         if ($this->isSubmitted() && $this->checkSubmitLimit()) {
             return $this->renderForm();
         }
+
         return parent::render();
     }
 
-    public function process() {
-        $this->setField('form.date',date($this->getCFGDef('dateFormat',$this->lexicon->getMsg('form.dateFormat'))));
+    /**
+     *
+     */
+    public function process()
+    {
+        $this->setField('form.date', date($this->getCFGDef('dateFormat', $this->lexicon->getMsg('form.dateFormat'))));
         //если защита сработала, то ничего не отправляем
-        if ($this->checkSubmitProtection()) return;
+        if ($this->checkSubmitProtection()) {
+            return;
+        }
         if ($this->sendReport()) {
-            $this->setSubmitProtection();
             $this->sendCCSender();
             $this->sendAutosender();
-            $this->postProcess();
+            $this->setSubmitProtection()->postProcess();
         } else {
             $this->addMessage($this->lexicon->getMsg('form.form_failed'));
         }
     }
 
-    public function postProcess() {
+    /**
+     *
+     */
+    public function postProcess()
+    {
         $this->setFormStatus(true);
         $this->redirect();
-        $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('form.default_successTpl'));
+        $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('form.default_successTpl'));
+    }
+
+    /**
+     * @param string $to
+     * @param string $fromParam
+     * @return array
+     */
+    public function getMailSendConfig($to, $fromParam)
+    {
+        return array_merge(
+            $this->mailConfig,
+            array(
+                'subject'  => $this->renderSubject(),
+                'to'       => $to,
+                'fromName' => $this->getCFGDef($fromParam, $this->modx->config['site_name'])
+            )
+        );
     }
 }

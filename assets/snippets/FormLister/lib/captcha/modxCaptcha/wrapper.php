@@ -2,8 +2,12 @@
 /**
  * Обертка для работы с классом капчи
  */
-include_once ('modxCaptcha.php');
+include_once('modxCaptcha.php');
+include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 
+/**
+ * Class modxCaptchaWrapper
+ */
 class modxCaptchaWrapper
 {
     /**
@@ -14,29 +18,35 @@ class modxCaptchaWrapper
      * inline
      * connectorDir
      */
-    protected $cfg = null;
+    public $cfg = null;
     protected $captcha = null;
+    protected $lastValue = '';
 
+    /**
+     * modxCaptchaWrapper constructor.
+     * @param $modx
+     * @param $cfg
+     */
     public function __construct($modx, $cfg)
     {
-        $cfg['id'] = isset($cfg['id']) ? $cfg['id'] : 'modx';
-        $cfg['width'] = isset($cfg['width']) ? $cfg['width'] : 100;
-        $cfg['height'] = isset($cfg['height']) ? $cfg['height'] : 60;
-        $cfg['inline'] = isset($cfg['inline']) ? $cfg['inline'] : 1;
-        $cfg['connectorDir'] = isset($cfg['connectorDir']) ? $cfg['connectorDir'] : 'assets/snippets/FormLister/lib/captcha/modxCaptcha/';
         $this->cfg = $cfg;
-        $this->captcha = new \modxCaptcha($modx, $cfg['width'], $cfg['height']);
+        $this->captcha = new \modxCaptcha($modx, \APIhelpers::getkey($this->cfg, 'width', 100),
+            \APIhelpers::getkey($this->cfg, 'width', 60));
     }
 
     /**
-     * Значение капчи
+     * Устанавливает значение капчи
      * @return mixed
      */
-    public function getValue() {
-        $formid = $this->cfg['id'];
-        $out = $_SESSION[$formid.'.captcha'];
-        $_SESSION[$formid.'.captcha'] = $this->captcha->word;
-        return $out;
+    public function init()
+    {
+        $formid = \APIhelpers::getkey($this->cfg, 'id');
+        if ($formid) {
+            $this->lastValue = isset($_SESSION[$formid . '.captcha'])
+                ? $_SESSION[$formid . '.captcha']
+                : $this->captcha->word;
+            $_SESSION[$formid . '.captcha'] = $this->captcha->word;
+        }
     }
 
     /**
@@ -44,14 +54,36 @@ class modxCaptchaWrapper
      * Может быть ссылкой на коннектор (чтобы можно было обновлять c помощью js), может быть сразу картинкой в base64
      * @return string
      */
-    public function getPlaceholder() {
-        if ($this->cfg['inline']) {
+    public function getPlaceholder()
+    {
+        $inline = \APIhelpers::getkey($this->cfg, 'inline', 1);
+        if ($inline) {
             $out = $this->captcha->output_image(true);
         } else {
-            $out = MODX_BASE_URL . $this->cfg['connectorDir'] . 'connector.php?formid=' . $this->cfg['id'];
-            $out .= '&w=' . $this->cfg['width'];
-            $out .= '&h=' . $this->cfg['height'];
+            $connectorDir = \APIhelpers::getkey($this->cfg, 'connectorDir',
+                'assets/snippets/FormLister/lib/captcha/modxCaptcha/');
+            $out = MODX_BASE_URL . $connectorDir . 'connector.php?formid=' . \APIhelpers::getkey($this->cfg, 'id',
+                    'modx');
+            $out .= '&w=' . \APIhelpers::getkey($this->cfg, 'width', 100);
+            $out .= '&h=' . \APIhelpers::getkey($this->cfg, 'width', 60);
         }
+
+        return $out;
+    }
+
+    /**
+     * @param $value
+     * @return bool
+     */
+    public static function validate($FormLister, $value, $captcha)
+    {
+        if (empty($value)) {
+            $out = \APIhelpers::getkey($captcha->cfg, 'errorEmptyCode', 'Введите проверочный код');
+        } else {
+            $out = $value == $captcha->lastValue ? true : \APIhelpers::getkey($captcha->cfg,
+                'errorCodeFailed', 'Неверный проверочный код');
+        }
+
         return $out;
     }
 }

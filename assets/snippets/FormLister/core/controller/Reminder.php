@@ -3,11 +3,14 @@
 /**
  * Контроллер для восстановления паролей
  */
-if (!defined('MODX_BASE_PATH')) die();
+include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
 
-include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
-
-class Reminder extends Form {
+/**
+ * Class Reminder
+ * @package FormLister
+ */
+class Reminder extends Form
+{
     protected $user = null;
 
     protected $mode = 'hash';
@@ -15,18 +18,25 @@ class Reminder extends Form {
     protected $uidField = '';
     protected $hashField = '';
 
-    public function __construct(\DocumentParser $modx, array $cfg)
+    /**
+     * Reminder constructor.
+     * @param \DocumentParser $modx
+     * @param array $cfg
+     */
+    public function __construct(\DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
         $this->user = $this->loadModel(
-            $this->getCFGDef('model','\modUsers'),
-            $this->getCFGDef('modelPath','assets/lib/MODxAPI/modUsers.php')
+            $this->getCFGDef('model', '\modUsers'),
+            $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
         );
         $lang = $this->lexicon->loadLang('reminder');
-        if ($lang) $this->log('Lexicon loaded',array('lexicon'=>$lang));
-        $hashField = $this->getCFGDef('hashField','hash');
-        $uidField = $this->getCFGDef('uidField','id');
-        $userField = $this->getCFGDef('userField','email');
+        if ($lang) {
+            $this->log('Lexicon loaded', array('lexicon' => $lang));
+        }
+        $hashField = $this->getCFGDef('hashField', 'hash');
+        $uidField = $this->getCFGDef('uidField', 'id');
+        $userField = $this->getCFGDef('userField', 'email');
         $this->hashField = $hashField;
         $this->uidField = $uidField;
         $this->userField = $userField;
@@ -34,33 +44,36 @@ class Reminder extends Form {
             $this->setFields($_REQUEST);
             $this->mode = 'reset';
             $this->config->setConfig(array(
-                'rules' => $this->getCFGDef('resetRules'),
-                'reportTpl' => $this->getCFGDef('resetReportTpl'),
+                'rules'       => $this->getCFGDef('resetRules'),
+                'reportTpl'   => $this->getCFGDef('resetReportTpl'),
                 'submitLimit' => 0
             ));
         }
-        $this->log('Reminder mode is '.$this->mode);
+        $this->log('Reminder mode is ' . $this->mode);
     }
 
-    public function render() {
+    /**
+     * @return null|string
+     */
+    public function render()
+    {
         if ($uid = $this->modx->getLoginUserID('web')) {
             $this->redirect('exitTo');
-            $this->renderTpl = $this->getCFGDef('skipTpl',$this->lexicon->getMsg('reminder.default_skipTpl'));
-            return parent::render();
-        };
-        $out = '';
-        switch ($this->mode) {
-            case 'hash':
-                $out = $this->renderHash();
-                break;
-            case 'reset':
-                $out = $this->renderReset();
-                break;
+            $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('reminder.default_skipTpl'));
+        } else {
+            if ($this->mode == 'reset') {
+                $this->renderReset();
+            }
         }
-        if ($out) return parent::render();
+
+        return parent::render();
     }
 
-    public function renderReset() {
+    /**
+     * @return bool
+     */
+    public function renderReset()
+    {
         $hash = $this->getField($this->hashField);
         $uid = $this->getField($this->uidField);
         if ($hash && $hash == $this->getUserHash($uid)) {
@@ -71,13 +84,12 @@ class Reminder extends Form {
                 $this->process();
             }
         }
-        return true;
     }
 
-    public function renderHash() {
-        return true;
-    }
-
+    /**
+     * @param string $param
+     * @return array|mixed|\xNop
+     */
     public function getValidationRules($param = 'rules')
     {
         $rules = parent::getValidationRules($param);
@@ -86,6 +98,7 @@ class Reminder extends Form {
                 $rules['repeatPassword']['equals']['params'] = $this->getField('password');
             }
         }
+
         return $rules;
     }
 
@@ -93,17 +106,23 @@ class Reminder extends Form {
      * @param $uid
      * @return bool|string
      */
-    public function getUserHash($uid) {
+    public function getUserHash($uid)
+    {
         if (is_null($this->user)) {
             $hash = false;
         } else {
             $userdata = $this->user->edit($uid)->toArray();
             $hash = $userdata['id'] ? md5(json_encode($userdata)) : false;
         }
+
         return $hash;
     }
 
-    public function process() {
+    /**
+     *
+     */
+    public function process()
+    {
         switch ($this->mode) {
             /**
              * Задаем хэш, отправляем пользователю ссылку для восстановления пароля
@@ -112,8 +131,9 @@ class Reminder extends Form {
                 $uid = $this->getField($this->userField);
                 if ($hash = $this->getUserHash($uid)) {
                     $this->setFields($this->user->toArray());
-                    $url = $this->getCFGDef('resetTo',$this->modx->documentIdentifier);
-                    $this->setField('reset.url',$this->modx->makeUrl($url,"","&{$this->uidField}={$this->getField($this->uidField)}&{$this->hashField}={$hash}",'full'));
+                    $url = $this->getCFGDef('resetTo', $this->modx->documentIdentifier);
+                    $this->setField('reset.url', $this->modx->makeUrl($url, "",
+                        "&{$this->uidField}={$this->getField($this->uidField)}&{$this->hashField}={$hash}", 'full'));
                     $this->mailConfig['to'] = $this->user->edit($uid)->get('email');
                     parent::process();
                 } else {
@@ -129,14 +149,16 @@ class Reminder extends Form {
                 $uid = $this->getField($this->uidField);
                 $hash = $this->getField($this->hashField);
                 if ($hash && $hash == $this->getUserHash($uid)) {
-                    if ($this->getField('password') == '' && !isset($this->rules['password'])) $this->setField('password',\APIhelpers::genPass($this->getCFGDef('passwordLength',6)));
-                    $fields = $this->filterFields($this->getFormData('fields'),array('password'));
+                    if ($this->getField('password') == '' && !isset($this->rules['password'])) {
+                        $this->setField('password', \APIhelpers::genPass($this->getCFGDef('passwordLength', 6)));
+                    }
+                    $fields = $this->filterFields($this->getFormData('fields'), array($this->userField,'password'));
                     $result = $this->user->edit($uid)->fromArray($fields)->save(true);
-                    $this->log('Update password',array('data'=>$fields,'result'=>$result));
+                    $this->log('Update password', array('data' => $fields, 'result' => $result));
                     if (!$result) {
                         $this->addMessage($this->lexicon->getMsg('reminder.update_failed'));
                     } else {
-                        $this->setField('newpassword',$this->getField('password'));
+                        $this->setField('newpassword', $this->getField('password'));
                         $this->setFields($this->user->toArray());
                         if ($this->getCFGDef('resetReportTpl')) {
                             $this->mailConfig['to'] = $this->getField('email');
@@ -151,7 +173,11 @@ class Reminder extends Form {
         }
     }
 
-    public function postProcess() {
+    /**
+     *
+     */
+    public function postProcess()
+    {
         $this->setFormStatus(true);
         switch ($this->mode) {
             case "hash":
