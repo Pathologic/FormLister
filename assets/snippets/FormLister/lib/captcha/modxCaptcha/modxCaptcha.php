@@ -26,17 +26,17 @@ class modxCaptcha
         $this->dir_noise = MODX_MANAGER_PATH . 'includes/' . $this->dir_noise;
         $this->im_width = $width;
         $this->im_height = $height;
-        $this->word = $this->pick_word();
+        $this->word = $this->pickWord();
     }
 
     /**
      * @param bool $inline
      * @return string
      */
-    public function output_image($inline = false)
+    public function outputImage($inline = false)
     {
         /* output the image as jpeg */
-        $this->draw_image();
+        $this->drawImage();
         ob_clean();
         if ($inline) {
             ob_start();
@@ -54,7 +54,7 @@ class modxCaptcha
     /**
      * @return string
      */
-    public function pick_word()
+    public function pickWord()
     {
         // set default words
         $words = "MODX,Access,Better,BitCode,Chunk,Cache,Desc,Design,Excell,Enjoy,URLs,TechView,Gerald,Griff,Humphrey,Holiday,Intel,Integration,Joystick,Join(),Oscope,Genetic,Light,Likeness,Marit,Maaike,Niche,Netherlands,Ordinance,Oscillo,Parser,Phusion,Query,Question,Regalia,Righteous,Snippet,Sentinel,Template,Thespian,Unity,Enterprise,Verily,Veri,Website,WideWeb,Yap,Yellow,Zebra,Zygote";
@@ -70,7 +70,7 @@ class modxCaptcha
     /**
      * @return resource
      */
-    private function draw_text()
+    private function drawText()
     {
         $dir = dir($this->dir_font);
         $fontstmp = array();
@@ -129,7 +129,10 @@ class modxCaptcha
     }
 
 
-    private function draw_image()
+    /**
+     * @return null|resource
+     */
+    private function drawImage()
     {
 
         /* pick one background image randomly from image directory */
@@ -156,7 +159,7 @@ class modxCaptcha
         /* put text image into background image */
         imagecopymerge(
             $this->im,
-            $this->draw_text(),
+            $this->drawText(),
             0, 0, 0, 0,
             $this->im_width,
             $this->im_height,
