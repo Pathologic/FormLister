@@ -137,7 +137,7 @@ class modxCaptcha
 
         /* create "noise" background image from your image stock*/
 
-        $noise_img = @imagecreatefromjpeg($img_file);
+        $noise_img = imagecreatefromjpeg($img_file);
         $noise_width = imagesx($noise_img);
         $noise_height = imagesy($noise_img);
 
