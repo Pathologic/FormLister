@@ -87,9 +87,9 @@ class smsCaptchaWrapper
                     'Код авторизации уже использовался');
             }
             $out = true;
-            if (method_exists($FormLister, 'setField')) {
-                $FormLister->setField('captcha.phone', $sms->get('phone'));
-            }
+
+            $FormLister->setField('captcha.phone', $sms->get('phone'));
+
         }
 
         return $out;

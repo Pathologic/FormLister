@@ -36,7 +36,7 @@ class Login extends Core
      */
     public function render()
     {
-        if ($uid = $this->modx->getLoginUserID('web')) {
+        if ($this->modx->getLoginUserID('web')) {
             $this->redirect();
             $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('login.default_skipTpl'));
             $this->setFormStatus(true);
