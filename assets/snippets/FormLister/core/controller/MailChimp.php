@@ -1,39 +1,55 @@
 <?php namespace FormLister;
 
-if (!defined('MODX_BASE_PATH')) {die();}
-include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
-include_once (MODX_BASE_PATH . 'assets/snippets/FormLister/lib/MailChimp/MailChimp.php');
+include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/core/FormLister.abstract.php');
+include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/MailChimp/MailChimp.php');
+
+/**
+ * Class MailChimp
+ * @package FormLister
+ */
 class MailChimp extends Core
 {
-    public function __construct(\DocumentParser $modx, array $cfg)
+    /**
+     * MailChimp constructor.
+     * @param \DocumentParser $modx
+     * @param array $cfg
+     */
+    public function __construct(\DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
         $this->lexicon->loadLang('mailchimp');
     }
 
-    public function process() {
+    /**
+     * @return bool
+     */
+    public function process()
+    {
         $errorMessage = $this->lexicon->getMsg('mc.subscription_failed');
         if (!$this->getCFGDef('apiKey')) {
             $this->addMessage($errorMessage);
+
             return false;
         }
         $MailChimp = new \DrewM\MailChimp\MailChimp($this->getCFGDef('apiKey'));
         $list_id = $this->getCFGDef('listId');
         if (!$list_id) {
             $this->addMessage($errorMessage);
+
             return false;
         }
-        
+
         $MailChimp->post("lists/$list_id/members", array(
-                'email_address' => $this->getField('email'),
-                'merge_fields' => array('NAME'=>$this->getField('name')),
-                'status'        => 'pending',
+            'email_address' => $this->getField('email'),
+            'merge_fields'  => array('NAME' => $this->getField('name')),
+            'status'        => 'pending',
         ));
-        if(!$MailChimp->getLastError()) {
+        if (!$MailChimp->getLastError()) {
             $this->addMessage($errorMessage);
         } else {
             $this->setFormStatus(true);
-            $this->renderTpl = $this->getCFGDef('successTpl',$this->lexicon->getMsg('mc.default_successTpl'));
+            $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('mc.default_successTpl'));
+
             return true;
         }
     }

@@ -1,8 +1,11 @@
 <?php namespace Helpers;
 
-if (!defined('MODX_BASE_PATH')) {die();}
-include_once (MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
+include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 
+/**
+ * Class Lexicon
+ * @package Helpers
+ */
 class Lexicon
 {
     protected $modx = null;
@@ -14,7 +17,8 @@ class Lexicon
      * @param \DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct($modx, $cfg = array()) {
+    public function __construct($modx, $cfg = array())
+    {
         $this->modx = $modx;
         $this->cfg = $cfg;
     }
@@ -29,7 +33,8 @@ class Lexicon
      */
     public function loadLang($name = 'core', $lang = '', $langDir = '')
     {
-        $langDir = empty($langDir) ? MODX_BASE_PATH . \APIhelpers::getkey($this->cfg, 'langDir', 'lang/') : MODX_BASE_PATH . $langDir;
+        $langDir = empty($langDir) ? MODX_BASE_PATH . \APIhelpers::getkey($this->cfg, 'langDir',
+                'lang/') : MODX_BASE_PATH . $langDir;
         if (empty($lang)) {
             $lang = \APIhelpers::getkey($this->cfg, 'lang', $this->modx->config['manager_language']);
         }
@@ -47,6 +52,7 @@ class Lexicon
                 }
             }
         }
+
         return $this->_lang;
     }
 
@@ -56,10 +62,12 @@ class Lexicon
      * @param $lang
      * @return array
      */
-    public function fromArray($lang) {
+    public function fromArray($lang)
+    {
         if (is_array($lang) && $lang) {
             $this->_lang = array_merge($this->_lang, $lang);
         }
+
         return $this->_lang;
     }
 
@@ -73,12 +81,13 @@ class Lexicon
     public function getMsg($name, $def = '')
     {
         $out = \APIhelpers::getkey($this->_lang, $name, $def);
-        if(class_exists('evoBabel', false) && isset($this->modx->snippetCache['lang'])){
+        if (class_exists('evoBabel', false) && isset($this->modx->snippetCache['lang'])) {
             $msg = $this->modx->runSnippet('lang', array('a' => $name));
-            if(!empty($msg)){
+            if (!empty($msg)) {
                 $out = $msg;
             }
         }
+
         return $out;
     }
 
@@ -101,10 +110,15 @@ class Lexicon
         } else {
             $tpl = '';
         }
+
         return $tpl;
     }
 
-    public function isReady() {
+    /**
+     * @return bool
+     */
+    public function isReady()
+    {
         return (bool)$this->_lang;
     }
 }
