@@ -9,9 +9,6 @@
  * @var array $params
  */
 
-if (!defined('MODX_BASE_PATH')) {
-    die('HACK???');
-}
 if (!isset($formid)) return;
 $out = '';
 $FLDir = MODX_BASE_PATH . 'assets/snippets/FormLister/';
@@ -44,4 +41,5 @@ if ($FormLister->getFormStatus() && isset($saveObject) && is_scalar($saveObject)
 if (!is_null($FormLister->debug)) {
     $FormLister->debug->saveLog();
 }
+
 return $out;
