@@ -6,7 +6,7 @@
  * Date: 06.02.2016
  * Time: 0:11
  */
-class modxCaptcha
+class ModxCaptcha
 {
     protected $modx = null;
 

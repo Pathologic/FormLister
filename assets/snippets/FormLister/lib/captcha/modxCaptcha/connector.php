@@ -11,6 +11,6 @@ $formid = (string) $_REQUEST['formid'];
 include_once ('modxCaptcha.php');
 $width = isset($_REQUEST['w']) ? (int) $_REQUEST['w'] : 200;
 $height = isset($_REQUEST['h']) ? (int) $_REQUEST['h'] : 160;
-$captcha = new modxCaptcha($modx, $width, $height);
+$captcha = new ModxCaptcha($modx, $width, $height);
 $_SESSION[$formid.'.captcha'] = $captcha->word;
 $captcha->outputImage();

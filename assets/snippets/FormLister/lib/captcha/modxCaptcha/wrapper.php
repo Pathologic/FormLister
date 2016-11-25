@@ -30,7 +30,7 @@ class ModxCaptchaWrapper
     public function __construct($modx, $cfg)
     {
         $this->cfg = $cfg;
-        $this->captcha = new \modxCaptcha($modx, \APIhelpers::getkey($this->cfg, 'width', 100),
+        $this->captcha = new \ModxCaptcha($modx, \APIhelpers::getkey($this->cfg, 'width', 100),
             \APIhelpers::getkey($this->cfg, 'width', 60));
     }
 

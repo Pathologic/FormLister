@@ -4,7 +4,7 @@ include_once(MODX_BASE_PATH . 'assets/lib/MODxAPI/autoTable.abstract.php');
 /**
  * Class sms
  */
-class sms extends \autoTable
+class SmsModel extends \autoTable
 {
     protected $table = 'smscaptcha';
     protected $default_field = array(

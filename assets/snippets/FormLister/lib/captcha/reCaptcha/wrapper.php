@@ -13,6 +13,7 @@ class ReCaptchaWrapper
      * id, secretKey, siteKey, size, theme, tabIndex, type
      */
     public $cfg = null;
+    protected $modx = null;
 
     /**
      * modxCaptchaWrapper constructor.
@@ -22,6 +23,7 @@ class ReCaptchaWrapper
     public function __construct($modx, $cfg)
     {
         $this->cfg = $cfg;
+        $this->modx = $modx;
     }
 
     /**

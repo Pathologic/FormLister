@@ -61,7 +61,7 @@ class SmsCaptchaWrapper
                 'Получите код авторизации');
         }
 
-        $sms = $FormLister->loadModel('sms', 'assets/snippets/FormLister/lib/captcha/smsCaptcha/model.php');
+        $sms = $FormLister->loadModel('SmsModel', 'assets/snippets/FormLister/lib/captcha/smsCaptcha/model.php');
 
         if (is_null($sms->getData($_SESSION[$id . '.smscaptcha'], $id)->getID())) {
 
