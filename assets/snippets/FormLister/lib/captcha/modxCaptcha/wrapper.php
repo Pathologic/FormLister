@@ -8,7 +8,7 @@ include_once(MODX_BASE_PATH . 'assets/lib/APIHelpers.class.php');
 /**
  * Class modxCaptchaWrapper
  */
-class modxCaptchaWrapper
+class ModxCaptchaWrapper
 {
     /**
      * @var array $cfg
@@ -58,7 +58,7 @@ class modxCaptchaWrapper
     {
         $inline = \APIhelpers::getkey($this->cfg, 'inline', 1);
         if ($inline) {
-            $out = $this->captcha->output_image(true);
+            $out = $this->captcha->outputImage(true);
         } else {
             $connectorDir = \APIhelpers::getkey($this->cfg, 'connectorDir',
                 'assets/snippets/FormLister/lib/captcha/modxCaptcha/');
@@ -72,10 +72,12 @@ class modxCaptchaWrapper
     }
 
     /**
+     * @param \FormLister\Core $FormLister
      * @param $value
-     * @return bool
+     * @param \ModxCaptchaWrapper $captcha
+     * @return bool|string
      */
-    public static function validate($FormLister, $value, $captcha)
+    public static function validate(\FormLister\Core $FormLister, $value, \ModxCaptchaWrapper $captcha)
     {
         if (empty($value)) {
             $out = \APIhelpers::getkey($captcha->cfg, 'errorEmptyCode', 'Введите проверочный код');
@@ -83,6 +85,7 @@ class modxCaptchaWrapper
             $out = $value == $captcha->lastValue ? true : \APIhelpers::getkey($captcha->cfg,
                 'errorCodeFailed', 'Неверный проверочный код');
         }
+        $FormLister->log('Validate captcha value '.$value.' against '.$captcha->lastValue);
 
         return $out;
     }

@@ -6,7 +6,7 @@
  * Date: 19.11.2016
  * Time: 0:27
  */
-class reCaptchaWrapper
+class ReCaptchaWrapper
 {
     /**
      * @var array $cfg
@@ -56,12 +56,12 @@ class reCaptchaWrapper
     }
 
     /**
-     * @param $FormLister
+     * @param \FormLister\Core $FormLister
      * @param $value
-     * @param $captcha
-     * @return bool
+     * @param ReCaptchaWrapper $captcha
+     * @return bool|string
      */
-    public static function validate($FormLister, $value, $captcha)
+    public static function validate(\FormLister\Core $FormLister, $value, \ReCaptchaWrapper $captcha)
     {
         $secretKey = \APIhelpers::getkey($captcha->cfg, 'secretKey');
         $url = "https://www.google.com/recaptcha/api/siteverify?secret=" . $secretKey . "&response=" . $value . "&remoteip=" . \APIhelpers::getUserIP();
@@ -79,8 +79,9 @@ class reCaptchaWrapper
             $out = $response['success'];
         }
         if (!$out) {
-            $out = \APIhelpers::getkey($FormLister->captcha->cfg, 'errorCodeFailed', 'Вы не прошли проверку');
+            $out = \APIhelpers::getkey($captcha->cfg, 'errorCodeFailed', 'Вы не прошли проверку');
         }
+        $FormLister->log('reCaptcha validation result: '.$out);
 
         return $out;
     }

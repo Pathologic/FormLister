@@ -6,7 +6,7 @@
  * Date: 19.11.2016
  * Time: 0:27
  */
-class smsCaptchaWrapper
+class SmsCaptchaWrapper
 {
     /**
      * @var null
@@ -35,7 +35,6 @@ class smsCaptchaWrapper
 
     /**
      * Плейсхолдер капчи для вывода в шаблон
-     * Может быть ссылкой на коннектор (чтобы можно было обновлять c помощью js), может быть сразу картинкой в base64
      * @return string
      */
     public function getPlaceholder()
@@ -44,10 +43,12 @@ class smsCaptchaWrapper
     }
 
     /**
+     * @param \FormLister\Core $FormLister
      * @param $value
-     * @return bool
+     * @param SmsCaptchaWrapper $captcha
+     * @return bool|mixed
      */
-    public static function validate($FormLister, $value, $captcha)
+    public static function validate(\FormLister\Core $FormLister, $value, \SmsCaptchaWrapper $captcha)
     {
         $id = \APIhelpers::getkey($captcha->cfg, 'id');
         if (empty($value)) {
@@ -89,8 +90,8 @@ class smsCaptchaWrapper
             $out = true;
 
             $FormLister->setField('captcha.phone', $sms->get('phone'));
-
         }
+        $FormLister->log('Validate captcha value '.$value.' against '.$sms->get('code'));
 
         return $out;
     }

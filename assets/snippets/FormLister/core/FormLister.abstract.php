@@ -864,7 +864,7 @@ abstract class Core
             $wrapper = MODX_BASE_PATH . "assets/snippets/FormLister/lib/captcha/{$captcha}/wrapper.php";
             if ($this->fs->checkFile($wrapper)) {
                 include_once($wrapper);
-                $wrapper = $captcha . 'Wrapper';
+                $wrapper = ucfirst($captcha . 'Wrapper');
                 /** @var \modxCaptchaWrapper $captcha */
                 $cfg = $this->config->loadArray($this->getCFGDef('captchaParams',array()));
                 $cfg['id'] = $this->getFormId();

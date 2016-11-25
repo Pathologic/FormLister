@@ -1,6 +1,4 @@
-<?php
-
-namespace DrewM\MailChimp;
+<?php namespace DrewM\MailChimp;
 
 /**
  * Super-simple, minimum abstraction MailChimp API v3 wrapper
@@ -44,7 +42,7 @@ class MailChimp
      * @param string $batch_id  Optional ID of an existing batch, if you need to check its status for example.
      * @return Batch            New Batch object.
      */
-    public function new_batch($batch_id=null)
+    public function newBatch($batch_id=null)
     {
         return new Batch($this, $batch_id);
     }
@@ -54,7 +52,7 @@ class MailChimp
      * @param   string  $email  The subscriber's email address
      * @return  string          Hashed version of the input
      */
-    public function subscriberHash($email)
+    public function getSubscriberHash($email)
     {
         return md5(strtolower($email));
     }
