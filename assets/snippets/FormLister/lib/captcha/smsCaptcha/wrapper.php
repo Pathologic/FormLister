@@ -13,6 +13,7 @@ class SmsCaptchaWrapper
      * id, errorEmptyCode, errorCodeRequired, errorCodeFailed, errorCodeExpired, errorCodeUsed
      */
     public $cfg = null;
+    protected $modx = null;
 
     /**
      * modxCaptchaWrapper constructor.
@@ -22,6 +23,7 @@ class SmsCaptchaWrapper
     public function __construct($modx, $cfg)
     {
         $this->cfg = $cfg;
+        $this->modx = $modx;
     }
 
     /**
