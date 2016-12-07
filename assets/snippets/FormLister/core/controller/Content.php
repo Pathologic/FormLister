@@ -54,6 +54,7 @@ class Content extends Form
                 $this->mode = 'edit';
             }
         }
+        $data = array();
         if ($this->mode == 'edit') {
             $data = $this->content->edit($this->id);
             $this->mailConfig['noemail'] = 1;
@@ -64,7 +65,7 @@ class Content extends Form
             }
             $this->config->setConfig(array(
                 'defaultsSources' => $defaultsSources,
-                'contentdata'     => $data
+                'contentdata'     => $data->toArray()
             ));
         }
         $this->log('Content mode is ' . $this->mode, array('data' => $data));
@@ -122,6 +123,10 @@ class Content extends Form
                     $this->renderTpl = $this->getCFGDef('badOwnerTpl',
                         $this->lexicon->getMsg('edit.default_badOwnerTpl'));
                 } else {
+                    if (!$this->isSubmitted()) {
+                        $fields = $this->getContentFields();
+                        $this->setFields($fields);
+                    }
                     return parent::render();
                 }
             } else {
@@ -195,7 +200,16 @@ class Content extends Form
     {
         $this->setFormStatus(true);
         if ($this->mode == 'create') {
-            $this->redirect();
+            if ($this->getCFGDef('editAfterCreate',0)) {
+                $idField = $this->getCFGDef('idField');
+                $this->redirect('redirectTo',
+                    array(
+                        $idField => $this->getField($idField)
+                    )
+                );
+            } else {
+                $this->redirect();
+            }
             $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('create.default_successTpl'));
         } else {
             $this->addMessage($this->lexicon->getMsg('edit.update_success'));

@@ -270,6 +270,15 @@ abstract class Core
                             break;
                         }
                     }
+                //Загружает поля документа
+                case 'document':
+                    $_source[0] = '\modResource';
+                    if (empty($_source[1])) {
+                        $_source[1] = $this->modx->documentIdentifier;
+                        if (!$_source[1]) {
+                            break;
+                        }
+                    }
                 //Загружает данные из произвольной модели MODxAPI
                 default:
                     if (!empty($_source[0])) {
@@ -413,7 +422,7 @@ abstract class Core
     public function renderForm()
     {
         $api = $this->getCFGDef('api', 0);
-        $plh = $this->getCFGDef('skipPrerender',0) ? $this->getFormData('fields') : $this->prerenderForm();
+        $plh = $this->getCFGDef('skipPrerender', 0) ? $this->getFormData('fields') : $this->prerenderForm();
         $this->log('Render output', array('template' => $this->renderTpl, 'data' => $plh));
         $form = $this->parseChunk($this->renderTpl, $plh);
         /*
@@ -841,9 +850,9 @@ abstract class Core
             ->setTemplatePath($this->getCFGDef('templatePath'))
             ->setTemplateExtension($this->getCFGDef('templateExtension'))
             ->setTwigTemplateVars(array(
-                'FormLister' => $this,
-                'errors' => $this->getFormData('errors'),
-                'messages' => $this->getFormData('messages'),
+                    'FormLister' => $this,
+                    'errors'     => $this->getFormData('errors'),
+                    'messages'   => $this->getFormData('messages'),
                 )
             );
         $out = $DLTemplate->parseChunk($name, $data, $parseDocumentSource);
@@ -860,20 +869,20 @@ abstract class Core
     public function initCaptcha()
     {
         if ($captcha = $this->getCFGDef('captcha')) {
-            $captcha = preg_replace('/[^a-zA-Z]/','',$captcha);
+            $captcha = preg_replace('/[^a-zA-Z]/', '', $captcha);
             $wrapper = MODX_BASE_PATH . "assets/snippets/FormLister/lib/captcha/{$captcha}/wrapper.php";
             if ($this->fs->checkFile($wrapper)) {
                 include_once($wrapper);
                 $wrapper = ucfirst($captcha . 'Wrapper');
                 /** @var \modxCaptchaWrapper $captcha */
-                $cfg = $this->config->loadArray($this->getCFGDef('captchaParams',array()));
+                $cfg = $this->config->loadArray($this->getCFGDef('captchaParams', array()));
                 $cfg['id'] = $this->getFormId();
                 $captcha = new $wrapper ($this->modx, $cfg);
                 $captcha->init();
                 $this->rules[$this->getCFGDef('captchaField', 'vericode')] = array(
-                    "captcha"   => array(
+                    "captcha" => array(
                         "function" => "{$wrapper}::validate",
-                        "params" => array($captcha)
+                        "params"   => array($captcha)
                     )
                 );
                 $this->captcha = $captcha;
@@ -935,7 +944,7 @@ abstract class Core
     /**
      * @param $name
      * @param array $params
-     * @return $this|void
+     * @return $this
      */
     public function callPrepare($name, $params = array())
     {
@@ -951,20 +960,26 @@ abstract class Core
     }
 
     /**
-     * @param string $param имя параметра с id документа для редиректа
      * В api-режиме редирект не выполняется, но ссылка доступна в formData
+     * @param string $param имя параметра с id документа для редиректа
+     * @param array $_query
      */
-    public function redirect($param = 'redirectTo')
+    public function redirect($param = 'redirectTo', $_query = array())
     {
         if ($redirect = $this->getCFGDef($param, 0)) {
             $redirect = $this->config->loadArray($redirect);
             $query = $header = '';
             if (is_array($redirect)) {
-                if (isset($redirect['query'])) $query = http_build_query($query);
-                if (isset($redirect['header'])) $header = $redirect['header'];
+                if (isset($redirect['query']) && is_array($redirect['query'])) {
+                    $query = http_build_query(array_merge($redirect['query'], $_query));
+                }
+                if (isset($redirect['header'])) {
+                    $header = $redirect['header'];
+                }
                 $page = isset($redirect['page']) ? $redirect['page'] : 0;
             } else {
                 $page = $redirect;
+                $query = http_build_query($_query);
             }
 
             $redirect = $this->modx->makeUrl($page, '', $query, 'full');
@@ -1084,7 +1099,8 @@ abstract class Core
      * @param $field
      * @return array|bool
      */
-    public function getErrorMessage($field) {
+    public function getErrorMessage($field)
+    {
         $out = array();
         if (!empty($field && isset($this->formData['errors'][$field]) && is_array($this->formData['errors'][$field]))) {
             $out = array_values($this->formData['errors'][$field]);
