@@ -109,6 +109,7 @@ abstract class Core
     {
         $this->modx = $modx;
         $this->config = new Config();
+        $this->config->setPath(dirname(__DIR__));
         $this->fs = FS::getInstance();
         if (isset($cfg['config'])) {
             $this->config->loadConfig($cfg['config']);
