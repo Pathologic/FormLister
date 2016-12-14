@@ -1103,7 +1103,7 @@ abstract class Core
     public function getErrorMessage($field)
     {
         $out = array();
-        if (!empty($field && isset($this->formData['errors'][$field]) && is_array($this->formData['errors'][$field]))) {
+        if (!empty($field) && isset($this->formData['errors'][$field]) && is_array($this->formData['errors'][$field])) {
             $out = array_values($this->formData['errors'][$field]);
         }
 
