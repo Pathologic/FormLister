@@ -1050,7 +1050,7 @@ abstract class Core
             $out = new $model($this->modx);
         } else {
             if ($path && $this->fs->checkFile($path)) {
-                include_once($path);
+                include_once(MODX_BASE_PATH . $this->fs->relativePath($path));
                 $out = new $model($this->modx);
             }
         }
@@ -1097,8 +1097,8 @@ abstract class Core
 
     /**
      * Возвращает сообщения об ошибках для указанного поля
-     * @param $field
-     * @return array|bool
+     * @param string $field
+     * @return array
      */
     public function getErrorMessage($field)
     {
