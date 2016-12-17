@@ -262,22 +262,25 @@ abstract class Core
                         }
                     }
                     break;
-                //Загружает данные авторизованного пользователя, user:web:user
                 case 'user':
-                    if (!empty($_source[1])) {
-                        $_source[0] = '\modUsers';
-                        $_source[1] = $this->modx->getLoginUserID($_source[1]);
-                        if (!$_source[1]) {
-                            break;
-                        }
-                    }
-                //Загружает поля документа
                 case 'document':
-                    $_source[0] = '\modResource';
-                    if (empty($_source[1])) {
-                        $_source[1] = $this->modx->documentIdentifier;
-                        if (!$_source[1]) {
-                            break;
+                    //Загружает поля документа
+                    if ($_source[0] == 'document') {
+                        $_source[0] = '\modResource';
+                        if (empty($_source[1])) {
+                            $_source[1] = $this->modx->documentIdentifier;
+                            if (!$_source[1]) {
+                                break;
+                            }
+                        }
+                    } else {
+                    //Загружает данные авторизованного пользователя, user:web:user
+                        if (!empty($_source[1])) {
+                            $_source[0] = '\modUsers';
+                            $_source[1] = $this->modx->getLoginUserID($_source[1]);
+                            if (!$_source[1]) {
+                                break;
+                            }
                         }
                     }
                 //Загружает данные из произвольной модели MODxAPI
@@ -343,7 +346,7 @@ abstract class Core
             $allowed = !empty($allowedFields) ? in_array($key, $allowedFields) : true;
             //поле входит в список запрещенных полей
             $forbidden = !empty($forbiddenFields) ? in_array($key, $forbiddenFields) : false;
-            if (($allowed && !$forbidden) && ($value !== '')) {
+            if (($allowed && !$forbidden) && ($value !== '' || $this->getCFGDef('allowEmptyFields',1))) {
                 $out[$key] = $value;
             }
         }
