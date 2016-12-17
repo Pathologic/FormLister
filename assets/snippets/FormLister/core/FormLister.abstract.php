@@ -863,7 +863,12 @@ abstract class Core
         if ($this->lexicon->isReady()) {
             $out = $this->lexicon->parseLang($out);
         }
-
+        if ($this->getCFGDef('removeEmptyPlaceholders',0)) {
+            preg_match_all('~\[(\+|\*|\(|%)([^:\+\[\]]+)([^\[\]]*?)(\1|\)|%)\]~s', $out, $matches);
+            if ($matches[0]) {
+                $out = str_replace($matches[0], '', $out);
+            }
+        }
         return $out;
     }
 
