@@ -752,15 +752,14 @@ abstract class Core
             $value = $this->getField($field);
             if ($value === '') {
                 continue;
-            } elseif (is_array($value)) {
+            } 
+            $value = explode('||', $value);
+            if (is_array($value)) {
                 foreach ($value as $_value) {
                     $plh["s.{$field}.{$_value}"] = 'selected';
                     $plh["c.{$field}.{$_value}"] = 'checked';
                 }
-            } else {
-                $plh["s.{$field}.{$value}"] = 'selected';
-                $plh["c.{$field}.{$value}"] = 'checked';
-            }
+            } 
         }
 
         return $plh;
