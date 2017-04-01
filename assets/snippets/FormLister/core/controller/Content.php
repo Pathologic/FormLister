@@ -228,6 +228,9 @@ class Content extends Form
         }
         foreach ($contentFields as $field => $formField) {
             $formField = $this->getField($formField);
+            if (is_array($formField)){ 
+                $formField = implode('||', $formField);
+            }
             if ($formField !== '' || $this->getCFGDef('allowEmptyFields', 1)) {
                 $fields[$field] = $formField;
             }
