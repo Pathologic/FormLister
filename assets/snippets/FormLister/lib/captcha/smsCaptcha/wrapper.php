@@ -1,12 +1,15 @@
 <?php
+include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/lib/captcha/Captcha.php');
 
+use FormLister\CaptchaInterface;
+use FormLister\Core;
 /**
  * Created by PhpStorm.
  * User: Pathologic
  * Date: 19.11.2016
  * Time: 0:27
  */
-class SmsCaptchaWrapper
+class SmsCaptchaWrapper implements CaptchaInterface
 {
     /**
      * @var null
@@ -20,7 +23,7 @@ class SmsCaptchaWrapper
      * @param $modx
      * @param $cfg
      */
-    public function __construct($modx, $cfg)
+    public function __construct(\DocumentParser $modx, $cfg = array())
     {
         $this->cfg = $cfg;
         $this->modx = $modx;
@@ -45,12 +48,12 @@ class SmsCaptchaWrapper
     }
 
     /**
-     * @param \FormLister\Core $FormLister
+     * @param Core $FormLister
      * @param $value
      * @param SmsCaptchaWrapper $captcha
      * @return bool|mixed
      */
-    public static function validate(\FormLister\Core $FormLister, $value, \SmsCaptchaWrapper $captcha)
+    public static function validate(Core $FormLister, $value, Captcha $captcha)
     {
         $id = \APIhelpers::getkey($captcha->cfg, 'id');
         if (empty($value)) {

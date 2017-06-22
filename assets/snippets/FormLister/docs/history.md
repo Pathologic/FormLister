@@ -1,4 +1,31 @@
 ##History
+###1.6.0
+* [Enhancement] Параметр rewriteUrls для обработки ссылок в шаблонах. Игнорируется, если задан параметр parseDocumentSource (Core).
+* [Enhancement] Если страница с вызовом контроллера Login указана в конфигурации, как страница "Доступ запрещен", то после успешной авторизации будет произведен редирект на запрашиваемую страницу (Login).
+* [Enhancement] Новый параметр ignoreMailerResult (Form). 
+* [Fix] Неправильная проверка уникальности username в контроллере Profile.
+* [Refactor] Для добавления пользователей в группы используется метод из modUsers (Register).
+* [Refactor] Введенный пользователем пароль сохраняется в поле user.password (Register).
+* [Refactor] Контроллеры Register, Profile и Content загружают данные из моделей после успешного выполнения; после этого можно выполнить сниппеты из параметра preparePostProcess. Сделано это потому что плагины на сохранение или сами модели могут менять данные.
+* [Enhancement] Восстановление данных, испорченных в protect.inc.php. Если параметр removeGpc равен 1, то очищены будут все входящие поля. Можно указать в параметре имена полей через запятую. При выводе обработанных полей будут экранироваться тэги MODX (Core).
+* [Refactor] В prepare-сниппеты передается переменная name с названием параметра в котором задан сниппет. Можно использовать один сниппет для всех случаев (Core).
+* [Enhancement] Контроллер DeleteUser для удаления пользователей c запросом пароля.
+* [Enhancement] Контроллер DeleteContent для удаления записей MODxAPI.
+* [Enhancement] Контроллер Activate для активации учетных записей.
+* [Enhancement] Контроллеры Register и Login могут работать с активацией учетных записей.
+* [Enhancement] Вывод параметров data-badge и data-callback для рекапчи (ReCaptchaWrapper).
+* [Enhancement] Параметр deleteAttachments для удаления файлов после отправки письма (Form).
+* [Enhancement] Сохранение имен файлов в поля формы (Form).
+* [Enhancement] Отправка файлов не из формы. Список файлов задается массивом в параметре attachFiles: {"field":{"filepath":"assets/images/logo.png","filename":"logo.png"}} (Form).
+* [Refactor] Можно не задавать параметр contentFields, в этом случае в модель будут переданы поля формы (Content).
+* [Refactor] Корректная обработка полей lastlogin и thislogin в плагине userHelper.
+* [Fix] Неверно выбирался шаблон при восстановлении паролей (Reminder).
+* [Enhancement] Дополнительная обработка чанков парсером MODX c помощью параметра parseDocumentSource (Core). 
+* [Enhancement] Возможность вырезать необработанные плейсхолдеры из чанков с помощью параметра removeEmptyPlaceholders (Core).
+* [Enhancement] Параметр removeEmptyPlaceholders для удаления необработанных плейсхолдеров из чанков (возможные значения 0,1; по умолчанию - 0) (Core).
+* [Fix] Из-за неправильной обработки параметра defaultsSources не загружались поля в контроллере Profile (Core).
+* [Fix] Метод filterFields не учитывал значение параметра allowEmptyFields (Core). 
+
 ###1.5.1
 Исправления ошибок.
 
@@ -23,7 +50,7 @@
 * [Refactor] Класс modxCaptchaWrapper больше не привязан к FormLister (Core, modxCaptchaWrapper).
 * [Enhancement] Убрано принудительное отключение параметров submitLimit и protectSubmit (Content).
 * [Refactor] Изменен алгоритм загрузки пользовательских лексиконов. Теперь в параметре lexicon можно указывать как имя файла, так и сразу массив c языковыми записями (Core, Lexicon).
-* [Refactor] Загрузка полей отправленной формы происходит не из R_REQUEST, а согласно параметру formMethod (значение по умолчанию - 'post') (Core).
+* [Refactor] Загрузка полей отправленной формы происходит не из $_REQUEST, а согласно параметру formMethod (значение по умолчанию - 'post') (Core).
 * [Enhancement] Метод loadArray можно использовать для обработки строк с разделителем (по умолчанию - ',')  (Config).
 * [Enhancement] Если значение параметра submitLimit меньше 60, то оно не пересчитывается в минуты (Form). 
 
