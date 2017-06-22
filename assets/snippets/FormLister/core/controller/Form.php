@@ -300,7 +300,7 @@ class Form extends Core
             $this->setField('attachments', $field);
         }
         $report = $this->renderReport();
-        $out = $this->getCFGDef('ignoreMailerResult',0) || $mailer->send($report);
+        $out = $mailer->send($report) || $this->getCFGDef('ignoreMailerResult',0);
         $this->log('Mail report', array('report' => $report, 'mailer_config' => $mailer->config, 'result' => $out));
 
         return $out;
