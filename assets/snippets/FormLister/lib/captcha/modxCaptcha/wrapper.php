@@ -75,12 +75,12 @@ class ModxCaptchaWrapper implements CaptchaInterface
     }
 
     /**
-     * @param Core $FormLister
+     * @param \FormLister\Core $FormLister
      * @param $value
-     * @param \ModxCaptchaWrapper $captcha
+     * @param \FormLister\CaptchaInterface $captcha
      * @return bool|string
      */
-    public static function validate(Core $FormLister, $value, Captcha $captcha)
+    public static function validate(Core $FormLister, $value, CaptchaInterface $captcha)
     {
         if (empty($value)) {
             $out = \APIhelpers::getkey($captcha->cfg, 'errorEmptyCode', 'Введите проверочный код');

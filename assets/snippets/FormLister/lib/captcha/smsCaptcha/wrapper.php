@@ -48,12 +48,12 @@ class SmsCaptchaWrapper implements CaptchaInterface
     }
 
     /**
-     * @param Core $FormLister
+     * @param \FormLister\Core $FormLister
      * @param $value
-     * @param SmsCaptchaWrapper $captcha
-     * @return bool|mixed
+     * @param \FormLister\CaptchaInterface $captcha
+     * @return bool|string
      */
-    public static function validate(Core $FormLister, $value, Captcha $captcha)
+    public static function validate(Core $FormLister, $value, CaptchaInterface $captcha)
     {
         $id = \APIhelpers::getkey($captcha->cfg, 'id');
         if (empty($value)) {

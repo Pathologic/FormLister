@@ -62,12 +62,12 @@ class ReCaptchaWrapper implements CaptchaInterface
     }
 
     /**
-     * @param Core $FormLister
+     * @param \FormLister\Core $FormLister
      * @param $value
-     * @param ReCaptchaWrapper $captcha
+     * @param \FormLister\CaptchaInterface $captcha
      * @return bool|string
      */
-    public static function validate(Core $FormLister, $value, Captcha $captcha)
+    public static function validate(Core $FormLister, $value, CaptchaInterface $captcha)
     {
         $secretKey = \APIhelpers::getkey($captcha->cfg, 'secretKey');
         $url = "https://www.google.com/recaptcha/api/siteverify?secret=" . $secretKey . "&response=" . $value . "&remoteip=" . \APIhelpers::getUserIP();

@@ -26,10 +26,10 @@ interface CaptchaInterface
 
     /**
      * Проверяет капчу
-     * @param Core $FormLister
-     * @param $value
-     * @param \ModxCaptchaWrapper $captcha
+     * @param \FormLister\Core $FormLister
+     * @param string $value
+     * @param \FormLister\CaptchaInterface $captcha
      * @return bool|string
      */
-    public static function validate (Core $FormLister, $value, Captcha $captcha);
+    public static function validate (Core $FormLister, $value, CaptchaInterface $captcha);
 }
