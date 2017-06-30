@@ -710,8 +710,9 @@ abstract class Core
      */
     public function fieldsToPlaceholders($fields = array(), $suffix = '', $split = false)
     {
-        $plh = $fields;
-        if (is_array($fields) && !empty($fields)) {
+        $plh = array();
+        if (is_array($fields)) {
+            $plh = $fields;
             $sanitarTagFields = $this->getRemoveGpcFields();
             foreach ($fields as $field => $value) {
                 if ($split && is_array($value)) {
