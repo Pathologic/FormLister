@@ -92,10 +92,9 @@ class Content extends Form
                     $this->renderTpl = $this->getCFGDef('badGroupTpl',
                         $this->lexicon->getMsg('create.default_badGroupTpl'));
                     $flag = false;
-                } else {
-                    $this->owner = $uid;
                 }
             }
+            $this->owner = $uid;
         }
 
         if ($mode == 'edit') {
