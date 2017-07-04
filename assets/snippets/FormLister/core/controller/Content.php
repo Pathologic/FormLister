@@ -2,10 +2,6 @@
 
 /**
  * Контроллер для создания записей
- */
-include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/core/controller/Form.php');
-
-/**
  * Class Content
  * @package FormLister
  */
@@ -79,7 +75,7 @@ class Content extends Form
      */
     public function render()
     {
-        $uid = $this->modx->getLoginUserID('web');
+        $uid = (int)$this->modx->getLoginUserID('web');
         $ownerField = $this->getCFGDef('ownerField', 'aid');
         $mode = $this->mode;
         $flag = true;
@@ -158,7 +154,7 @@ class Content extends Form
                     if ($this->checkSubmitProtection() || $this->checkSubmitLimit()) {
                         return;
                     }
-                    if ($this->owner) {
+                    if ($this->owner || !$this->getCFGDef('onlyUsers',1)) {
                         $fields[$ownerField] = $this->owner;
                         $result = $this->content->create($fields)->save(true, $clearCache);
                     }
@@ -188,11 +184,14 @@ class Content extends Form
             }
         }
         if (!$result) {
+            $this->log('Save failed', array('model' => get_class($this->content), 'data' => $fields));
             $this->addMessage($this->lexicon->getMsg('edit.update_failed'));
         } else {
             $this->content->close();
-            $this->setFields($this->content->edit($result)->toArray('','','_',false));
-            if ($this->getCFGDef('contentFields')) $this->setFields($this->getContentFields(true));
+            $this->setFields($this->content->edit($result)->toArray('', '', '_', false));
+            if ($this->getCFGDef('contentFields')) {
+                $this->setFields($this->getContentFields(true));
+            }
             if ($this->owner) {
                 $this->setFields($this->user->edit($this->owner)->toArray(), 'user');
             }
