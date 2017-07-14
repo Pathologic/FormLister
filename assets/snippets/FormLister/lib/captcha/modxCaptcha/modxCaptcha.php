@@ -97,7 +97,7 @@ class ModxCaptcha
             $box = imagettfbbox($text_size, $text_angle, $text_font, $this->word);
             $text_width = $box[2] - $box[0]; //text width
             /* adjust text size */
-            $text_size = round((30 * $this->im_width) / $text_width);
+            $text_size = round((28 * $this->im_width) / $text_width);
             /* recalculate text width and height */
             $box = imagettfbbox($text_size, $text_angle, $text_font, $this->word);
             $text_width = ($box[2] - $box[0]) / $len; //text width
