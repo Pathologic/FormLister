@@ -122,9 +122,6 @@ class ModxCaptcha
             $data['height'] = $charHeight;
             $totalWidth += $charWidth;
         }
-        $_SESSION['test'] = $_chars;
-        /* angle for text inclination */
-        /* initial text size */
         /* create canvas for text drawing */
         $im_text = imagecreate($this->im_width, $this->im_height);
         $bg_color = imagecolorallocate($im_text, 255, 255, 255);
