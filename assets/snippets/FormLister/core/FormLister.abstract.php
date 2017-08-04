@@ -738,8 +738,10 @@ abstract class Core
         foreach ($this->getFormData('errors') as $field => $error) {
             foreach ($error as $type => $message) {
                 $classType = ($type == 'required') ? 'required' : 'error';
-                $plh[$field . '.error'] = $this->parseChunk($this->getCFGDef('errorTpl',
+                if (!empty($message)) {
+                    $plh[$field . '.error'] = $this->parseChunk($this->getCFGDef('errorTpl',
                     '@CODE:<div class="error">[+message+]</div>'), array('message' => $message));
+                }
                 $plh[$field . '.' . $classType . 'Class'] = $this->getCFGDef($field . '.' . $classType . 'Class',
                     $this->getCFGDef($classType . 'Class', $classType));
             }
@@ -877,7 +879,7 @@ abstract class Core
         if (!$parseDocumentSource && $rewriteUrls) {
             $out = $this->modx->rewriteUrls($out);
         }
-        if ($this->getCFGDef('removeEmptyPlaceholders', 0)) {
+        if ($this->getCFGDef('removeEmptyPlaceholders', 1)) {
             preg_match_all('~\[(\+|\*|\(|%)([^:\+\[\]]+)([^\[\]]*?)(\1|\)|%)\]~s', $out, $matches);
             if ($matches[0]) {
                 $out = str_replace($matches[0], '', $out);
