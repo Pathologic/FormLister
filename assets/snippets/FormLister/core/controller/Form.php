@@ -79,7 +79,7 @@ class Form extends Core
     {
         $submitLimit = $this->getCFGDef('submitLimit', 60);
         $result = false;
-        if ($this->isSubmitted() && $submitLimit > 0) {
+        if (isset($_SESSION[$this->formid . '_limit']) && $this->isSubmitted() && $submitLimit > 0) {
             if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
                 $result = true;
                 $this->addMessage('[%form.submitLimit%] ' .
