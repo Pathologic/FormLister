@@ -1,4 +1,7 @@
 ## History
+### 1.7.9
+* [Fix] Исправления ошибок.
+
 ### 1.7.8
 * [Refactor] Переименованы файлы документации.
 * [Refactor] Параметр removeEmptyPlaceholders по умолчанию включен (Core).
