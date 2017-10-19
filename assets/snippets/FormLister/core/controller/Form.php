@@ -178,7 +178,7 @@ class Form extends Core
         if (empty($tpl) && $tplParam == 'reportTpl') {
             $tpl = '@CODE:';
             foreach ($this->getFormData('fields') as $key => $value) {
-                $tpl .= "[+{$key}+]: [+{$key}.value+]" . PHP_EOL;
+                $tpl .=  \APIhelpers::e($key) . ": [+{$key}.value+]" . PHP_EOL;
             }
         }
         $out = $this->parseChunk($tpl, $this->prerenderForm(true));
