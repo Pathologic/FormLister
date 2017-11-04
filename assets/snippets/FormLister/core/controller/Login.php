@@ -23,7 +23,11 @@ class Login extends Core
             $this->getCFGDef('model', '\modUsers'),
             $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
         );
-        $this->requestUri = $this->modx->config['site_url'] . ltrim($_SERVER['REQUEST_URI'], '/');
+        $requestUri = $_SERVER['REQUEST_URI'];
+        if (0 === str_pos($requestUri, MODX_BASE_URL)) {
+            $requestUri = substr($requestUri, strlen(MODX_BASE_URL));
+        } 
+        $this->requestUri = $this->modx->config['site_url'] . $requestUri;
         $this->context = $this->getCFGDef('context', 'web');
         $lang = $this->lexicon->loadLang('login');
         if ($lang) {
@@ -36,8 +40,10 @@ class Login extends Core
      */
     public function render()
     {
-        if ($this->modx->getLoginUserID($this->context)) {
+        if ($id = $this->modx->getLoginUserID($this->context)) {
             $this->redirect();
+            $this->user->edit($id);
+            $this->setFields($this->user->toArray());
             $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('login.default_skipTpl'));
             $this->setValid(false);
         };
