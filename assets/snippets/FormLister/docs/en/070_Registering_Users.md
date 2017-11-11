@@ -1,137 +1,138 @@
 ## Регистрация пользователей
 
-Контроллер Register позволяет регистрировать пользователей в заданные группы и отправлять уведомления о регистрации. Контроллер является расширением контроллера Form, соответственно можно использовать соответствующие параметры для отправки писем при регистрации.
+Register controller allows to register users, add them to user groups and send notifications. It extends Form controller, so you can use all its parameters to send letters during registration.
 
-Имена полей в форме должны соответствовать полям модели [modUsers](http://docs.evolution-cms.com/Extras/Snippets/DocLister/MODxAPI).
+Field names should be the same as [modUsers](http://docs.evolution-cms.com/Extras/Snippets/DocLister/MODxAPI) model's ones.
 
-Если в форме не задано поле username, то ему присваивается значение поля email. Таким образом можно регистрировать пользователей только по email.
+If there's no "username" field in the form, then its value will be the value of the "email" field. So it's possible to register users only by e-mail.
 
-Если в форме не задано поле password, то значение поля генерируется автоматически. То есть регистрацию пользователя можно свести к указанию email.
+If there's no "password" field, then its value will be created automatically. So, the registration adds up to specify e-mail only.
 
-При регистрации с паролем, в форме может присутствовать поле repeatPassword. Если заданы правила валидации для полей password и repeatPassword, то при наличии для поля repeatPassword правила equals, оно будет автоматически скорректировано для проверки равенства значений полей password и repeatPassword:
+If there's the "repeatPassword" field in the form and validation rules are set for the "password" and "repeatPassword" fields, then the "equals" rule will be corrected to check if the "password" field matches the "repeatPassword" field:
+:
 ```
 "repeatPassword":{
-    "required":"Введите пароль еще раз",
+    "required":"Enter password one more time",
     "equals":{
-        "params" : "Этот ключ в описании правила можно не задавать, он будет сформирован контроллером автоматически",
-        "message":"Пароли не совпадают"
+        "params" : "This key is not needed because it will be set by Register controller",
+        "message":"Passwords don't match"
     }
 }
 ```
 
-При регистрации следует проверять уникальность имени пользователя и email. В контроллере предусмотрены соответствующие правила:
+Registration need to check if the "username" and "email" fields are unique. Controller provides rules needed:
 ```
 &rules=`{
     "username":{
-        "required":"Введите имя пользователя",
-        "alphaNumeric":"Только буквы и цифры",
+        "required":"Enter user name",
+        "alphaNumeric":"Only letters and digits are allowed",
         "custom":{
             "function":"\\FormLister\\Register::uniqueUsername",
-            "message":"Имя уже занято"
+            "message":"You cannot use this name"
         }
     },
     "email":{
-        "required":"Введите email",
-        "email":"Неверный email",
+        "required":"Enter e-mail",
+        "email":"Wrong e-mail",
         "custom":{
             "function":"\\FormLister\\Register::uniqueEmail",
-            "message":"Этот email уже использует другой пользователь"
+            "message":"You cannot use this e-mail"
         }
     }
 }`
 ```
-В шаблонах доступны все поля модели для созданной записи. Дополнительно задается поле user.password с незашифрованным паролем. 
+All model fields for the new record are available in templates. Additional field "user.password" with given password is set. 
 
-## Параметры
+## Parameters
 ### model
-Класс для работы с пользователями.
+Class to manage users.
 
-Возможные значения - имя класса.
+Possible values - class name.
 
-Значение по умолчанию - \modUsers
+Default value - \modUsers
 
 ### modelPath
-Путь к файлу класса для работы с пользователями.
+Path to the class to manage users.
 
-Возможные значения - относительный путь к файлу.
+Possible values - relative file path.
 
-Значение по умолчанию - assets/lib/MODxAPI/modUsers.php
+Default value - assets/lib/MODxAPI/modUsers.php
 
 ### allowedFields
-Разрешенные для обработки поля. Поля, не указанные в списке, игнорируются. Поля username, email и password всегда разрешены.
+Fields allowed to process, other fields are ignored. The "username", "email" and "password" fields are enabled always.
 
-Если не задано, то разрешены все поля.
+If not set, then all fields are allowed.
 
-Возможные значения - имена полей формы, разделенные запятой. 
+Possible value - field names, comma separated. 
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### forbiddenFields
-Запрещенные для обработки поля. Поля, указанные в списке, игнорируются. Поля username, email и password удаляются из списка запрещенных.
+Fields forbidden to process. The "username", "email" and "password" fields will be removed from the list of forbidden fields.
 
-Возможные значения - имена полей формы, разделенные запятой. 
+Possible value - field names, comma separated. 
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### userGroups
-Добавляет зарегистрированного пользователя в указанные группы.
+Adds registered user to user group.
 
-Возможные значения - имена групп, разделенные запятой (если имена содержат запятую в названии, то можно задать значение параметра массивом).
+Possible values - group names, comma separated (or an array).
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### checkActivation
-Включает проверку активации учетной записи пользователя (см. "Активация учетных записей"). При этом после сохранения записи будет установлено поле activate.url, содержащее ссылку на страницу с вызовом сниппета для активации учетной записи.  
+Enables the check for user profile activation (see "Activating user profiles"). The "activate.url" field will be set, which contains link to a page with FormLister call to activate user profile.  
 
-Возможные значения - 1 или 0.
+Possible values - 1 or 0.
 
-Значение по умолчанию - 0.
+Default value - 0.
 
 ### activateTo
-Если включена проверка активации, то в этом параметре необходимо указать id страницы, на которой вызывается сниппет для активации.
+If profile activation check is enabled, then you have to specify the id of the page with FormLister call to activate user profile.
 
-Возможные значения - id страницы.
+Possible values - page id.
 
-Значение по умолчанию - значение $modx->config['site_start'].
+Default value - the value of $modx->config['site_start'].
 
 ### preparePostProcess
-Позволяет выполнить обработку данных после сохранения.
+Allows to process data after saving new user.
 
-Возможные значения - имена сниппетов, анонимные функции, статические методы загруженных классов.
+Possible values - snippet names, anonymous functions, static methods of loaded classes.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### redirectTo
-Перенаправляет пользователя на указанную страницу после регистрации.
+Redirects user after successful registration.
 
-Возможные значения - id целевой страницы или массив.
+Possible values - target page id or array.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### exitTo
-Перенаправляет уже авторизованного пользователя на указанную страницу.
+Redirects authorized user.
 
-Возможные значения - id целевой страницы.
+Possible values - target page id or array.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### skipTpl
-Шаблон сообщения для уже авторизованного пользователя.
+Outputs message if user is authorized.
 
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
+Possible values - template name, according to DocLister templating rules.
 
-Значение по умолчанию - запись из лексикона Register с ключом [+register.default_skipTpl+]
+Default value - register lexicon entry with the key [%register.default_skipTpl%].
 
 ### successTpl
-Шаблон сообщения об успешной регистрации. 
+Success message template.
 
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
+Possible values - template name, according to DocLister templating rules.
 
-Значение по умолчанию - запись из лексикона Register с ключом [+register.default_successTpl+]
+Default value - register lexicon entry with the key [%register.default_successTpl%]
 
 ### passwordLength
-Длина пароля (если создается автоматически).
+Password length (if the password needs to be created automatically).
 
-Возможные значения - число символов больше 6.
+Possible values - number of characters greater than 6.
 
-Значение по умолчанию - 6.
+Default value - 6.

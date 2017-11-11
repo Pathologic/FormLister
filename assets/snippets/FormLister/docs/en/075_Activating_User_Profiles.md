@@ -1,84 +1,77 @@
-## Активация учетных записей
+## Activating user profiles
 
-Контроллер Activate реализует активацию учетных записей. Таким образом появляется возможность требовать у пользователя подтверждение учетной записи путем перехода по специальной ссылке из письма, отправленного при регистрации.
+Activate controller activates user profile, so it's possible to request registration confirmation by following the special link in the letter sent after the registration.
 
-Если по какой-то причине пользователь не получил письмо, то c помощью контроллера Activate он может запросить его повторную отправку.
+If the user hasn't received this letter, then he can request this letter again.
 
-Учетная запись пользователя считается неактивированной если в поле logincount записано -1.
+User profile assumes to be inactivated if the "logincount" field value is -1.
 
-В вызовах сниппета для регистрации и авторизации пользователей должен присутствовать параметр &checkActivation=`1`.
+Snippet calls to register and authorize users should have the  "checkActivation" parameter enabled.
 
-Поэтому если при регистрации пользователь указывал пароль самостоятельно, то нужно запрашивать пароль для отправки письма со ссылкой для активации. Иначе будет генерироваться новый пароль, потому что раз пользователь запрашивает письмо для активации вручную, значит письмо после регистрации он не получил и не знает созданный при регистрации пароль.
+If user creates password himself during registration, then this password needs to be requested to send a letter with the activation link. Or the new password will be created, because if user hasn't received the letter containing generated password after registration, then he cannot know this password
 
-В шаблонах доступны все поля модели для обрабатываемой записи. В шаблоне reportTpl задается поле user.password с незашифрованным паролем и поле activate.url со ссылкой для активации. 
+All model fields are available in templates. Additional field "user.password" with raw password value is set as well as the "activate.url" field with activation link. 
 
-## Параметры
+## Parameters
 ### model
-Класс для работы с пользователями.
+Class to manage users.
 
-Возможные значения - имя класса.
+Possible values - class name.
 
-Значение по умолчанию - \modUsers
+Default value - \modUsers
 
 ### modelPath
-Путь к файлу класса для работы с пользователями.
+Path to the class to manage users.
 
-Возможные значения - относительный путь к файлу.
+Possible values - relative file path.
 
-Значение по умолчанию - assets/lib/MODxAPI/modUsers.php
+Default value - assets/lib/MODxAPI/modUsers.php
 
 ### redirectTo
-Перенаправляет пользователя на указанную страницу после активации.
+Redirects user after successful activation.
 
-Возможные значения - id целевой страницы или массив.
+Possible values - target page id or array.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### exitTo
-Перенаправляет авторизованного пользователя на указанную страницу.
+Redirects authorized user.
 
-Возможные значения - id целевой страницы или массив.
+Possible values - target page id or array.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### skipTpl
-Шаблон сообщения для авторизованного пользователя.
+Outputs message if user is authorized.
 
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
+Possible values - template name, according to DocLister templating rules.
 
-Значение по умолчанию - запись из лексикона Register с ключом [+register.default_skipTpl+]
-
-### reportTpl
-Шаблон письма с информацией для активации учетной записи.
-
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
-
-Значение по умолчанию - пусто.
+Default value - activate lexicon entry with the key [%activate.default_skipTpl%].
 
 ### reportTpl
-Шаблон письма с информацией для активации учетной записи.
+Letter template containing profile activation data.
 
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
+Possible values - template name, according to DocLister templating rules.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### successTpl
-Шаблон сообщения об успешной отправке письма с данными для активации. 
+Message template if e-mail with activation data is sent successfully.
 
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
+Possible values - template name, according to DocLister templating rules.
 
-Значение по умолчанию - запись из лексикона Activate с ключом [+activate.default_successTpl+]
+Default value - activate lexicon entry with the key [%activate.default_successTpl%]
 
 ### activateSuccessTpl
-Шаблон сообщения об успешной активации. 
+Message template if activation is finished successfully.
 
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
+Possible values - template name, according to DocLister templating rules.
 
-Значение по умолчанию - запись из лексикона Activate с ключом [+activate.default_activateSuccessTpl+]
+Default value - activate lexicon entry with the key [+activate.default_activateSuccessTpl+]
 
 ### passwordLength
-Длина создаваемого пароля.
+Password length.
 
-Возможные значения - число символов больше 6.
+Possible values - number of characters greater than 6.
 
-Значение по умолчанию - 6.
+Default value - 6.

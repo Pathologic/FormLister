@@ -213,6 +213,6 @@ Validation rules (see "Data validation" chapter). Default validator has the foll
 - maxCount: files count is less than defined;
 - countBetween: files count is in the range;
 
-There's no sense to use "!field name" construction in file validation rules,  because the value of the file field can not be empty, so use "optional" rule instead.
+There's no sense to use the "!field name" construction in file validation rules,  because the value of the file field can not be empty, so use the "optional" rule instead.
 
 There's the [+attachments.value+] placeholder available in reportTpl template, it contains the list of attached files. To output particular file field use the [+field name.value+] placeholder. Files are sent only in letters with reportTpl template.

@@ -1,99 +1,98 @@
-## Редактирование профиля пользователя
+## Editing user profile
 
-Контроллер Profile позволяет авторизованным пользователям редактировать свои профили, в том числе менять пароль.
+Profile controller allow authorized users to change their profiles, as well as passwords.
 
-При изменении профиля следует проверять уникальность email. В контроллере предусмотрено соответствующее правило:
+E-mail should be checked for uniqueness with controller's special rule:
 ```
 &rules=`{
     "email":{
-        "required":"Введите email",
-        "email":"Неверный email",
+        "required":"Enter e-mail",
+        "email":"Wrong e-mail",
         "custom":{
             "function":"\\FormLister\\Profile::uniqueEmail",
-            "message":"Этот email уже использует другой пользователь"
+            "message":"You cannot use this e-mail"
         }
     }
 }`
 ```
-Аналогично с полем username:
+The same for the "username" field:
 ```
 &rules=`{
     "username":{
-        "required":"Введите имя пользователя",
-        "alphaNumeric":"Только буквы и цифры",
+        "required":"Enter user name",
+        "alphaNumeric":"Only letters and digits are allowed",
         "custom":{
             "function":"\\FormLister\\Profile::uniqueUsername",
-            "message":"Имя уже занято"
+            "message":"You cannot use this name"
         }
     }
 }`
 ```
 
-Если поле с паролем пустое, то пароль остается прежний. После изменения пароля пользователь должен авторизоваться с новым паролем. Новый пароль сохраняется в поле user.password.
+If the "password" field is empty, then the password will stay unchanged.If the password is changed then user needs to be authorized again. The new password is stored in the "user.password" field.
 
-
-## Параметры
+## Parameters
 ### model
-Класс для работы с пользователями.
+Class to manage users.
 
-Возможные значения - имя класса.
+Possible values - class name.
 
-Значение по умолчанию - \modUsers
+Default value - \modUsers
 
 ### modelPath
-Путь к файлу класса для работы с пользователями.
+Path to the class to manage users.
 
-Возможные значения - относительный путь к файлу.
+Possible values - relative file path.
 
-Значение по умолчанию - assets/lib/MODxAPI/modUsers.php
+Default value - assets/lib/MODxAPI/modUsers.php
 
 ### allowedFields
-Разрешенные для обработки поля. Поля, не указанные в списке, игнорируются. Если пользователь меняет пароль, то в разрешенные поля добавляется поле password. Если у пользователей совпадают поля e-mail и username, то при изменении e-mail будет изменено и поле username, если значение этого поля не задано. В этом случае поле username будет добавлено в список разрешенных.
+Fields allowed to process, other fields are ignored. If password is changed, then the "password" field will be added to the list. If no value is set to the "username" field then, it this field be set with the "e-mail" field value. The "username" will be allowed in this case.
 
-Если не задано, то разрешены все поля.
+If not set, then all fields are allowed.
 
-Возможные значения - имена полей формы, разделенные запятой. 
+Possible value - field names, comma separated. 
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### forbiddenFields
-Запрещенные для обработки поля. Поля, указанные в списке, игнорируются. Поля password и username исключаются из списка по аналогии с allowedFields.
+Fields forbidden to process. The "password" and "username" fields are processed the same way as for the "allowedFields" parameter.
 
-Возможные значения - имена полей формы, разделенные запятой. 
+Possible value - field names, comma separated. 
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### preparePostProcess
-Позволяет выполнить обработку данных после сохранения.
+Allows to process data after saving user data.
 
-Возможные значения - имена сниппетов, анонимные функции, статические методы загруженных классов.
+Possible values - snippet names, anonymous functions, static methods of loaded classes.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### redirectTo
-Перенаправляет пользователя на указанную страницу после сохранения профиля.
+Redirects user after successful profile update.
 
-Возможные значения - id целевой страницы.
+Possible values - target page id or array.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### exitTo
-Перенаправляет неавторизованного пользователя на указанную страницу.
+Redirects non authorized user.
 
-Возможные значения - id целевой страницы или массив.
+Possible values - target page id or array.
 
-Значение по умолчанию - пусто.
+Default value - none.
 
 ### skipTpl
-Шаблон сообщения для неавторизованного пользователя.
+Outputs message if user is not authorized.
 
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
+Possible values - template name, according to DocLister templating rules.
 
-Значение по умолчанию - запись из лексикона Profile с ключом [+profile.default_skipTpl+]
+Default value - profile lexicon entry with the key [%profile.default_skipTpl%].
 
 ### successTpl
-Шаблон сообщения об успешном обновлении профиля. Если не задан, то генерируется сообщение об успешном сохранении формы.
+Success message template.
 
-Возможные значения - имя шаблона, указанное по правилам задания шаблонов в DocLister.
+Possible values - template name, according to DocLister templating rules.
 
-Значение по умолчанию - пусто.
+Default value - none.
