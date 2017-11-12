@@ -677,6 +677,9 @@ abstract class Core
      */
     public function addError($field, $type, $message)
     {
+        if ($this->lexicon->isReady()) {
+            $message = $this->lexicon->parseLang($message);
+        }
         $this->formData['errors'][$field][$type] = $message;
 
         return $this;
@@ -690,6 +693,9 @@ abstract class Core
     public function addMessage($message = '')
     {
         if ($message) {
+            if ($this->lexicon->isReady()) {
+                $message = $this->lexicon->parseLang($message);
+            }
             $this->formData['messages'][] = $message;
         }
 
