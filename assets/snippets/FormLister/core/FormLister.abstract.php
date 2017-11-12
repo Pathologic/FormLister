@@ -980,7 +980,6 @@ abstract class Core
      */
     public function callPrepare($name, $params = array())
     {
-        $name = trim($name);
         if (!empty($name)) {
             if ((is_object($name) && ($name instanceof \Closure)) || is_callable($name)) {
                 $result = call_user_func_array($name, $params);
