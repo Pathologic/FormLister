@@ -980,11 +980,15 @@ abstract class Core
      */
     public function callPrepare($name, $params = array())
     {
+        $name = trim($name);
         if (!empty($name)) {
             if ((is_object($name) && ($name instanceof \Closure)) || is_callable($name)) {
-                call_user_func_array($name, $params);
+                $result = call_user_func_array($name, $params);
             } else {
-                $this->modx->runSnippet($name, $params);
+                $result = $this->modx->runSnippet($name, $params);
+            }
+            if (is_array($result)) {
+                $this->setFields($result);
             }
         }
 
