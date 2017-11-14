@@ -794,9 +794,16 @@ abstract class Core
     public function getValidationRules($param = 'rules')
     {
         $rules = $this->getCFGDef($param);
+        if (empty($rules)) {
+            $this->log('No validation rules defined');
+            return array();
+        }
         $rules = $this->config->loadArray($rules, '');
+        if (empty($rules)) {
+            $this->log('Validation rules failed to load');
+        }
 
-        return is_array($rules) ? $rules : array();
+        return $rules;
     }
 
     /**
