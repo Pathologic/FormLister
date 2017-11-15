@@ -3,6 +3,7 @@
 * [Fix] Предупреждения в PHP 7 (Core).
 * [Enhancement] Вывод сообщений в лог при проблемах с параметрами rules, fileRules и contentFields (Core, Content). 
 * [Refactor] Обработка языковых плейсхолдеров в сообщениях (Core).
+* [Enhancement] Из prepare-сниппетов можно возвращать массив значений полей, который будет передан в метод setFields (Core).
 
 ### 1.7.10
 * [Enhancement] Возможность использовать плейсхолдеры с данными пользователя в шаблоне skipTpl (Login, Activate, Register, Reminder).
