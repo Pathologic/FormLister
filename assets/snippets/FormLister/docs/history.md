@@ -1,4 +1,7 @@
 ## History
+### 1.7.12
+* [Enhancement] Возможность указать имя параметра с id пользователя в ссылке для восстановления пароля (Reminder).
+ 
 ### 1.7.11
 * [Fix] Предупреждения в PHP 7 (Core).
 * [Enhancement] Вывод сообщений в лог при проблемах с параметрами rules, fileRules и contentFields (Core, Content). 
