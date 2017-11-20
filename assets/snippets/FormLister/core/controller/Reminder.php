@@ -31,7 +31,7 @@ class Reminder extends Form
             $this->log('Lexicon loaded', array('lexicon' => $lang));
         }
         $hashField = $this->getCFGDef('hashField', 'hash');
-        $uidField = $this->getCFGDef('uidField', 'id');
+        $uidField = $this->getCFGDef('uidField', $this->user->fieldPKName());
         $uidName = $this->getCFGDef('uidName', $uidField);
         $userField = $this->getCFGDef('userField', 'email');
         $this->hashField = $hashField;
