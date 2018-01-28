@@ -3,6 +3,13 @@
 Form controller allows to send form data via e-mail.
 
 ## Mailer parameters
+###parseMailerParams
+Allows to parse mail sending parameters as chunks (&to=\`@CODE:[+user.email.value+]\` etc.).
+
+Possible values - 1, 0.
+
+Default value - 0.
+
 ### isHtml
 Allows to send e-mail in html format.
 

@@ -379,6 +379,7 @@ class Form extends Core
         if ($this->getCFGDef('parseMailerParams', 0)) {
             $plh = $this->prerenderForm(true);
             foreach ($out as $key => &$value) {
+                if ($key == 'subject') continue;
                 $_value = $this->parseChunk($value, $plh);
                 if (!empty($_value)) {
                     $value = $_value;
