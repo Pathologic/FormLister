@@ -96,6 +96,8 @@ abstract class Core
     protected $gpc_seed = '';
     protected $gpc_fields = array();
 
+    protected $plhCache = array();
+
 
     /**
      * Core constructor.
@@ -411,15 +413,17 @@ abstract class Core
      */
     public function prerenderForm($convertArraysToStrings = false)
     {
-        $plh = array_merge(
-            $this->fieldsToPlaceholders($this->getFormData('fields'), 'value',
-                $this->getFormData('status') || $convertArraysToStrings),
-            $this->controlsToPlaceholders(),
-            $this->errorsToPlaceholders(),
-            array('form.messages' => $this->renderMessages())
-        );
+        if (empty($this->plhCache) || !$convertArraysToStrings) {
+            $this->plhCache = array_merge(
+                $this->fieldsToPlaceholders($this->getFormData('fields'), 'value',
+                    $this->getFormData('status') || $convertArraysToStrings),
+                $this->controlsToPlaceholders(),
+                $this->errorsToPlaceholders(),
+                array('form.messages' => $this->renderMessages())
+            );
+        }
 
-        return $plh;
+        return $this->plhCache;
     }
 
     /**
@@ -442,6 +446,7 @@ abstract class Core
             $out = $form;
         } else {
             $out = $this->getFormData();
+            unset($out['files']);
             if ($api == 2) {
                 $out['output'] = $form;
             }
@@ -628,6 +633,7 @@ abstract class Core
     {
         if ($value !== '' || $this->getCFGDef('allowEmptyFields', 1)) {
             $this->formData['fields'][$field] = $value;
+            $this->plhCache = array();
         }
 
         return $this;
@@ -641,6 +647,7 @@ abstract class Core
     public function setPlaceholder($placeholder, $value)
     {
         $this->placeholders[$placeholder] = $value;
+        $this->plhCache = array();
 
         return $this;
     }

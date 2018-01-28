@@ -122,7 +122,9 @@ class Profile extends Form
     {
         if ($this->user->get('username') == $this->user->get('email') && !empty($this->getField('email')) && empty($this->getField('username'))) {
             $this->setField('username', $this->getField('email'));
-            if (!empty($this->allowedFields)) $this->allowedFields[] = 'username';
+            if (!empty($this->allowedFields)) {
+                $this->allowedFields[] = 'username';
+            }
             if (!empty($this->forbiddenFields)) {
                 $_forbidden = array_flip($this->forbiddenFields);
                 unset($_forbidden['username']);

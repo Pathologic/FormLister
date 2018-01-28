@@ -1,11 +1,8 @@
 <?php namespace FormLister;
-
 use Helpers\Mailer;
-
 /**
  * Контроллер для обычных форм с отправкой, типа обратной связи
  */
-
 /**
  * Class Form
  * @package FormLister
@@ -17,13 +14,11 @@ class Form extends Core
      * @var array
      */
     public $mailConfig = array();
-
     /**
      * Правила валидации файлов
      * @var array
      */
     protected $fileRules = array();
-
     /**
      * Form constructor.
      * @param \DocumentParser $modx
@@ -51,7 +46,6 @@ class Form extends Core
             $this->log('Lexicon loaded', array('lexicon' => $lang));
         }
     }
-
     /**
      * Проверка повторной отправки формы
      * @return bool
@@ -67,10 +61,8 @@ class Form extends Core
                 $this->log('Submit protection enabled');
             }
         }
-
         return $result;
     }
-
     /**
      * Проверка повторной отправки в течение определенного времени, в секундах
      * @return bool
@@ -92,10 +84,8 @@ class Form extends Core
                 unset($_SESSION[$this->formid . '_limit']);
             } //time expired
         }
-
         return $result;
     }
-
     /**
      * @return $this
      */
@@ -107,10 +97,8 @@ class Form extends Core
         if ($this->getCFGDef('submitLimit', 60) > 0) {
             $_SESSION[$this->formid . '_limit'] = time();
         }
-
         return $this;
     }
-
     /**
      * @return array|string
      */
@@ -136,10 +124,8 @@ class Form extends Core
         if ($hash) {
             $hash = md5(json_encode($hash));
         }
-
         return $hash;
     }
-
     /**
      * @return bool
      */
@@ -162,10 +148,8 @@ class Form extends Core
             }
             $this->log('File validation errors', $this->getFormData('errors'));
         }
-
         return $this->isValid();
     }
-
     /**
      * Формирует текст письма для отправки
      * Если основной шаблон письма не задан, то формирует список полей формы
@@ -182,10 +166,8 @@ class Form extends Core
             }
         }
         $out = $this->parseChunk($tpl, $this->prerenderForm(true));
-
         return $out;
     }
-
     /**
      * Получает тему письма из шаблона или строки
      * @param string $param
@@ -199,10 +181,8 @@ class Form extends Core
         } else {
             $subject = $this->getCFGDef($param);
         }
-
         return $subject;
     }
-
     /**
      * @return array
      */
@@ -219,7 +199,6 @@ class Form extends Core
                 }
             }
         }
-
         $userfiles = $this->config->loadArray($this->getCFGDef('attachFiles'));
         foreach ($userfiles as $field => $files) {
             if (!isset($files[0])) {
@@ -234,10 +213,8 @@ class Form extends Core
                 }
             }
         }
-
         return $attachments;
     }
-
     /**
      * @return $this
      */
@@ -254,7 +231,6 @@ class Form extends Core
                 }
             }
         }
-
         $userfiles = $this->config->loadArray($this->getCFGDef('attachFiles'));
         foreach ($userfiles as $field => $files) {
             if (!isset($files[0])) {
@@ -266,14 +242,11 @@ class Form extends Core
                 }
             }
         }
-
         if (!empty($fields)) {
             $this->setFields($fields);
         }
-
         return $this;
     }
-
     /**
      * Оправляет письмо
      * @return mixed
@@ -297,10 +270,8 @@ class Form extends Core
         $report = $this->renderReport();
         $out = $mailer->send($report) || $this->getCFGDef('ignoreMailerResult',0);
         $this->log('Mail report', array('report' => $report, 'mailer_config' => $mailer->config, 'result' => $out));
-
         return $out;
     }
-
     /**
      * Оправляет копию письма на указанный адрес
      * @return mixed
@@ -321,10 +292,8 @@ class Form extends Core
                 )
             );
         }
-
         return $out;
     }
-
     /**
      * Отправляет копию письма на адрес из поля email
      * @return mixed
@@ -345,10 +314,8 @@ class Form extends Core
                 $out = true;
             }
         }
-
         return $out;
     }
-
     /**
      * @return string
      */
@@ -357,10 +324,8 @@ class Form extends Core
         if ($this->isSubmitted() && $this->checkSubmitLimit()) {
             return $this->renderForm();
         }
-
         return parent::render();
     }
-
     /**
      *
      */
@@ -380,7 +345,6 @@ class Form extends Core
             $this->addMessage($this->lexicon->getMsg('form.form_failed'));
         }
     }
-
     /**
      *
      */
@@ -404,8 +368,7 @@ class Form extends Core
     public function getMailSendConfig($to, $fromParam, $subjectParam = 'subject')
     {
         $subject = empty($this->getCFGDef($subjectParam)) ? $this->renderSubject() : $this->renderSubject($subjectParam);
-
-        return array_merge(
+        $out = array_merge(
             $this->mailConfig,
             array(
                 'subject'  => $subject,
@@ -413,8 +376,18 @@ class Form extends Core
                 'fromName' => $this->getCFGDef($fromParam, $this->modx->config['site_name'])
             )
         );
-    }
+        if ($this->getCFGDef('parseMailerParams', 0)) {
+            $plh = $this->prerenderForm(true);
+            foreach ($out as $key => &$value) {
+                $_value = $this->parseChunk($value, $plh);
+                if (!empty($_value)) {
+                    $value = $_value;
+                }
+            }
+        }
 
+        return $out;
+    }
     /**
      * @return $this
      */
@@ -424,7 +397,6 @@ class Form extends Core
         foreach ($files as $file) {
             $this->fs->delete($file['filepath']);
         }
-
         return $this;
     }
 }
