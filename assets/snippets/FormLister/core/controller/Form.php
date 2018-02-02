@@ -337,6 +337,7 @@ class Form extends Core
         if ($this->checkSubmitProtection()) {
             return;
         }
+        $this->mailConfig = $this->parseMailerConfig($this->mailConfig);
         if ($this->sendReport()) {
             $this->sendCCSender();
             $this->sendAutosender();
@@ -344,6 +345,23 @@ class Form extends Core
         } else {
             $this->addMessage($this->lexicon->getMsg('form.form_failed'));
         }
+    }
+
+    /**
+     * @param array $cfg
+     * @return array
+     */
+    public function parseMailerParams($cfg = array()) {
+        if ($this->getCFGDef('parseMailerParams', 0)) {
+            $plh = \APIhelpers::renameKeyArr($this->prerenderForm(true), '[', ']', '+');
+            $search = array_keys($plh);
+            $replace = array_values($plh);
+            foreach ($cfg as $key => &$value) {
+                $value = str_replace($search, $replace, $value);
+            }
+        }
+
+        return $cfg;
     }
     /**
      *
@@ -376,16 +394,7 @@ class Form extends Core
                 'fromName' => $this->getCFGDef($fromParam, $this->modx->config['site_name'])
             )
         );
-        if ($this->getCFGDef('parseMailerParams', 0)) {
-            $plh = $this->prerenderForm(true);
-            foreach ($out as $key => &$value) {
-                if ($key == 'subject') continue;
-                $_value = $this->parseChunk($value, $plh);
-                if (!empty($_value)) {
-                    $value = $_value;
-                }
-            }
-        }
+        $out = $this->parseMailerParams($out);
 
         return $out;
     }

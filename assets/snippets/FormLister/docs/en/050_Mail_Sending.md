@@ -3,8 +3,8 @@
 Form controller allows to send form data via e-mail.
 
 ## Mailer parameters
-###parseMailerParams
-Allows to parse mail sending parameters as chunks (&to=\`@CODE:[+user.email.value+]\` etc.).
+### parseMailerParams
+Allows to use form data in mail sending parameters  (&to=\`[+user.email.value+]\` etc.).
 
 Possible values - 1, 0.
 

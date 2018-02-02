@@ -98,6 +98,8 @@ abstract class Core
 
     protected $plhCache = array();
 
+    protected $DLTemplate = null;
+
 
     /**
      * Core constructor.
@@ -123,6 +125,7 @@ abstract class Core
             'langDir' => 'assets/snippets/FormLister/core/lang/',
             'lang'    => $this->getCFGDef('lang', $this->modx->config['manager_language'])
         ));
+        $this->DLTemplate = \DLTemplate::getInstance($modx);
         $this->formid = $this->getCFGDef('formid');
         switch (strtolower($this->getCFGDef('formMethod', 'post'))) {
             case 'post':
@@ -888,17 +891,14 @@ abstract class Core
     {
         $parseDocumentSource = $parseDocumentSource || $this->getCFGDef('parseDocumentSource', 0);
         $rewriteUrls = $this->getCFGDef('rewriteUrls', 1);
-        $DLTemplate = \DLTemplate::getInstance($this->modx)
-            ->setTemplatePath($this->getCFGDef('templatePath'))
-            ->setTemplateExtension($this->getCFGDef('templateExtension'))
-            ->setTwigTemplateVars(array(
-                    'FormLister' => $this,
-                    'errors'     => $this->getFormData('errors'),
-                    'messages'   => $this->getFormData('messages'),
-                    'plh'        => $this->placeholders
-                )
-            );
-        $out = $DLTemplate->parseChunk($name, $data, $parseDocumentSource);
+        $this->DLTemplate->setTwigTemplateVars(array(
+                'FormLister' => $this,
+                'errors'     => $this->getFormData('errors'),
+                'messages'   => $this->getFormData('messages'),
+                'plh'        => $this->placeholders
+            )
+        );
+        $out = $this->DLTemplate->parseChunk($name, $data, $parseDocumentSource);
         if ($this->lexicon->isReady()) {
             $out = $this->lexicon->parseLang($out);
         }
