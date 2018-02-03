@@ -337,7 +337,7 @@ class Form extends Core
         if ($this->checkSubmitProtection()) {
             return;
         }
-        $this->mailConfig = $this->parseMailerConfig($this->mailConfig);
+        $this->mailConfig = $this->parseMailerParams($this->mailConfig);
         if ($this->sendReport()) {
             $this->sendCCSender();
             $this->sendAutosender();
