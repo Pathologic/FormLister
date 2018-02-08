@@ -122,6 +122,20 @@ Possible values - string.
 
 Default value - none.
 
+## ccMailConfig
+Allows to redefine mail sending parameters for the letters to the address taken from the form field ((isHtml, from, fromName, subject, replyTo, cc, bcc, noemail)).
+
+Possible values - json or php array.
+ 
+Default value - none.
+
+## autoMailConfig
+Allows to redefine mail sending parameters for the additional letters (isHtml, from, fromName, subject, replyTo, cc, bcc, noemail). 
+
+Possible values - json or php array.
+ 
+Default value - none.
+
 ## Submit protection
 ### protectSubmit
 Prevents submission of the form with the same data again.

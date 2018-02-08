@@ -438,25 +438,31 @@ abstract class Core
      */
     public function renderForm()
     {
-        $api = $this->getCFGDef('api', 0);
-        $plh = $this->getCFGDef('skipPrerender', 0) ? $this->getFormData('fields') : $this->prerenderForm();
-        $this->log('Render output', array('template' => $this->renderTpl, 'data' => $plh));
-        $form = $this->parseChunk($this->renderTpl, $plh);
+        $api = (int)$this->getCFGDef('api', 0);
+        $data = $this->getFormData();
+        unset($data['files']);
         /*
-         * Если api = 0, то возвращается шаблон
-         * Если api = 1, то возвращаются данные формы
-         * Если api = 2, то возвращаются данные формы и шаблон
-         */
-        if (!$api) {
-            $out = $form;
+        * Если api = 0, то возвращается шаблон
+        * Если api = 1, то возвращаются данные формы
+        * Если api = 2, то возвращаются данные формы и шаблон
+        */
+        if ($api == 1) {
+            $out = $data;
         } else {
-            $out = $this->getFormData();
-            unset($out['files']);
-            if ($api == 2) {
+            $plh = $this->getCFGDef('skipPrerender', 0) ? $this->getFormData('fields') : $this->prerenderForm();
+            $this->log('Render output', array('template' => $this->renderTpl, 'data' => $plh));
+            $form = $this->parseChunk($this->renderTpl, $plh);
+            if (!$api) {
+                $out = $form;
+            } else {
+                $out = $data;
                 $out['output'] = $form;
             }
-            $out = json_encode($out);
         }
+        if ($api) {
+            $out = $this->getCFGDef('apiFormat', 'json') == 'json' ? json_encode($out) : $out;
+        }
+
         $this->log('Output', $out);
 
         return $out;

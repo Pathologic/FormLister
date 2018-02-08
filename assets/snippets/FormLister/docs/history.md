@@ -1,4 +1,12 @@
 ## History
+### 1.7.15
+* [Enhancement] Отдельные настройки почты для писем ccSender и automessage в параметрах ccMailConfig и autoMailConfig (Form).
+* [Refactor] Проверка типа входящих данных (Validator).
+* [Refactor] Изменен метод renderForm (Core).
+* [Enhancement] Параметр apiFormat для формата вывода данных (json или просто массив) (Core).
+* [Fix] В валидаторе файлов неправильно обрабатывалась ситуация, когда файлы отправляются одним массивом из нескольких полей (Form).
+* [Enhancement] Разлогинивание удаленных и заблокированных пользователей (userHelper).
+
 ### 1.7.14
 * [Refactor] Упрощение параметра parseMailerParams.
 
