@@ -126,6 +126,8 @@ abstract class Core
             'lang'    => $this->getCFGDef('lang', $this->modx->config['manager_language'])
         ));
         $this->DLTemplate = \DLTemplate::getInstance($modx);
+        $this->DLTemplate->setTemplatePath($this->getCFGDef('templatePath'));
+        $this->DLTemplate->setTemplateExtenstion($this->getCFGDef('templateExtension'));
         $this->formid = $this->getCFGDef('formid');
         switch (strtolower($this->getCFGDef('formMethod', 'post'))) {
             case 'post':
@@ -626,12 +628,13 @@ abstract class Core
 
     /**
      * Возвращает значение поля из formData
-     * @param $field
-     * @return string
+     * @param string $field
+     * @param mixed $default
+     * @return mixed
      */
-    public function getField($field)
+    public function getField($field, $default = '')
     {
-        return \APIhelpers::getkey($this->formData['fields'], $field);
+        return \APIhelpers::getkey($this->formData['fields'], $field, $default);
     }
 
     /**

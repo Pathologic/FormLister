@@ -143,8 +143,12 @@ class Profile extends Form
             }
         }
         $fields = $this->filterFields($this->getFormData('fields'), $this->allowedFields, $this->forbiddenFields);
-        $fields['username'] = is_scalar($fields['username']) ? strtolower($fields['username']) : '';
-        $fields['email'] = is_scalar($fields['username']) ? strtolower($fields['email']) : '';
+        if (isset($fields['username'])) {
+            $fields['username'] = is_scalar($fields['username']) ? strtolower($fields['username']) : '';
+        }
+        if (isset($fields['email'])) {
+            $fields['email'] = is_scalar($fields['username']) ? strtolower($fields['email']) : '';
+        }
         $result = $this->user->fromArray($fields)->save(true);
         $this->log('Update profile', array('data' => $fields, 'result' => $result));
         if ($result) {

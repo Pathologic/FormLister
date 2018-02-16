@@ -1,4 +1,9 @@
 ## History
+### 1.7.16
+* [Fix] Ошибка с полями username и email при их отсутствии (Profile).
+* [Enhancement] В метод getField можно передать значение по умолчанию (Core).
+* [Refactor] Оптимизация обработки чанков (Core).
+
 ### 1.7.15
 * [Enhancement] Отдельные настройки почты для писем ccSender и automessage в параметрах ccMailConfig и autoMailConfig (Form).
 * [Refactor] Проверка типа входящих данных (Validator).
