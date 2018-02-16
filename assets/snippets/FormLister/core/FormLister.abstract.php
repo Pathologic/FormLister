@@ -127,7 +127,7 @@ abstract class Core
         ));
         $this->DLTemplate = \DLTemplate::getInstance($modx);
         $this->DLTemplate->setTemplatePath($this->getCFGDef('templatePath'));
-        $this->DLTemplate->setTemplateExtenstion($this->getCFGDef('templateExtension'));
+        $this->DLTemplate->setTemplateExtension($this->getCFGDef('templateExtension'));
         $this->formid = $this->getCFGDef('formid');
         switch (strtolower($this->getCFGDef('formMethod', 'post'))) {
             case 'post':
