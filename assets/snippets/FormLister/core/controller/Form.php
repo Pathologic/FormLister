@@ -282,7 +282,13 @@ class Form extends Core
         if (empty($to)) {
             $out = true;
         } else {
-            $mailer = new Mailer($this->modx, $this->getMailSendConfig($to, 'autosenderFromName', 'autoSubject'));
+            $config = $this->getMailSendConfig($to, 'autosenderFromName', 'autoSubject');
+            $asConfig = $this->config->loadArray($this->getCFGDef('autoMailConfig'));
+            if (!empty($asConfig) && is_array($asConfig)) {
+                $asConfig = $this->parseMailerParams($asConfig);
+                $config = array_merge($config, $asConfig);
+            }
+            $mailer = new Mailer($this->modx, $config);
             $report = $this->renderReport('automessageTpl');
             $out = $mailer->send($report);
             $this->log('Mail autosender report', array(
@@ -305,7 +311,13 @@ class Form extends Core
             $out = true;
         } else {
             if ($this->getCFGDef('ccSender', 0)) {
-                $mailer = new Mailer($this->modx, $this->getMailSendConfig($to, 'ccSenderFromName', 'ccSubject'));
+                $config = $this->getMailSendConfig($to, 'ccSenderFromName', 'ccSubject');
+                $ccConfig = $this->config->loadArray($this->getCFGDef('ccMailConfig'));
+                if (!empty($ccConfig) && is_array($ccConfig)) {
+                    $ccConfig = $this->parseMailerParams($ccConfig);
+                    $config = array_merge($config, $ccConfig);
+                }
+                $mailer = new Mailer($this->modx, $config);
                 $report = $this->renderReport('ccSenderTpl');
                 $out = $mailer->send($report);
                 $this->log('Mail CC report',
@@ -337,6 +349,7 @@ class Form extends Core
         if ($this->checkSubmitProtection()) {
             return;
         }
+        $this->mailConfig = $this->parseMailerParams($this->mailConfig);
         if ($this->sendReport()) {
             $this->sendCCSender();
             $this->sendAutosender();
@@ -344,6 +357,23 @@ class Form extends Core
         } else {
             $this->addMessage($this->lexicon->getMsg('form.form_failed'));
         }
+    }
+
+    /**
+     * @param array $cfg
+     * @return array
+     */
+    public function parseMailerParams($cfg = array()) {
+        if ($this->getCFGDef('parseMailerParams', 0) && !empty($cfg)) {
+            $plh = \APIhelpers::renameKeyArr($this->prerenderForm(true), '[', ']', '+');
+            $search = array_keys($plh);
+            $replace = array_values($plh);
+            foreach ($cfg as $key => &$value) {
+                $value = str_replace($search, $replace, $value);
+            }
+        }
+
+        return $cfg;
     }
     /**
      *
@@ -376,16 +406,7 @@ class Form extends Core
                 'fromName' => $this->getCFGDef($fromParam, $this->modx->config['site_name'])
             )
         );
-        if ($this->getCFGDef('parseMailerParams', 0)) {
-            $plh = $this->prerenderForm(true);
-            foreach ($out as $key => &$value) {
-                if ($key == 'subject') continue;
-                $_value = $this->parseChunk($value, $plh);
-                if (!empty($_value)) {
-                    $value = $_value;
-                }
-            }
-        }
+        $out = $this->parseMailerParams($out);
 
         return $out;
     }

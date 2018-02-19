@@ -73,7 +73,7 @@ class Register extends Form
     public static function uniqueEmail($fl, $value)
     {
         $result = true;
-        if (!is_null($fl->user)) {
+        if (is_scalar($value) && !is_null($fl->user)) {
             $fl->user->set('email', strtolower($value));
             $result = $fl->user->checkUnique('web_user_attributes', 'email', 'internalKey');
         }
@@ -91,7 +91,7 @@ class Register extends Form
     public static function uniqueUsername($fl, $value)
     {
         $result = true;
-        if (!is_null($fl->user)) {
+        if (is_scalar($value) && !is_null($fl->user)) {
             $fl->user->set('username', strtolower($value));
             $result = $fl->user->checkUnique('web_users', 'username');
         }
@@ -130,8 +130,8 @@ class Register extends Form
         $fields = $this->filterFields($this->getFormData('fields'), $this->allowedFields, $this->forbiddenFields);
         $checkActivation = $this->getCFGDef('checkActivation',0);
         if ($checkActivation) $fields['logincount'] = -1;
-        $fields['username'] = strtolower($fields['username']);
-        $fields['email'] = strtolower($fields['email']);
+        $fields['username'] = is_scalar($fields['username']) ? strtolower($fields['username']) : '';
+        $fields['email'] = is_scalar($fields['email']) ? strtolower($fields['email']) : '';
         $this->user->create($fields);
         $this->addWebUserToGroups(0, $this->config->loadArray($this->getCFGDef('userGroups')));
         $result = $this->user->save(true);

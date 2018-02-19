@@ -98,6 +98,8 @@ abstract class Core
 
     protected $plhCache = array();
 
+    protected $DLTemplate = null;
+
 
     /**
      * Core constructor.
@@ -123,6 +125,9 @@ abstract class Core
             'langDir' => 'assets/snippets/FormLister/core/lang/',
             'lang'    => $this->getCFGDef('lang', $this->modx->config['manager_language'])
         ));
+        $this->DLTemplate = \DLTemplate::getInstance($modx);
+        $this->DLTemplate->setTemplatePath($this->getCFGDef('templatePath'));
+        $this->DLTemplate->setTemplateExtension($this->getCFGDef('templateExtension'));
         $this->formid = $this->getCFGDef('formid');
         switch (strtolower($this->getCFGDef('formMethod', 'post'))) {
             case 'post':
@@ -435,25 +440,31 @@ abstract class Core
      */
     public function renderForm()
     {
-        $api = $this->getCFGDef('api', 0);
-        $plh = $this->getCFGDef('skipPrerender', 0) ? $this->getFormData('fields') : $this->prerenderForm();
-        $this->log('Render output', array('template' => $this->renderTpl, 'data' => $plh));
-        $form = $this->parseChunk($this->renderTpl, $plh);
+        $api = (int)$this->getCFGDef('api', 0);
+        $data = $this->getFormData();
+        unset($data['files']);
         /*
-         * Если api = 0, то возвращается шаблон
-         * Если api = 1, то возвращаются данные формы
-         * Если api = 2, то возвращаются данные формы и шаблон
-         */
-        if (!$api) {
-            $out = $form;
+        * Если api = 0, то возвращается шаблон
+        * Если api = 1, то возвращаются данные формы
+        * Если api = 2, то возвращаются данные формы и шаблон
+        */
+        if ($api == 1) {
+            $out = $data;
         } else {
-            $out = $this->getFormData();
-            unset($out['files']);
-            if ($api == 2) {
+            $plh = $this->getCFGDef('skipPrerender', 0) ? $this->getFormData('fields') : $this->prerenderForm();
+            $this->log('Render output', array('template' => $this->renderTpl, 'data' => $plh));
+            $form = $this->parseChunk($this->renderTpl, $plh);
+            if (!$api) {
+                $out = $form;
+            } else {
+                $out = $data;
                 $out['output'] = $form;
             }
-            $out = json_encode($out);
         }
+        if ($api) {
+            $out = $this->getCFGDef('apiFormat', 'json') == 'json' ? json_encode($out) : $out;
+        }
+
         $this->log('Output', $out);
 
         return $out;
@@ -617,12 +628,13 @@ abstract class Core
 
     /**
      * Возвращает значение поля из formData
-     * @param $field
-     * @return string
+     * @param string $field
+     * @param mixed $default
+     * @return mixed
      */
-    public function getField($field)
+    public function getField($field, $default = '')
     {
-        return \APIhelpers::getkey($this->formData['fields'], $field);
+        return \APIhelpers::getkey($this->formData['fields'], $field, $default);
     }
 
     /**
@@ -888,17 +900,14 @@ abstract class Core
     {
         $parseDocumentSource = $parseDocumentSource || $this->getCFGDef('parseDocumentSource', 0);
         $rewriteUrls = $this->getCFGDef('rewriteUrls', 1);
-        $DLTemplate = \DLTemplate::getInstance($this->modx)
-            ->setTemplatePath($this->getCFGDef('templatePath'))
-            ->setTemplateExtension($this->getCFGDef('templateExtension'))
-            ->setTwigTemplateVars(array(
-                    'FormLister' => $this,
-                    'errors'     => $this->getFormData('errors'),
-                    'messages'   => $this->getFormData('messages'),
-                    'plh'        => $this->placeholders
-                )
-            );
-        $out = $DLTemplate->parseChunk($name, $data, $parseDocumentSource);
+        $this->DLTemplate->setTwigTemplateVars(array(
+                'FormLister' => $this,
+                'errors'     => $this->getFormData('errors'),
+                'messages'   => $this->getFormData('messages'),
+                'plh'        => $this->placeholders
+            )
+        );
+        $out = $this->DLTemplate->parseChunk($name, $data, $parseDocumentSource);
         if ($this->lexicon->isReady()) {
             $out = $this->lexicon->parseLang($out);
         }
