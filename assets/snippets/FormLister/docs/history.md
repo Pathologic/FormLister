@@ -1,4 +1,7 @@
 ## History
+### 1.7.17
+* [Refactor] Мультибайтовые функции.
+
 ### 1.7.16
 * [Fix] Ошибка с полями username и email при их отсутствии (Profile).
 * [Enhancement] В метод getField можно передать значение по умолчанию (Core).
