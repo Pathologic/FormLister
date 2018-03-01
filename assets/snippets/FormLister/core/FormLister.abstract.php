@@ -452,7 +452,7 @@ abstract class Core
         if ($api == 1) {
             $out = $data;
         } else {
-            $plh = $this->getCFGDef('skipPrerender', 0) ? $this->getFormData('fields') : $this->prerenderForm();
+            $plh = $this->getCFGDef('skipPrerender', 0) ? $this->getFormData('fields') : $this->prerenderForm($this->getFormStatus());
             $this->log('Render output', array('template' => $this->renderTpl, 'data' => $plh));
             $form = $this->parseChunk($this->renderTpl, $plh);
             if (!$api) {
@@ -1254,7 +1254,6 @@ abstract class Core
     }
 
     /**
-     * @param array $fields
      * @return array
      */
     public function getRemoveGpcFields()
