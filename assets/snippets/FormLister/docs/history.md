@@ -1,4 +1,8 @@
 ## History
+### 1.7.18
+* [Enhancement] Dutch, Polish, English-Britain, German lexicons.
+* [Refactor] Экранирование значений массива до преобразования массива в строку в методе fieldsToPlaceholders 
+
 ### 1.7.17
 * [Refactor] Мультибайтовые функции.
 

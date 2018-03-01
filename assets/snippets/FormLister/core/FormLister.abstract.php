@@ -208,15 +208,16 @@ abstract class Core
                     }
                     break;
                 //Массив значений указывается в произвольном параметре
-                case 'param': {
-                    if (!empty($_source[1])) {
-                        $fields = $this->config->loadArray($this->getCFGDef($_source[1]));
-                        if (isset($_source[2])) {
-                            $prefix = $_source[2];
+                case 'param':
+                    {
+                        if (!empty($_source[1])) {
+                            $fields = $this->config->loadArray($this->getCFGDef($_source[1]));
+                            if (isset($_source[2])) {
+                                $prefix = $_source[2];
+                            }
                         }
+                        break;
                     }
-                    break;
-                }
                 //Массив значений указывается в параметре сессии
                 case 'session':
                     if (isset($_SESSION[$_source[1]]) && !empty($_source[1]) && is_array($_SESSION[$_source[1]])) {
@@ -736,18 +737,35 @@ abstract class Core
         if (is_array($fields)) {
             $plh = $fields;
             $sanitarTagFields = $this->getRemoveGpcFields();
+            $defaultSplitter = $this->getCFGDef('arraySplitter', '; ');
             foreach ($fields as $field => $value) {
-                if ($split && is_array($value)) {
-                    $arraySplitter = $this->getCFGDef($field . '.arraySplitter',
-                        $this->getCFGDef('arraySplitter', '; '));
-                    $value = implode($arraySplitter, $value);
-                }
-                if (in_array($field, $sanitarTagFields)) {
-                    $value = \APIhelpers::sanitarTag($value);
+                $sanitizeTags = in_array($field, $sanitarTagFields);
+                if (is_array($value)) {
+                    foreach ($value as $key => &$_value) {
+                        if (empty($_value) || !is_scalar($_value)) {
+                            unset($value[$key]);
+                            continue;
+                        }
+                        if ($sanitizeTags) {
+                            $_value = \APIhelpers::sanitarTag($_value);
+                        }
+                        $_value = \APIhelpers::e($_value);
+                    }
+                    unset($_value);
+                    if ($split) {
+                        $arraySplitter = $this->getCFGDef($field . '.arraySplitter',
+                            $defaultSplitter);
+                        $value = implode($arraySplitter, $value);
+                    }
+                } else {
+                    if ($sanitizeTags) {
+                        $value = \APIhelpers::sanitarTag($value);
+                    }
+                    $value = \APIhelpers::e($value);
                 }
                 $field = array($field, $suffix);
                 $field = implode('.', array_filter($field));
-                $plh[$field] = \APIhelpers::e($value);
+                $plh[$field] = $value;
             }
         }
         if (!empty($this->placeholders)) {
@@ -817,6 +835,7 @@ abstract class Core
         $rules = $this->getCFGDef($param);
         if (empty($rules)) {
             $this->log('No validation rules defined');
+
             return array();
         }
         $rules = $this->config->loadArray($rules, '');
