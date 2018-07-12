@@ -1,4 +1,8 @@
 ## History
+### 1.7.20
+* [Refactor] modxCaptcha больше не зависит от папки manager (modxCaptcha).
+* [Fix] Исправлена проверка уникальности имени пользователя и email (Register, Profile).
+
 ### 1.7.19
 * [Refactor] Имя пользователя и E-mail не приводятся в нижний регистр (Login, Register, Profile).
 * [Refactor] Не выводятся пустые обертки для сообщений формы (Core).
