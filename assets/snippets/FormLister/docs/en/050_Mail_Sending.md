@@ -164,21 +164,21 @@ Template of the additional letter.
 
 Possible values - template name, according to DocLister templating rules.
 
-Default value - none.
+Default value - reportTpl parameter value.
 
 ### ccSenderTpl
 Template of the letter sent to the user defined address.
 
 Possible values - template name, according to DocLister templating rules.
 
-Default value - none.
+Default value - reportTpl parameter value.
 
 ### successTpl
 Success message template.
 
 Possible values - template name, according to DocLister templating rules.
 
-Default value - none.
+Default value - lexicon entry with "form.default_successTpl" key.
 
 ## Sending files
 ### attachments
