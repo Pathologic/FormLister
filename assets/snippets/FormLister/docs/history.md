@@ -4,7 +4,7 @@
 * [Refactor] Переделана отправка писем для удобства отладки при пустом параметре &to и аналогичных.
 * [Refactor] При незаданных шаблонах ccSenderTpl и automessageTpl используется шаблон reportTpl.
 
-### 1.7.21
+### 1.7.20
 * [Refactor] modxCaptcha больше не зависит от папки manager (modxCaptcha).
 * [Fix] Исправлена проверка уникальности имени пользователя и email (Register, Profile).
 
