@@ -377,7 +377,8 @@ abstract class Core
      */
     public function isSubmitted()
     {
-        $out = $this->formid && ($this->getField('formid') === $this->formid);
+        $enableSubmit = !$this->getCFGDef('disableSubmit', 0);
+        $out = $this->formid && ($this->getField('formid') === $this->formid) && $enableSubmit;
 
         return $out;
     }

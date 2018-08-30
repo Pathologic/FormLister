@@ -25,6 +25,13 @@ Possible values - post, get or request.
 
 Default value - post.
 
+### disableSubmit
+Disables form submission, if the parameter value is set to 1.
+
+Possible value - 1, 0.
+
+Default value - 0.
+
 ### config
 Loads parameters from json file.
 
