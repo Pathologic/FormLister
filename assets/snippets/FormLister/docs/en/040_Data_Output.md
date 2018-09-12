@@ -36,14 +36,20 @@ Example:
 ```
 
 Class for empty required field:
+```
 [+field name.requiredСlass+]
+```
 
 Class for wrong filled field:
-[+field value.errorClass+]
+```
+[+field name.errorClass+]
+```
 
 Alternative classes output:
-[+field value.class+]
-[+field value.classnames+]
+```
+[+field name.class+] outputs class="classname"
+[+field name.classname+] outputs "classname"
+```
 
 Validation error message:
 [+field name.error+]
