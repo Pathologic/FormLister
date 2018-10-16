@@ -649,6 +649,16 @@ abstract class Core
     }
 
     /**
+     * Проверяет существование поля в formData
+     * @param string $field
+     * @return bool
+     */
+    public function fieldExists($field)
+    {
+        return is_scalar($field) && isset($this->formData['fields'][$field]);
+    }
+
+    /**
      * Сохраняет значение поля в formData
      * @param string $field имя поля
      * @param $value

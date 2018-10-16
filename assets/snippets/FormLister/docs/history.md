@@ -1,5 +1,8 @@
 ## History
 ### 1.7.22
+* [Enhancement] Метод fieldExists для проверки существования поля (Core).
+* [Fix] Исправлена ошибка в классе FileValidator (FileValidator).
+* [Refactor] Дополнительная проверка в плагине userHelper.
 * [Enhancement] Параметр disableSubmit (Core).
 
 ### 1.7.21
