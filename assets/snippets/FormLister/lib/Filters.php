@@ -33,7 +33,7 @@ class Filters {
      * @param $value
      * @return string
      */
-    public  static function strip_tags($value) {
+    public  static function stripTags($value) {
         return is_scalar($value) ? strip_tags($value) : '';
     }
 
@@ -87,6 +87,14 @@ class Filters {
 
     /**
      * @param $value
+     * @return null|string|string[]
+     */
+    public static function phone($value) {
+        return is_scalar($value) ? preg_replace('/[^\D\(\)\s\+-]/', '', $value) : '';
+    }
+
+    /**
+     * @param $value
      * @return mixed|string
      */
     public static function url($value) {
@@ -115,6 +123,14 @@ class Filters {
      */
     public static function alphaNumeric($value) {
         return is_scalar($value) ? preg_replace('/[^\pL\d]/', '', $value) : '';
+    }
+
+    /**
+     * @param $value
+     * @return null|string|string[]
+     */
+    public static function removeExtraSpaces ($value) {
+        return is_scalar($value) ? preg_replace('/\s+/', ' ', $value) : '';
     }
 
     /**
