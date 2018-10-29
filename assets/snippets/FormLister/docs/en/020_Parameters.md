@@ -151,6 +151,17 @@ Possible values - snippet names, anonymous functions, static methods of loaded c
 
 Default value - none.
 
+## Filtering
+### filterer
+Class name to filter data. Is has to be loaded before snippet call.
+
+Default value - \FormLister\Filters.
+
+### filters
+Filtering rules array.
+
+Default value - none.
+
 ## Validation
 ### validator
 Class name to validate data. Is has to be loaded before snippet call.

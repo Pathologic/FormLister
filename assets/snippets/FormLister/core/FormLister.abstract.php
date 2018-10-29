@@ -105,7 +105,7 @@ abstract class Core
      * @param \DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, $cfg = array())
+    public function __construct (\DocumentParser $modx, $cfg = array())
     {
         $this->modx = $modx;
         $this->config = new Config();
@@ -148,7 +148,7 @@ abstract class Core
      * Установка шаблона формы
      * Загрузка капчи
      */
-    public function initForm()
+    public function initForm ()
     {
         $lexicon = $this->getCFGDef('lexicon');
         $langDir = $this->getCFGDef('langDir', 'assets/snippets/FormLister/core/lang/');
@@ -173,10 +173,11 @@ abstract class Core
         $this->emptyFormControls = array_merge(
             $this->emptyFormControls,
             $this->config->loadArray($this->getCFGDef('emptyFormControls'),
-            ''
-        ));
-        $this->setRequestParams();
-        $this->setExternalFields($this->getCFGDef('defaultsSources', 'array'));
+                ''
+            ));
+        $this->setRequestParams()
+            ->setExternalFields($this->getCFGDef('defaultsSources', 'array'))
+            ->sanitizeForm();
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
         $this->initCaptcha();
         $this->runPrepare('prepare');
@@ -190,7 +191,7 @@ abstract class Core
      * @param string $arrayParam название параметра с данными
      * @return $this
      */
-    public function setExternalFields($sources = 'array', $arrayParam = 'defaults')
+    public function setExternalFields ($sources = 'array', $arrayParam = 'defaults')
     {
         $keepDefaults = $this->getCFGDef('keepDefaults', 0);
         $submitted = $this->isSubmitted();
@@ -333,7 +334,7 @@ abstract class Core
     /**
      * Сохранение массива $_REQUEST
      */
-    public function setRequestParams()
+    public function setRequestParams ()
     {
         $this->removeGpc($this->_rq);
         $this->setFields($this->_rq);
@@ -356,7 +357,7 @@ abstract class Core
      * @param array $forbiddenFields
      * @return array
      */
-    public function filterFields($fields = array(), $allowedFields = array(), $forbiddenFields = array())
+    public function filterFields ($fields = array(), $allowedFields = array(), $forbiddenFields = array())
     {
         $out = array();
         foreach ($fields as $key => $value) {
@@ -375,7 +376,7 @@ abstract class Core
     /**
      * @return bool
      */
-    public function isSubmitted()
+    public function isSubmitted ()
     {
         $enableSubmit = !$this->getCFGDef('disableSubmit', 0);
         $out = $this->formid && ($this->getField('formid') === $this->formid) && $enableSubmit;
@@ -390,7 +391,7 @@ abstract class Core
      * @param mixed $def значение по умолчанию, если в конфиге нет искомого параметра
      * @return mixed значение из конфига
      */
-    public function getCFGDef($name, $def = null)
+    public function getCFGDef ($name, $def = null)
     {
         return $this->config->getCFGDef($name, $def);
     }
@@ -403,7 +404,7 @@ abstract class Core
      *
      * @return string
      */
-    public function render()
+    public function render ()
     {
         if ($this->isSubmitted()) {
             $this->validateForm();
@@ -424,7 +425,7 @@ abstract class Core
      * @param bool $convertArraysToStrings
      * @return array
      */
-    public function prerenderForm($convertArraysToStrings = false)
+    public function prerenderForm ($convertArraysToStrings = false)
     {
         if (empty($this->plhCache) || !$convertArraysToStrings) {
             $this->plhCache = array_merge(
@@ -446,7 +447,7 @@ abstract class Core
      *
      * @return null|string
      */
-    public function renderForm()
+    public function renderForm ()
     {
         $api = (int)$this->getCFGDef('api', 0);
         $data = $this->getFormData();
@@ -459,7 +460,8 @@ abstract class Core
         if ($api == 1) {
             $out = $data;
         } else {
-            $plh = $this->getCFGDef('skipPrerender', 0) ? $this->getFormData('fields') : $this->prerenderForm($this->getFormStatus());
+            $plh = $this->getCFGDef('skipPrerender',
+                0) ? $this->getFormData('fields') : $this->prerenderForm($this->getFormStatus());
             $this->log('Render output', array('template' => $this->renderTpl, 'data' => $plh));
             $form = $this->parseChunk($this->renderTpl, $plh);
             if (!$api) {
@@ -484,7 +486,7 @@ abstract class Core
      * @param string $prefix добавляет префикс к имени поля
      * @return $this
      */
-    public function setFields($fields = array(), $prefix = '')
+    public function setFields ($fields = array(), $prefix = '')
     {
         foreach ($fields as $key => $value) {
             if (is_int($key)) {
@@ -500,10 +502,38 @@ abstract class Core
     }
 
     /**
+     * Обработка значений по предопределенным правилам
+     * @return $this
+     */
+    public function sanitizeForm ()
+    {
+        $filterer = $this->getCFGDef('filterer', '\FormLister\Filters');
+        $filterer = $this->loadModel($filterer, '', array());
+        $filterSet = $this->config->loadArray($this->getCFGDef('filters', ''), '');
+        foreach ($filterSet as $field => $filters) {
+            $value = $this->getField($field);
+            if (!is_array($filters)) {
+                $filters = array($filters);
+            }
+            foreach ($filters as $filter) {
+                if (method_exists($filterer, $filter)) {
+                    $value = call_user_func(
+                        array($filterer, $filter),
+                        $value
+                    );
+                }
+            }
+            $this->setField($field, $value);
+        }
+
+        return $this;
+    }
+
+    /**
      * Возвращает результат проверки формы
      * @return bool
      */
-    public function validateForm()
+    public function validateForm ()
     {
         $validator = $this->getCFGDef('validator', '\FormLister\Validator');
         $validator = $this->loadModel($validator, '', array());
@@ -529,7 +559,7 @@ abstract class Core
      * @param  array $fields
      * @return bool|array
      */
-    public function validate($validator, $rules, $fields)
+    public function validate ($validator, $rules, $fields)
     {
         if (empty($rules) || is_null($validator)) {
             return true;
@@ -605,7 +635,7 @@ abstract class Core
      * @param string $section
      * @return array
      */
-    public function getFormData($section = '')
+    public function getFormData ($section = '')
     {
         if ($section && isset($this->formData[$section])) {
             $out = $this->formData[$section];
@@ -621,7 +651,7 @@ abstract class Core
      * @param bool $status
      * @return $this
      */
-    public function setFormStatus($status)
+    public function setFormStatus ($status)
     {
         $this->formData['status'] = (bool)$status;
 
@@ -632,7 +662,7 @@ abstract class Core
      * Возращвет статус формы
      * @return bool
      */
-    public function getFormStatus()
+    public function getFormStatus ()
     {
         return $this->formData['status'];
     }
@@ -643,7 +673,7 @@ abstract class Core
      * @param mixed $default
      * @return mixed
      */
-    public function getField($field, $default = '')
+    public function getField ($field, $default = '')
     {
         return \APIhelpers::getkey($this->formData['fields'], $field, $default);
     }
@@ -653,7 +683,7 @@ abstract class Core
      * @param string $field
      * @return bool
      */
-    public function fieldExists($field)
+    public function fieldExists ($field)
     {
         return is_scalar($field) && isset($this->formData['fields'][$field]);
     }
@@ -664,7 +694,7 @@ abstract class Core
      * @param $value
      * @return $this
      */
-    public function setField($field, $value)
+    public function setField ($field, $value)
     {
         if ($value !== '' || $this->getCFGDef('allowEmptyFields', 1)) {
             $this->formData['fields'][$field] = $value;
@@ -679,7 +709,7 @@ abstract class Core
      * @param $value
      * @return $this
      */
-    public function setPlaceholder($placeholder, $value)
+    public function setPlaceholder ($placeholder, $value)
     {
         $this->placeholders[$placeholder] = $value;
         $this->plhCache = array();
@@ -691,7 +721,7 @@ abstract class Core
      * @param $placeholder
      * @return mixed
      */
-    public function getPlaceholder($placeholder)
+    public function getPlaceholder ($placeholder)
     {
         return \APIhelpers::getkey($this->placeholders, $placeholder);
     }
@@ -701,10 +731,11 @@ abstract class Core
      * @param string $field
      * @return $this
      */
-    public function unsetField($field)
+    public function unsetField ($field)
     {
         if (isset($this->formData['fields'][$field])) {
             unset($this->formData['fields'][$field]);
+            $this->plhCache = array();
         }
 
         return $this;
@@ -717,7 +748,7 @@ abstract class Core
      * @param string $message сообщение об ошибке
      * @return $this
      */
-    public function addError($field, $type, $message)
+    public function addError ($field, $type, $message)
     {
         if ($this->lexicon->isReady()) {
             $message = $this->lexicon->parseLang($message);
@@ -732,13 +763,14 @@ abstract class Core
      * @param string $message
      * @return $this
      */
-    public function addMessage($message = '')
+    public function addMessage ($message = '')
     {
         if ($message) {
             if ($this->lexicon->isReady()) {
                 $message = $this->lexicon->parseLang($message);
             }
             $this->formData['messages'][] = $message;
+            $this->plhCache = array();
         }
 
         return $this;
@@ -751,7 +783,7 @@ abstract class Core
      * @param bool $split преобразование массивов в строки
      * @return array
      */
-    public function fieldsToPlaceholders($fields = array(), $suffix = '', $split = false)
+    public function fieldsToPlaceholders ($fields = array(), $suffix = '', $split = false)
     {
         $plh = array();
         if (is_array($fields)) {
@@ -799,7 +831,7 @@ abstract class Core
      * Готовит сообщения об ошибках для вывода в шаблон
      * @return array
      */
-    public function errorsToPlaceholders()
+    public function errorsToPlaceholders ()
     {
         $plh = array();
         foreach ($this->getFormData('errors') as $field => $error) {
@@ -823,7 +855,7 @@ abstract class Core
      * Обработка чекбоксов, селектов, радио-кнопок перед выводом в шаблон
      * @return array
      */
-    public function controlsToPlaceholders()
+    public function controlsToPlaceholders ()
     {
         $plh = array();
         $formControls = $this->config->loadArray($this->getCFGDef('formControls'));
@@ -850,7 +882,7 @@ abstract class Core
      * @param string $param
      * @return array|mixed|\xNop
      */
-    public function getValidationRules($param = 'rules')
+    public function getValidationRules ($param = 'rules')
     {
         $rules = $this->getCFGDef($param);
         if (empty($rules)) {
@@ -870,7 +902,7 @@ abstract class Core
      * Готовит сообщения из formData для вывода в шаблон
      * @return string
      */
-    public function renderMessages()
+    public function renderMessages ()
     {
         $out = '';
         $wrapper = $this->getCFGDef('messagesTpl', '@CODE:<div class="form-messages">[+messages+]</div>');
@@ -921,7 +953,7 @@ abstract class Core
      * @param string $splitter
      * @return string
      */
-    public function renderMessagesGroup($messages, $wrapper, $splitter)
+    public function renderMessagesGroup ($messages, $wrapper, $splitter)
     {
         $out = '';
         if (is_array($messages) && !empty($messages)) {
@@ -939,7 +971,7 @@ abstract class Core
      * @param bool $parseDocumentSource
      * @return string
      */
-    public function parseChunk($name, $data, $parseDocumentSource = false)
+    public function parseChunk ($name, $data, $parseDocumentSource = false)
     {
         $parseDocumentSource = $parseDocumentSource || $this->getCFGDef('parseDocumentSource', 0);
         $rewriteUrls = $this->getCFGDef('rewriteUrls', 1);
@@ -970,7 +1002,7 @@ abstract class Core
     /**
      * Загружает класс капчи
      */
-    public function initCaptcha()
+    public function initCaptcha ()
     {
         if ($captcha = $this->getCFGDef('captcha')) {
             $captcha = preg_replace('/[^a-zA-Z]/', '', $captcha);
@@ -1001,7 +1033,7 @@ abstract class Core
     /**
      * @return \DocumentParser|null
      */
-    public function getMODX()
+    public function getMODX ()
     {
         return $this->modx;
     }
@@ -1009,7 +1041,7 @@ abstract class Core
     /**
      * @return mixed|string
      */
-    public function getFormId()
+    public function getFormId ()
     {
         return $this->formid;
     }
@@ -1017,7 +1049,7 @@ abstract class Core
     /**
      * @return bool
      */
-    public function isValid()
+    public function isValid ()
     {
         $this->setValid(!count($this->getFormData('errors')));
 
@@ -1029,7 +1061,7 @@ abstract class Core
      * @param string $paramName
      * @return $this
      */
-    public function runPrepare($paramName = 'prepare')
+    public function runPrepare ($paramName = 'prepare')
     {
         if (($prepare = $this->getCFGDef($paramName)) != '') {
             $names = $this->config->loadArray($prepare);
@@ -1052,7 +1084,7 @@ abstract class Core
      * @param array $params
      * @return $this
      */
-    public function callPrepare($name, $params = array())
+    public function callPrepare ($name, $params = array())
     {
         if (!empty($name)) {
             if ((is_object($name) && ($name instanceof \Closure)) || is_callable($name)) {
@@ -1073,7 +1105,7 @@ abstract class Core
      * @param string $param имя параметра с id документа для редиректа
      * @param array $_query
      */
-    public function redirect($param = 'redirectTo', $_query = array())
+    public function redirect ($param = 'redirectTo', $_query = array())
     {
         if ($redirect = $this->getCFGDef($param, 0)) {
             $redirect = $this->config->loadArray($redirect);
@@ -1108,7 +1140,7 @@ abstract class Core
      * @param $url
      * @param $header
      */
-    public function sendRedirect($url, $header = 'HTTP/1.1 307 Temporary Redirect')
+    public function sendRedirect ($url, $header = 'HTTP/1.1 307 Temporary Redirect')
     {
         if (!$this->getCFGDef('api', 0)) {
             $header = $header ? $header : 'HTTP/1.1 307 Temporary Redirect';
@@ -1124,13 +1156,13 @@ abstract class Core
      *
      * @return mixed
      */
-    abstract public function process();
+    abstract public function process ();
 
     /**
      * @param boolean $valid
      * @return Core
      */
-    public function setValid($valid)
+    public function setValid ($valid)
     {
         $this->valid &= $valid;
 
@@ -1141,7 +1173,7 @@ abstract class Core
      * @param array $files
      * @return Core
      */
-    public function setFiles($files)
+    public function setFiles ($files)
     {
         if (is_array($files)) {
             $this->formData['files'] = $files;
@@ -1155,7 +1187,7 @@ abstract class Core
      * @param array $data
      * @return Core
      */
-    public function log($message, $data = array())
+    public function log ($message, $data = array())
     {
         if (!is_null($this->debug)) {
             $this->debug->log($message, $data);
@@ -1169,7 +1201,7 @@ abstract class Core
      * @param string $path
      * @return object
      */
-    public function loadModel($model, $path = '', $init = '')
+    public function loadModel ($model, $path = '', $init = '')
     {
         $out = null;
         if (!class_exists($model) && $path && $this->fs->checkFile($path)) {
@@ -1191,7 +1223,7 @@ abstract class Core
      * @param bool $flag
      * @return array
      */
-    public function filesToArray(array $_files, array $allowed, $flag = true)
+    public function filesToArray (array $_files, array $allowed, $flag = true)
     {
         $files = array();
         foreach ($_files as $name => $file) {
@@ -1227,7 +1259,7 @@ abstract class Core
      * @param string $field
      * @return array
      */
-    public function getErrorMessage($field)
+    public function getErrorMessage ($field)
     {
         $out = array();
         if (!empty($field) && isset($this->formData['errors'][$field]) && is_array($this->formData['errors'][$field])) {
@@ -1240,7 +1272,7 @@ abstract class Core
     /**
      * @return string
      */
-    protected function setGpcSeed()
+    protected function setGpcSeed ()
     {
         $this->gpc_seed = 'sanitize_seed_' . base_convert(md5(realpath(MODX_MANAGER_PATH . 'includes/protect.inc.php')),
                 16, 36);
@@ -1255,7 +1287,7 @@ abstract class Core
      * @param int $count
      * @return mixed
      */
-    protected function removeGpc(&$target, $count = 0)
+    protected function removeGpc (&$target, $count = 0)
     {
         $removeFields = $this->getRemoveGpcFields();
         foreach ($target as $key => $value) {
@@ -1283,7 +1315,7 @@ abstract class Core
     /**
      * @return array
      */
-    public function getRemoveGpcFields()
+    public function getRemoveGpcFields ()
     {
         $out = $this->gpc_fields;
         if (($removeGpc = $this->getCFGDef('removeGpc', 0)) && empty($out)) {

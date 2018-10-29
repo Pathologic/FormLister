@@ -1,4 +1,7 @@
 ## History
+### 1.8.0
+* [Enhancement] Поддержка фильтров для предварительной обработки значений в форме (Core, Filters).
+
 ### 1.7.22
 * [Enhancement] Метод fieldExists для проверки существования поля (Core).
 * [Fix] Исправлена ошибка в классе FileValidator (FileValidator).
