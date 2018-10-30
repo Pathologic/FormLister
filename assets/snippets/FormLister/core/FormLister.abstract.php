@@ -981,6 +981,7 @@ abstract class Core
             'messages'   => $this->getFormData('messages'),
             'plh'        => $this->placeholders
         );
+        /* TODO remove in further versions*/
         if (method_exists($this->DLTemplate, 'setTwigTemplateVars')) {
             $this->DLTemplate->setTwigTemplateVars($templateData);
         } else {
