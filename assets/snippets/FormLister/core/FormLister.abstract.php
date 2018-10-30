@@ -975,13 +975,17 @@ abstract class Core
     {
         $parseDocumentSource = $parseDocumentSource || $this->getCFGDef('parseDocumentSource', 0);
         $rewriteUrls = $this->getCFGDef('rewriteUrls', 1);
-        $this->DLTemplate->setTwigTemplateVars(array(
-                'FormLister' => $this,
-                'errors'     => $this->getFormData('errors'),
-                'messages'   => $this->getFormData('messages'),
-                'plh'        => $this->placeholders
-            )
+        $templateData = array(
+            'FormLister' => $this,
+            'errors'     => $this->getFormData('errors'),
+            'messages'   => $this->getFormData('messages'),
+            'plh'        => $this->placeholders
         );
+        if (method_exists($this->DLTemplate, 'setTwigTemplateVars')) {
+            $this->DLTemplate->setTwigTemplateVars($templateData);
+        } else {
+            $this->DLTemplate->setTemplateData($templateData);
+        }
         $out = $this->DLTemplate->parseChunk($name, $data, $parseDocumentSource);
         if ($this->lexicon->isReady()) {
             $out = $this->lexicon->parseLang($out);
