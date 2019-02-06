@@ -1,4 +1,7 @@
 ## History
+### 1.8.2
+* [Enhancement] Учет настройки server_offset_time (Form).
+
 ### 1.8.1
 * [Refactor] Убраны прямые обращения к $modx->config.
 

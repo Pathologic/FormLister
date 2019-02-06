@@ -378,7 +378,8 @@ class Form extends Core
      */
     public function process()
     {
-        $this->setField('form.date', date($this->getCFGDef('dateFormat', $this->lexicon->getMsg('form.dateFormat'))));
+        $now = time() + $this->modx->getConfig('server_offset_time');
+        $this->setField('form.date', date($this->getCFGDef('dateFormat', $this->lexicon->getMsg('form.dateFormat')), $now));
         $this->setFileFields();
         //если защита сработала, то ничего не отправляем
         if ($this->checkSubmitProtection()) {
