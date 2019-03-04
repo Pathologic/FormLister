@@ -42,7 +42,7 @@ if (class_exists($classname)) {
     $FormLister->initForm();
     $out = $FormLister->render();
     if ($FormLister->getFormStatus() && isset($saveObject) && is_scalar($saveObject)) {
-        $modx->setPlaceholder($saveObject,$FormLister);
+        $modx->setPlaceholder($saveObject, $FormLister);
     }
 
     if (!is_null($FormLister->debug)) {

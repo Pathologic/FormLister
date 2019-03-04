@@ -450,13 +450,16 @@ abstract class Core
     public function renderForm ()
     {
         $api = (int)$this->getCFGDef('api', 0);
-        $data = $this->getFormData();
-        unset($data['files']);
         /*
         * Если api = 0, то возвращается шаблон
         * Если api = 1, то возвращаются данные формы
         * Если api = 2, то возвращаются данные формы и шаблон
+        * Если api = 3, то возвращается объект
         */
+        if ($api == 3) return $this;
+
+        $data = $this->getFormData();
+        unset($data['files']);
         if ($api == 1) {
             $out = $data;
         } else {
@@ -1113,22 +1116,23 @@ abstract class Core
     public function redirect ($param = 'redirectTo', $_query = array())
     {
         if ($redirect = $this->getCFGDef($param, 0)) {
-            $redirect = $this->config->loadArray($redirect);
             $query = $header = '';
+            $query = http_build_query($_query);
             if (is_numeric($redirect)) {
                 $page = $redirect;
-                $query = http_build_query($_query);
-            } elseif (isset($redirect[0])) {
-                $page = $redirect[0];
-                $query = http_build_query($_query);
             } else {
-                if (isset($redirect['query']) && is_array($redirect['query'])) {
-                    $query = http_build_query(array_merge($redirect['query'], $_query));
+                $redirect = $this->config->loadArray($redirect);
+                if (isset($redirect[0])) {
+                    $redirect['page'] = $redirect[0];
+                } else {
+                    if (isset($redirect['query']) && is_array($redirect['query'])) {
+                        $query = http_build_query(array_merge($redirect['query'], $_query));
+                    }
+                    if (isset($redirect['header'])) {
+                        $header = $redirect['header'];
+                    }
+                    $page = isset($redirect['page']) ? $redirect['page'] : $this->modx->getConfig('site_start');
                 }
-                if (isset($redirect['header'])) {
-                    $header = $redirect['header'];
-                }
-                $page = isset($redirect['page']) ? $redirect['page'] : $this->modx->getConfig('site_start');
             }
             if (is_numeric($page)) {
                 $redirect = $this->modx->makeUrl($page, '', $query, 'full');

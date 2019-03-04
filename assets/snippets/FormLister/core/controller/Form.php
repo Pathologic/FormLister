@@ -435,7 +435,7 @@ class Form extends Core
      */
     public function getMailSendConfig($to, $fromParam, $subjectParam = 'subject')
     {
-        $subject = empty($this->getCFGDef($subjectParam))
+        $subject = empty($this->getCFGDef($subjectParam . 'Tpl'))
             ? $this->renderSubject()
             : $this->renderSubject($subjectParam);
         $out = array_merge(
