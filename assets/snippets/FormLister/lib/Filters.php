@@ -90,7 +90,7 @@ class Filters {
      * @return null|string|string[]
      */
     public static function phone($value) {
-        return is_scalar($value) ? preg_replace('/[^\D\(\)\s\+-]/', '', $value) : '';
+        return is_scalar($value) ? preg_replace('/[^\d\(\)\s\+-]/', '', $value) : '';
     }
 
     /**
