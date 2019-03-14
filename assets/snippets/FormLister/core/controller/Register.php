@@ -134,7 +134,6 @@ class Register extends Form
         $fields['username'] = is_scalar($fields['username']) ? $fields['username'] : '';
         $fields['email'] = is_scalar($fields['email']) ? $fields['email'] : '';
         $this->user->create($fields);
-        $this->addWebUserToGroups(0, $this->config->loadArray($this->getCFGDef('userGroups')));
         $result = $this->user->save(true);
         $this->log('Register user', array('data' => $fields, 'result' => $result, 'log' => $this->user->getLog()));
         if (!$result) {
@@ -142,6 +141,7 @@ class Register extends Form
         } else {
             $this->user->close();
             $userdata = $this->user->edit($result)->toArray();
+            $this->addWebUserToGroups($result, $this->config->loadArray($this->getCFGDef('userGroups')));
             $this->setFields($userdata);
             $this->setField('user.password', $password);
             $this->runPrepare('preparePostProcess');
