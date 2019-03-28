@@ -130,7 +130,7 @@ class Filters {
      * @return null|string|string[]
      */
     public static function removeExtraSpaces ($value) {
-        return is_scalar($value) ? preg_replace('/\s+/', ' ', $value) : '';
+        return is_scalar($value) ? preg_replace(array('/(\v){3,}/', '/\h+/'), array('$1$1', ' '), $value) : '';
     }
 
     /**
