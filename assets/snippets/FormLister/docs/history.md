@@ -1,9 +1,10 @@
 ## History
 ### 1.8.3
-* [Fix] Ошибка в фильтре phone.
-* [Refactor] Разбор параметров редиректа.
-* [Fix] Проверка существования параметров *SubjectTpl.
-* [Enhancement] Дополнительный режим api, в котором возвращается объект контроллера.
+* [Enhancement] Новый фильтр compressText (Filters).
+* [Fix] Ошибка в фильтре phone (Filters).
+* [Refactor] Разбор параметров редиректа (Core).
+* [Fix] Проверка существования параметров *SubjectTpl (Form).
+* [Enhancement] Дополнительный режим api, в котором возвращается объект контроллера (Core).
 
 ### 1.8.2
 * [Enhancement] Учет настройки server_offset_time (Form).

@@ -16,7 +16,8 @@ The default filterer class (\FormLister\Filters) contains the following filters:
 - alpha: removes everything but letters;
 - numeric: removes everything but digits;
 - alphaNumeric: removes everything but letters and digits;
-- removeExtraSpaces: removes extras whitespaces;
+- removeExtraSpaces: removes extra whitespaces and line breaks;
+- compressText: removes extra whitespaces but preserves line breaks;
 - stripTags: removes html tags;
 - lcfirst: converts the first character to the lowercase;
 - ucfirst: converts the first character to the uppercase;
