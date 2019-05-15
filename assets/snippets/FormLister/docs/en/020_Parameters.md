@@ -86,7 +86,7 @@ Allows to load data from external sources, to pre-fill form fields, for example.
 
 Possible values: sources, semicolon separated. The order of loading data matches the sources order in parameter.
 
-The source can be set as "name:key:prefix". Prefix is added to field name, if set - for example, config.site_name.
+The source can be set as "name:key:prefix". A prefix with a dot is added to field name, if set - for example, config.site_name. If a prefix is ended with an underscore (_), then an underscore will be used instead of a dot - that allows to avoid dot to underscore conversion made by PHP (https://www.php.net/manual/en/language.variables.external.php).
 
 Possible sources:
 

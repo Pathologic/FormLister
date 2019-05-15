@@ -1,4 +1,8 @@
 ## History
+### 1.8.4
+* [Enhancement] Метод translate для получения записи из лексикона (Core).
+* [Enhancement] Возможность использовать подчеркивание вместо точки при загрузке внешних полей (параметр defaultsSources)с префиксом (Core).
+
 ### 1.8.3
 * [Enhancement] Новый фильтр compressText (Filters).
 * [Fix] Ошибка в фильтре phone (Filters).

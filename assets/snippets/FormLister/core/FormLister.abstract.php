@@ -487,16 +487,21 @@ abstract class Core
      * Загружает данные в formData
      * @param array $fields массив полей
      * @param string $prefix добавляет префикс к имени поля
+     * Если префикс заканчивается на подчеркивание(_), то префикс и имя разделяются подчеркиванием, иначе - точкой
      * @return $this
      */
     public function setFields ($fields = array(), $prefix = '')
     {
+        $prefix = trim($prefix);
         foreach ($fields as $key => $value) {
             if (is_int($key)) {
                 continue;
             }
-            if ($prefix) {
-                $key = "{$prefix}.{$key}";
+            if ($prefix && $prefix != '') {
+                if (substr($prefix, -1) != '_') {
+                    $prefix = $prefix . '.';
+                }
+                $key = $prefix . $key;
             }
             $this->setField($key, $value);
         }
@@ -1002,6 +1007,21 @@ abstract class Core
             if ($matches[0]) {
                 $out = str_replace($matches[0], '', $out);
             }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Получение значения из лексикона
+     * @param $name
+     * @param string $default
+     * @return string
+     */
+    public function translate($name, $default = '') {
+        $out = $default;
+        if ($this->lexicon->isReady()) {
+            $out = $this->lexicon->getMsg($name, $default);
         }
 
         return $out;
