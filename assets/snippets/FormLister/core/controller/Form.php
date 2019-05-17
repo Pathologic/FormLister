@@ -366,7 +366,7 @@ class Form extends Core
      */
     public function render()
     {
-        if ($this->isSubmitted() && $this->checkSubmitLimit()) {
+        if ($this->isSubmitted() && $this->checkSubmitLimit() && $this->checkSubmitProtection()) {
             return $this->renderForm();
         }
 
@@ -381,10 +381,6 @@ class Form extends Core
         $now = time() + $this->modx->getConfig('server_offset_time');
         $this->setField('form.date', date($this->getCFGDef('dateFormat', $this->lexicon->getMsg('form.dateFormat')), $now));
         $this->setFileFields();
-        //если защита сработала, то ничего не отправляем
-        if ($this->checkSubmitProtection()) {
-            return;
-        }
         $this->mailConfig = $this->parseMailerParams($this->mailConfig);
         if ($this->sendReport()) {
             $this->sendCCSender();

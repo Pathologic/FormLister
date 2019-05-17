@@ -21,7 +21,13 @@ The name of the form, required parameter.
 Form needs to have a hidden field named "formid" and its value has to be the same as parameter value. The form means to be sent, if there is a key named "formid" in the $_REQUEST array and its value is equal to the parameter value.
 
 ### formMethod
-Possible values - post, get or request.
+Determines the source of request data:
+* post - $_POST array;
+* get - $_GET array;
+* request - $_REQUEST array;
+* the result of anonymous function or class method call.
+
+Possible values - post, get, request, anonymous function or class method. 
 
 Default value - post.
 

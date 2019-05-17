@@ -5,7 +5,7 @@
  * Class Profile
  * @package FormLister
  */
-class Profile extends Form
+class Profile extends Core
 {
     /**
      * @var \modUsers
@@ -26,22 +26,32 @@ class Profile extends Form
         }
         $uid = $modx->getLoginUserId('web');
         if ($uid) {
+            /* @var $user \modUsers */
             $user = $this->loadModel(
                 $this->getCFGDef('model', '\modUsers'),
                 $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
             );
             $this->user = $user->edit($uid);
-            if ($ds = $this->getCFGDef('defaultsSources')) {
-                $defaultsSources = "{$ds};param:userdata";
-            } else {
-                $defaultsSources = "param:userdata";
-            }
             $this->config->setConfig(array(
-                'defaultsSources' => $defaultsSources,
                 'userdata' => $this->user->toArray()
             ));
         }
     }
+
+    /**
+     * Загружает в formData данные не из формы
+     * @param string $sources список источников
+     * @param string $arrayParam название параметра с данными
+     * @return $this
+     */
+    public function setExternalFields ($sources = 'array', $arrayParam = 'defaults')
+    {
+        parent::setExternalFields($sources, $arrayParam);
+        parent::setExternalFields('array', 'userdata');
+
+        return $this;
+    }
+
 
     /**
      * @return string
@@ -92,6 +102,7 @@ class Profile extends Form
     {
         $result = true;
         if (is_scalar($value) && !is_null($fl->user) && ($fl->user->get("email") !== $value)) {
+            /* @var $user \modUsers */
             $user = clone($fl->user);
             $user->set('email', $value);
             $result = $user->checkUnique('web_user_attributes', 'email', 'internalKey');
@@ -109,6 +120,7 @@ class Profile extends Form
     {
         $result = true;
         if (is_scalar($value) && !is_null($fl->user) && ($fl->user->get("email") !== $value)) {
+            /* @var $user \modUsers */
             $user = clone($fl->user);
             $user->set('username', $value);
             $result = $user->checkUnique('web_users', 'username');

@@ -118,9 +118,6 @@ class Register extends Form
         if ($this->getField('username') == '') {
             $this->setField('username', $this->getField('email'));
         }
-        if ($this->checkSubmitProtection()) {
-            return;
-        }
         //регистрация со случайным паролем
         if ($this->getField('password') == '' && !isset($this->rules['password'])) {
             $this->setField('password', \APIhelpers::genPass($this->getCFGDef('passwordLength', 6)));

@@ -27,24 +27,32 @@ class DeleteUser extends Form
                 $this->getCFGDef('model', '\modUsers'),
                 $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
             );
-            if ($ds = $this->getCFGDef('defaultsSources')) {
-                $defaultsSources = "{$ds};param:userdata";
-            } else {
-                $defaultsSources = "param:userdata";
-            }
             if (!is_null($this->user)) {
                 $userdata = $this->user->edit($uid)->toArray();
                 unset($userdata['password']);
             }
             $this->config->setConfig(array(
-                'defaultsSources'    => $defaultsSources,
-                'userdata'           => $userdata,
                 'ignoreMailerResult' => 1,
                 'keepDefaults'       => 1,
                 'protectSubmit'      => 0,
-                'submitLimit'        => 0
+                'submitLimit'        => 0,
+                'userdata'           => $userdata
             ));
         }
+    }
+
+    /**
+     * Загружает в formData данные не из формы
+     * @param string $sources список источников
+     * @param string $arrayParam название параметра с данными
+     * @return $this
+     */
+    public function setExternalFields ($sources = 'array', $arrayParam = 'defaults')
+    {
+        parent::setExternalFields($sources, $arrayParam);
+        parent::setExternalFields('array', 'userdata');
+
+        return $this;
     }
 
     /**

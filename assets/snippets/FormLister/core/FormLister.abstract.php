@@ -128,19 +128,34 @@ abstract class Core
         $this->DLTemplate->setTemplatePath($this->getCFGDef('templatePath'));
         $this->DLTemplate->setTemplateExtension($this->getCFGDef('templateExtension'));
         $this->formid = $this->getCFGDef('formid');
-        switch (strtolower($this->getCFGDef('formMethod', 'post'))) {
-            case 'post':
-                $this->_rq = $_POST;
-                break;
-            case 'get':
-                $this->_rq = $_GET;
-                break;
-            default:
-                $this->_rq = $_REQUEST;
-        }
+        $this->getRequest();
         if ($this->getCFGDef('removeGpc', 0)) {
             $this->setGpcSeed();
         }
+    }
+
+    /**
+     * @return $this
+     */
+    public function getRequest() {
+        $method = $this->getCFGDef('formMethod', 'post');
+        if ((is_object($method) && ($method instanceof \Closure)) || is_callable($method)) {
+            $result = call_user_func($method);
+            $this->_rq = is_array($result) ? $result : '';
+        } else {
+            switch (strtolower($method)) {
+                case 'post':
+                    $this->_rq = $_POST;
+                    break;
+                case 'get':
+                    $this->_rq = $_GET;
+                    break;
+                default:
+                    $this->_rq = $_REQUEST;
+            }
+        }
+
+        return $this;
     }
 
     /**

@@ -64,7 +64,9 @@ class Content extends Form
                 'contentdata'     => $data,
                 'formTpl'         => $this->getCFGDef('editTpl', $this->getCFGDef('formTpl')),
                 'successTpl'      => $this->getCFGDef('editSuccessTpl'),
-                'onlyUsers'       => 1
+                'onlyUsers'       => 1,
+                'protectSubmit'   => 0,
+                'submitLimit'     => 0
             ));
         }
         $this->log('Content mode is ' . $this->mode, array('data' => $data));

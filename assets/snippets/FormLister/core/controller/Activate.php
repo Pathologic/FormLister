@@ -144,7 +144,6 @@ class Activate extends Form
                     }
                 } else {
                     $this->addMessage($this->lexicon->getMsg('activate.update_failed'));
-                    parent::process();
                 }
                 break;
         }

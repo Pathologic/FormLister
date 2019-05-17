@@ -37,6 +37,9 @@ class Reminder extends Form
         $this->hashField = $hashField;
         $this->uidField = $uidField;
         $this->userField = $userField;
+        $this->config->setConfig(array(
+            'protectSubmit' => 0
+        ));
         if ((isset($_REQUEST[$hashField]) && !empty($_REQUEST[$hashField])) && (isset($_REQUEST[$uidName]) && !empty($_REQUEST[$uidName]))) {
             $this->setFields($_REQUEST);
             $this->mode = 'reset';
