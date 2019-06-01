@@ -199,9 +199,9 @@ abstract class Core
             return $this;
         }
         $sources = array_filter($this->config->loadArray($sources, ';'));
-        $prefix = '';
         foreach ($sources as $source) {
             $fields = array();
+            $prefix = '';
             $_source = explode(':', $source);
             switch ($_source[0]) {
                 //Массив значений указывается в параметре defaults
