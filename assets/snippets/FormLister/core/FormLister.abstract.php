@@ -138,20 +138,23 @@ abstract class Core
      * @return $this
      */
     public function getRequest() {
-        $method = $this->getCFGDef('formMethod', 'post');
-        if ((is_object($method) && ($method instanceof \Closure)) || is_callable($method)) {
-            $result = call_user_func($method);
-            $this->_rq = is_array($result) ? $result : '';
-        } else {
-            switch (strtolower($method)) {
-                case 'post':
-                    $this->_rq = $_POST;
-                    break;
-                case 'get':
-                    $this->_rq = $_GET;
-                    break;
-                default:
-                    $this->_rq = $_REQUEST;
+        $disableSubmit = $this->getCFGDef('disableSubmit', 0);
+        if (!$disableSubmit) {
+            $method = $this->getCFGDef('formMethod', 'post');
+            if ((is_object($method) && ($method instanceof \Closure)) || is_callable($method)) {
+                $result = call_user_func($method);
+                $this->_rq = is_array($result) ? $result : array();
+            } else {
+                switch (strtolower($method)) {
+                    case 'post':
+                        $this->_rq = $_POST;
+                        break;
+                    case 'get':
+                        $this->_rq = $_GET;
+                        break;
+                    default:
+                        $this->_rq = $_REQUEST;
+                }
             }
         }
 
@@ -393,10 +396,7 @@ abstract class Core
      */
     public function isSubmitted ()
     {
-        $enableSubmit = !$this->getCFGDef('disableSubmit', 0);
-        $out = $this->formid && ($this->getField('formid') === $this->formid) && $enableSubmit;
-
-        return $out;
+        return $this->formid && ($this->getField('formid') === $this->formid);
     }
 
     /**
