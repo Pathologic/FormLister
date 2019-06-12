@@ -639,6 +639,9 @@ abstract class Core
                 if ($inverseFlag) {
                     $result = !$result;
                 }
+                if ((int)$this->getCFGDef('api', 0) > 0 && $this->lexicon->isReady()) {
+                    $message = $this->lexicon->parseLang($message);
+                }
                 if (!$result) {
                     $errors[] = array(
                         $field,
