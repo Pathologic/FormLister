@@ -513,10 +513,11 @@ abstract class Core
                 continue;
             }
             if ($prefix && $prefix != '') {
-                if (substr($prefix, -1) != '_') {
-                    $prefix = $prefix . '.';
+                $_prefix = $prefix;
+                if (substr($_prefix, -1) != '_') {
+                    $_prefix = $_prefix . '.';
                 }
-                $key = $prefix . $key;
+                $key = $_prefix . $key;
             }
             $this->setField($key, $value);
         }
