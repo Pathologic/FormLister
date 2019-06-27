@@ -475,6 +475,7 @@ abstract class Core
 
         $data = $this->getFormData();
         unset($data['files']);
+        $data['captcha'] = $this->getPlaceholder('captcha');
         if ($api == 1) {
             $out = $data;
         } else {
@@ -748,9 +749,9 @@ abstract class Core
      * @param $placeholder
      * @return mixed
      */
-    public function getPlaceholder ($placeholder)
+    public function getPlaceholder ($placeholder, $default = '')
     {
-        return \APIhelpers::getkey($this->placeholders, $placeholder);
+        return \APIhelpers::getkey($this->placeholders, $placeholder, $default);
     }
 
     /**
