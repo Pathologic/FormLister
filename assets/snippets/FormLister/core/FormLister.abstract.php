@@ -509,18 +509,14 @@ abstract class Core
     public function setFields ($fields = array(), $prefix = '')
     {
         $prefix = trim($prefix);
+        if (!empty($prefix) && substr($prefix, -1) != '_') {
+            $prefix .= '.';
+        }
         foreach ($fields as $key => $value) {
             if (is_int($key)) {
                 continue;
             }
-            if ($prefix && $prefix != '') {
-                $_prefix = $prefix;
-                if (substr($_prefix, -1) != '_') {
-                    $_prefix = $_prefix . '.';
-                }
-                $key = $_prefix . $key;
-            }
-            $this->setField($key, $value);
+            $this->setField($prefix . $key, $value);
         }
 
         return $this;
