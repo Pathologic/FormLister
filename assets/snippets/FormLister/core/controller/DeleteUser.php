@@ -1,5 +1,7 @@
 <?php namespace FormLister;
 
+use DocumentParser;
+
 /**
  * Class DeleteUser
  * @package FormLister
@@ -10,10 +12,10 @@ class DeleteUser extends Form
 
     /**
      * Form constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, array $cfg = array())
+    public function __construct(DocumentParser $modx, array $cfg = array())
     {
         parent::__construct($modx, $cfg);
         $lang = $this->lexicon->loadLang('deleteUser');
@@ -62,7 +64,7 @@ class DeleteUser extends Form
     {
         if (!$this->modx->getLoginUserID('web')) {
             $this->redirect('exitTo');
-            $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('deleteUser.default_skipTpl'));
+            $this->renderTpl = $this->getCFGDef('skipTpl', $this->translate('deleteUser.default_skipTpl'));
             $this->setValid(false);
         };
 
@@ -84,14 +86,12 @@ class DeleteUser extends Form
                     $this->user->logout();
                     parent::process();
                 } else {
-                    return $this->addMessage($this->lexicon->getMsg('deleteUser.delete_failed'));
+                    return $this->addMessage($this->translate('deleteUser.delete_failed'));
                 }
-            } else {
-
             }
         }
 
-        return $this->addMessage($this->lexicon->getMsg('deleteUser.delete_failed'));
+        return $this->addMessage($this->translate('deleteUser.delete_failed'));
     }
 
     /**
@@ -100,6 +100,6 @@ class DeleteUser extends Form
     public function postProcess()
     {
         parent::postProcess();
-        $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('deleteUser.default_successTpl'));
+        $this->renderTpl = $this->getCFGDef('successTpl', $this->translate('deleteUser.default_successTpl'));
     }
 }

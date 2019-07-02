@@ -1,5 +1,9 @@
 <?php namespace FormLister;
 
+use APIhelpers;
+use DocumentParser;
+use jsonHelper;
+
 /**
  * Контроллер для восстановления паролей
  * Class Reminder
@@ -16,10 +20,10 @@ class Reminder extends Form
 
     /**
      * Reminder constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, $cfg = array())
+    public function __construct(DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
         $this->user = $this->loadModel(
@@ -61,7 +65,7 @@ class Reminder extends Form
             $this->redirect('exitTo');
             $this->user->edit($id);
             $this->setFields($this->user->toArray());
-            $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('reminder.default_skipTpl'));
+            $this->renderTpl = $this->getCFGDef('skipTpl', $this->translate('reminder.default_skipTpl'));
             $this->setValid(false);
         }
 
@@ -90,7 +94,7 @@ class Reminder extends Form
             }
             $this->process();
         } else {
-            $this->addMessage($this->lexicon->getMsg('reminder.update_failed'));
+            $this->addMessage($this->translate('reminder.update_failed'));
         }
     }
 
@@ -120,7 +124,7 @@ class Reminder extends Form
             $hash = false;
         } else {
             $userdata = $this->user->edit($uid)->toArray();
-            $hash = $this->user->getID() ? md5(json_encode($userdata)) : false;
+            $hash = $this->user->getID() ? md5(jsonHelper::toJSON($userdata)) : false;
         }
 
         return $hash;
@@ -149,7 +153,7 @@ class Reminder extends Form
                     $this->mailConfig['to'] = $this->user->get('email');
                     parent::process();
                 } else {
-                    $this->addMessage($this->lexicon->getMsg('reminder.users_only'));
+                    $this->addMessage($this->translate('reminder.users_only'));
                 }
                 break;
             /**
@@ -162,13 +166,13 @@ class Reminder extends Form
                 $hash = $this->getField($this->hashField);
                 if ($hash && $hash == $this->getUserHash($uid)) {
                     if ($this->getField('password') == '' && !isset($this->rules['password'])) {
-                        $this->setField('password', \APIhelpers::genPass($this->getCFGDef('passwordLength', 6)));
+                        $this->setField('password', APIhelpers::genPass($this->getCFGDef('passwordLength', 6)));
                     }
                     $fields = $this->filterFields($this->getFormData('fields'), array($this->userField, 'password'));
                     $result = $this->user->edit($uid)->fromArray($fields)->save(true);
                     $this->log('Update password', array('data' => $fields, 'result' => $result));
                     if (!$result) {
-                        $this->addMessage($this->lexicon->getMsg('reminder.update_failed'));
+                        $this->addMessage($this->translate('reminder.update_failed'));
                     } else {
                         $this->setField('newpassword', $this->getField('password'));
                         $this->setFields($this->user->toArray());
@@ -178,7 +182,7 @@ class Reminder extends Form
                         parent::process();
                     }
                 } else {
-                    $this->addMessage($this->lexicon->getMsg('reminder.update_failed'));
+                    $this->addMessage($this->translate('reminder.update_failed'));
                     parent::process();
                 }
                 break;
@@ -194,12 +198,12 @@ class Reminder extends Form
         switch ($this->mode) {
             case "hash":
                 $this->renderTpl = $this->getCFGDef('successTpl',
-                    $this->lexicon->getMsg('reminder.default_successTpl'));
+                    $this->translate('reminder.default_successTpl'));
                 break;
             case "reset":
                 $this->redirect();
                 $this->renderTpl = $this->getCFGDef('resetSuccessTpl',
-                    $this->lexicon->getMsg('reminder.default_resetSuccessTpl'));
+                    $this->translate('reminder.default_resetSuccessTpl'));
         }
     }
 }

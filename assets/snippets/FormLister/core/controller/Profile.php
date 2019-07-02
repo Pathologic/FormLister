@@ -1,5 +1,7 @@
 <?php namespace FormLister;
 
+use DocumentParser;
+
 /**
  * Контроллер для редактирования профиля
  * Class Profile
@@ -14,10 +16,10 @@ class Profile extends Core
 
     /**
      * Profile constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, $cfg = array())
+    public function __construct(DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
         $lang = $this->lexicon->loadLang('profile');
@@ -60,7 +62,7 @@ class Profile extends Core
     {
         if (is_null($this->user) || !$this->user->getID()) {
             $this->redirect('exitTo');
-            $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('profile.default_skipTpl'));
+            $this->renderTpl = $this->getCFGDef('skipTpl', $this->translate('profile.default_skipTpl'));
             $this->setValid(false);
         }
 
@@ -169,7 +171,7 @@ class Profile extends Core
             $this->setFormStatus(true);
             $this->user->close();
             $this->setFields($this->user->edit($result)->toArray());
-            $this->setField('user.password',$newpassword);
+            $this->setField('user.password', $newpassword);
             $this->runPrepare('preparePostProcess');
             if (!empty($newpassword) && ($password !== $this->user->getPassword($newpassword))) {
                 $this->user->logOut('WebLoginPE', true);
@@ -179,10 +181,10 @@ class Profile extends Core
             if ($successTpl = $this->getCFGDef('successTpl')) {
                 $this->renderTpl = $successTpl;
             } else {
-                $this->addMessage($this->lexicon->getMsg('profile.update_success'));
+                $this->addMessage($this->translate('profile.update_success'));
             }
         } else {
-            $this->addMessage($this->lexicon->getMsg('profile.update_failed'));
+            $this->addMessage($this->translate('profile.update_failed'));
         }
     }
 }

@@ -1,5 +1,7 @@
 <?php namespace FormLister;
 
+use DocumentParser;
+
 /**
  * Контроллер для авторизации пользователя
  * Class Login
@@ -13,10 +15,10 @@ class Login extends Core
 
     /**
      * Login constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, $cfg = array())
+    public function __construct(DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
         $this->user = $this->loadModel(
@@ -44,7 +46,7 @@ class Login extends Core
             $this->redirect();
             $this->user->edit($id);
             $this->setFields($this->user->toArray());
-            $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('login.default_skipTpl'));
+            $this->renderTpl = $this->getCFGDef('skipTpl', $this->translate('login.default_skipTpl'));
             $this->setValid(false);
         };
 
@@ -58,7 +60,7 @@ class Login extends Core
     public function process()
     {
         if (is_null($this->user)) {
-            $this->addMessage($this->lexicon->getMsg('login.user_failed'));
+            $this->addMessage($this->translate('login.user_failed'));
 
             return;
         }
@@ -69,21 +71,21 @@ class Login extends Core
         $password = $this->getField($this->getCFGDef('passwordField', 'password'));
         $remember = $this->getField($this->getCFGDef('rememberField', 'rememberme'));
         if ($this->user->checkBlock($login)) {
-            $this->addMessage($this->lexicon->getMsg('login.user_blocked'));
+            $this->addMessage($this->translate('login.user_blocked'));
 
             return;
         }
         $this->user->edit($login);
 
         if ($this->getCFGDef('checkActivation', 0) && $this->user->get('logincount') < 0) {
-            $this->addMessage($this->lexicon->getMsg('login.user_notactivated'));
+            $this->addMessage($this->translate('login.user_notactivated'));
 
             return;
         }
 
         $auth = $this->user->testAuth($login, $password, false, true);
         if (!$auth) {
-            $this->addMessage($this->lexicon->getMsg('login.user_failed'));
+            $this->addMessage($this->translate('login.user_failed'));
 
             return;
         }

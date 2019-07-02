@@ -12,6 +12,7 @@ use Helpers\Mailer;
  */
 class Form extends Core
 {
+    use SubmitProtection;
     /**
      * Настройки для отправки почты
      * @var array
@@ -49,96 +50,6 @@ class Form extends Core
         if ($lang) {
             $this->log('Lexicon loaded', array('lexicon' => $lang));
         }
-    }
-
-    /**
-     * Проверка повторной отправки формы
-     * @return bool
-     */
-    public function checkSubmitProtection()
-    {
-        $result = false;
-        if ($this->isSubmitted() && $this->getCFGDef('protectSubmit', 1)) {
-            $hash = $this->getFormHash();
-            if (isset($_SESSION[$this->formid . '_hash'])
-                && $_SESSION[$this->formid . '_hash'] == $hash
-                && $hash != '') {
-                $result = true;
-                $this->addMessage($this->lexicon->getMsg('form.protectSubmit'));
-                $this->log('Submit protection enabled');
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Проверка повторной отправки в течение определенного времени, в секундах
-     * @return bool
-     */
-    public function checkSubmitLimit()
-    {
-        $submitLimit = $this->getCFGDef('submitLimit', 60);
-        $result = false;
-        if (isset($_SESSION[$this->formid . '_limit']) && $this->isSubmitted() && $submitLimit > 0) {
-            if (time() < $submitLimit + $_SESSION[$this->formid . '_limit']) {
-                $result = true;
-                $this->addMessage('[%form.submitLimit%] ' .
-                    ($submitLimit >= 60
-                        ? round($submitLimit / 60, 0) . ' [%form.minutes%].'
-                        : $submitLimit . ' [%form.seconds%].'
-                    ));
-                $this->log('Submit limit enabled');
-            } else {
-                unset($_SESSION[$this->formid . '_limit']);
-            } //time expired
-        }
-
-        return $result;
-    }
-
-    /**
-     * @return $this
-     */
-    public function setSubmitProtection()
-    {
-        if ($this->getCFGDef('protectSubmit', 1)) {
-            $_SESSION[$this->formid . '_hash'] = $this->getFormHash();
-        } //hash is set earlier
-        if ($this->getCFGDef('submitLimit', 60) > 0) {
-            $_SESSION[$this->formid . '_limit'] = time();
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return array|string
-     */
-    public function getFormHash()
-    {
-        $hash = array();
-        $protectSubmit = $this->getCFGDef('protectSubmit', 1);
-        if (!is_numeric($protectSubmit)) { //supplied field names
-            $protectSubmit = $this->config->loadArray($protectSubmit);
-            foreach ($protectSubmit as $field) {
-                $hash[] = $this->getField(trim($field));
-            }
-        } else //all required fields
-        {
-            foreach ($this->rules as $field => $rules) {
-                foreach ($rules as $rule => $description) {
-                    if ($rule == 'required') {
-                        $hash[] = $this->getField($field);
-                    }
-                }
-            }
-        }
-        if ($hash) {
-            $hash = md5(json_encode($hash));
-        }
-
-        return $hash;
     }
 
     /**
@@ -366,7 +277,7 @@ class Form extends Core
      */
     public function render()
     {
-        if ($this->isSubmitted() && $this->checkSubmitLimit() && $this->checkSubmitProtection()) {
+        if ($this->isSubmitted() && ($this->checkSubmitLimit() || $this->checkSubmitProtection())) {
             return $this->renderForm();
         }
 
@@ -379,7 +290,7 @@ class Form extends Core
     public function process()
     {
         $now = time() + $this->modx->getConfig('server_offset_time');
-        $this->setField('form.date', date($this->getCFGDef('dateFormat', $this->lexicon->getMsg('form.dateFormat')), $now));
+        $this->setField('form.date', date($this->getCFGDef('dateFormat', $this->translate('form.dateFormat')), $now));
         $this->setFileFields();
         $this->mailConfig = $this->parseMailerParams($this->mailConfig);
         if ($this->sendReport()) {
@@ -387,7 +298,7 @@ class Form extends Core
             $this->sendAutosender();
             $this->setSubmitProtection()->postProcess();
         } else {
-            $this->addMessage($this->lexicon->getMsg('form.form_failed'));
+            $this->addMessage($this->translate('form.form_failed'));
         }
     }
 
@@ -420,7 +331,7 @@ class Form extends Core
         }
         $this->runPrepare('prepareAfterProcess');
         $this->redirect();
-        $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('form.default_successTpl'));
+        $this->renderTpl = $this->getCFGDef('successTpl', $this->translate('form.default_successTpl'));
     }
 
     /**

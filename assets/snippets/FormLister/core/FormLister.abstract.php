@@ -1,9 +1,15 @@
 <?php namespace FormLister;
 
+use APIHelpers;
+use Closure;
+use DLTemplate;
+use DocumentParser;
 use Helpers\Config;
 use Helpers\FS;
 use Helpers\Lexicon;
 use Helpers\Debug;
+use Helpers\Gpc;
+use jsonHelper;
 
 /**
  * Class FormLister
@@ -93,19 +99,17 @@ abstract class Core
 
     public $captcha = null;
 
-    protected $gpc_seed = '';
-    protected $gpc_fields = array();
-
     protected $plhCache = array();
 
     protected $DLTemplate = null;
+    protected $gpc = null;
 
     /**
      * Core constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct (\DocumentParser $modx, $cfg = array())
+    public function __construct (DocumentParser $modx, $cfg = array())
     {
         $this->modx = $modx;
         $this->config = new Config();
@@ -124,13 +128,13 @@ abstract class Core
             'langDir' => 'assets/snippets/FormLister/core/lang/',
             'lang'    => $this->getCFGDef('lang', $this->modx->getConfig('manager_language'))
         ));
-        $this->DLTemplate = \DLTemplate::getInstance($modx);
+        $this->DLTemplate = DLTemplate::getInstance($modx);
         $this->DLTemplate->setTemplatePath($this->getCFGDef('templatePath'));
         $this->DLTemplate->setTemplateExtension($this->getCFGDef('templateExtension'));
         $this->formid = $this->getCFGDef('formid');
         $this->getRequest();
-        if ($this->getCFGDef('removeGpc', 0)) {
-            $this->setGpcSeed();
+        if ($removeGpc = $this->getCFGDef('removeGpc', 0)) {
+            $this->gpc = new Gpc(is_numeric($removeGpc) && $removeGpc == '1' ? array_keys($this->_rq) : $this->config->loadArray($removeGpc));
         }
     }
 
@@ -141,7 +145,7 @@ abstract class Core
         $disableSubmit = $this->getCFGDef('disableSubmit', 0);
         if (!$disableSubmit) {
             $method = $this->getCFGDef('formMethod', 'post');
-            if ((is_object($method) && ($method instanceof \Closure)) || is_callable($method)) {
+            if ((is_object($method) && ($method instanceof Closure)) || is_callable($method)) {
                 $result = call_user_func($method);
                 $this->_rq = is_array($result) ? $result : array();
             } else {
@@ -199,6 +203,7 @@ abstract class Core
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
         $this->initCaptcha();
         $this->runPrepare('prepare');
+        $this->rules = array_merge($this->getValidationRules(), $this->rules);
 
         return $this;
     }
@@ -354,7 +359,9 @@ abstract class Core
      */
     public function setRequestParams ()
     {
-        $this->removeGpc($this->_rq);
+        if (!is_null($this->gpc)) {
+            $this->gpc->removeGpc($this->_rq);
+        }
         $this->setFields($this->_rq);
         if ($emptyFields = $this->emptyFormControls) {
             foreach ($emptyFields as $field => $value) {
@@ -491,7 +498,7 @@ abstract class Core
             }
         }
         if ($api) {
-            $out = $this->getCFGDef('apiFormat', 'json') == 'json' ? json_encode($out) : $out;
+            $out = $this->getCFGDef('apiFormat', 'json') == 'json' ? jsonHelper::toJson($out) : $out;
         }
 
         $this->log('Output', $out);
@@ -510,7 +517,7 @@ abstract class Core
     {
         $prefix = trim($prefix);
         if (!empty($prefix) && substr($prefix, -1) != '_') {
-            $prefix .= '.';
+            $prefix = $prefix . '.';
         }
         foreach ($fields as $key => $value) {
             if (is_int($key)) {
@@ -559,10 +566,9 @@ abstract class Core
         $validator = $this->getCFGDef('validator', '\FormLister\Validator');
         $validator = $this->loadModel($validator, '', array());
         $fields = $this->getFormData('fields');
-        $rules = $this->getValidationRules();
-        $this->rules = array_merge($this->rules, $rules);
-        $this->log('Prepare to validate fields', array('fields' => $fields, 'rules' => $this->rules));
-        $result = $this->validate($validator, $this->rules, $fields);
+        $rules = $this->rules;
+        $this->log('Prepare to validate fields', array('fields' => $fields, 'rules' => $rules));
+        $result = $this->validate($validator, $rules, $fields);
         if ($result !== true) {
             foreach ($result as $item) {
                 $this->addError($item[0], $item[1], $item[2]);
@@ -592,7 +598,7 @@ abstract class Core
             if ($skipFlag) {
                 $field = substr($field, 1);
             }
-            $value = \APIHelpers::getkey($fields, $field);
+            $value = APIHelpers::getkey($fields, $field);
             if ($skipFlag && empty($value)) {
                 continue;
             }
@@ -699,7 +705,7 @@ abstract class Core
      */
     public function getField ($field, $default = '')
     {
-        return \APIhelpers::getkey($this->formData['fields'], $field, $default);
+        return APIhelpers::getkey($this->formData['fields'], $field, $default);
     }
 
     /**
@@ -743,11 +749,12 @@ abstract class Core
 
     /**
      * @param $placeholder
+     * @param string $default
      * @return mixed
      */
     public function getPlaceholder ($placeholder, $default = '')
     {
-        return \APIhelpers::getkey($this->placeholders, $placeholder, $default);
+        return APIhelpers::getkey($this->placeholders, $placeholder, $default);
     }
 
     /**
@@ -812,7 +819,7 @@ abstract class Core
         $plh = array();
         if (is_array($fields)) {
             $plh = $fields;
-            $sanitarTagFields = $this->getRemoveGpcFields();
+            $sanitarTagFields = is_null($this->gpc) ? array() : $this->gpc->getFields();
             $defaultSplitter = $this->getCFGDef('arraySplitter', '; ');
             foreach ($fields as $field => $value) {
                 $sanitizeTags = in_array($field, $sanitarTagFields);
@@ -823,9 +830,9 @@ abstract class Core
                             continue;
                         }
                         if ($sanitizeTags) {
-                            $_value = \APIhelpers::sanitarTag($_value);
+                            $_value = APIhelpers::sanitarTag($_value);
                         }
-                        $_value = \APIhelpers::e($_value);
+                        $_value = APIhelpers::e($_value);
                     }
                     unset($_value);
                     if ($split) {
@@ -835,9 +842,9 @@ abstract class Core
                     }
                 } else {
                     if ($sanitizeTags) {
-                        $value = \APIhelpers::sanitarTag($value);
+                        $value = APIhelpers::sanitarTag($value);
                     }
-                    $value = \APIhelpers::e($value);
+                    $value = APIhelpers::e($value);
                 }
                 $field = array($field, $suffix);
                 $field = implode('.', array_filter($field));
@@ -1075,7 +1082,7 @@ abstract class Core
     }
 
     /**
-     * @return \DocumentParser|null
+     * @return DocumentParser|null
      */
     public function getMODX ()
     {
@@ -1131,7 +1138,7 @@ abstract class Core
     public function callPrepare ($name, $params = array())
     {
         if (!empty($name)) {
-            if ((is_object($name) && ($name instanceof \Closure)) || is_callable($name)) {
+            if ((is_object($name) && ($name instanceof Closure)) || is_callable($name)) {
                 $result = call_user_func_array($name, $params);
             } else {
                 $result = $this->modx->runSnippet($name, $params);
@@ -1152,14 +1159,14 @@ abstract class Core
     public function redirect ($param = 'redirectTo', $_query = array())
     {
         if ($redirect = $this->getCFGDef($param, 0)) {
-            $query = $header = '';
+            $header = '';
             $query = http_build_query($_query);
             if (is_numeric($redirect)) {
                 $page = $redirect;
             } else {
-                $redirect = $this->config->loadArray($redirect);
-                if (isset($redirect[0])) {
-                    $redirect['page'] = $redirect[0];
+                $redirect = $this->config->loadArray($redirect, '');
+                if (!is_array($redirect)) {
+                    $page = $redirect;
                 } else {
                     if (isset($redirect['query']) && is_array($redirect['query'])) {
                         $query = http_build_query(array_merge($redirect['query'], $_query));
@@ -1315,66 +1322,15 @@ abstract class Core
     }
 
     /**
-     * @return string
-     */
-    protected function setGpcSeed ()
-    {
-        $this->gpc_seed = 'sanitize_seed_' . base_convert(md5(realpath(MODX_MANAGER_PATH . 'includes/protect.inc.php')),
-                16, 36);
-
-        return $this;
-    }
-
-    /**
-     * Remove fucking modX_sanitize_gpc
-     *
-     * @param $target
-     * @param int $count
-     * @return mixed
-     */
-    protected function removeGpc (&$target, $count = 0)
-    {
-        $removeFields = $this->getRemoveGpcFields();
-        foreach ($target as $key => $value) {
-            if (!in_array($key, $removeFields)) {
-                continue;
-            }
-            if (is_array($value)) {
-                $count++;
-                if (10 < $count) {
-                    break;
-                }
-                $this->removeGpc($value, $count);
-                $count--;
-            } else {
-                $value = str_replace($this->gpc_seed, '', $value);
-                $value = str_replace('sanitized_by_modx<s cript', '<script', $value);
-                $value = str_replace('sanitized_by_modx& ', '&', $value);
-                $target[$key] = $value;
-            }
-        }
-
-        return $target;
-    }
-
-    /**
+     * Возвращает типы ошибок для указанного поля
+     * @param string $field
      * @return array
      */
-    public function getRemoveGpcFields ()
+    public function getErrorType ($field)
     {
-        $out = $this->gpc_fields;
-        if (($removeGpc = $this->getCFGDef('removeGpc', 0)) && empty($out)) {
-            if (is_numeric($removeGpc)) {
-                $out = array_keys($this->_rq);
-            } else {
-                $fields = $this->config->loadArray($removeGpc);
-                foreach ($fields as $field) {
-                    if (isset($this->_rq[$field])) {
-                        $out[] = $field;
-                    }
-                }
-            }
-            $this->gpc_fields = $out;
+        $out = array();
+        if (!empty($field) && isset($this->formData['errors'][$field]) && is_array($this->formData['errors'][$field])) {
+            $out = array_keys($this->formData['errors'][$field]);
         }
 
         return $out;

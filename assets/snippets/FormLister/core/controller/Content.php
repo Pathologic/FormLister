@@ -1,5 +1,7 @@
 <?php namespace FormLister;
 
+use DocumentParser;
+
 /**
  * Контроллер для создания записей
  * Class Content
@@ -18,10 +20,10 @@ class Content extends Form
 
     /**
      * Content constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, $cfg = array())
+    public function __construct(DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
         $lang = $this->lexicon->loadLang('content');
@@ -87,12 +89,12 @@ class Content extends Form
                 if (!$uid) {
                     $this->redirect('exitTo');
                     $this->renderTpl = $this->getCFGDef('skipTpl',
-                        $this->lexicon->getMsg('create.default_skipTpl'));
+                        $this->translate('create.default_skipTpl'));
                     $flag = false;
                 } elseif (!$this->checkUserGroups($uid, $this->getCFGDef('userGroups'))) {
                     $this->redirect('badGroupTo');
                     $this->renderTpl = $this->getCFGDef('badGroupTpl',
-                        $this->lexicon->getMsg('create.default_badGroupTpl'));
+                        $this->translate('create.default_badGroupTpl'));
                     $flag = false;
                 }
             }
@@ -103,12 +105,12 @@ class Content extends Form
             if (!$uid) {
                 $this->redirect('exitTo');
                 $this->renderTpl = $this->getCFGDef('skipEditTpl',
-                    $this->lexicon->getMsg('edit.default_skipEditTpl'));
+                    $this->translate('edit.default_skipEditTpl'));
                 $flag = false;
             } elseif (!$this->checkUserGroups($uid, $this->getCFGDef('userGroups'))) {
                 $this->redirect('badGroupTo');
                 $this->renderTpl = $this->getCFGDef('badGroupTpl',
-                    $this->lexicon->getMsg('edit.default_badGroupTpl'));
+                    $this->translate('edit.default_badGroupTpl'));
                 $flag = false;
             } else {
                 $cid = is_null($this->content) ? false : $this->content->getID();
@@ -117,14 +119,14 @@ class Content extends Form
                     if ($this->getCFGDef('onlyAuthors', 1) && $owner && $owner != $uid) {
                         $this->redirect('badOwnerTo');
                         $this->renderTpl = $this->getCFGDef('badOwnerTpl',
-                            $this->lexicon->getMsg('edit.default_badOwnerTpl'));
+                            $this->translate('edit.default_badOwnerTpl'));
                         $flag = false;
                     }
                     $this->owner = $uid;
                 } else {
                     $this->redirect('badRecordTo');
                     $this->renderTpl = $this->getCFGDef('badRecordTpl',
-                        $this->lexicon->getMsg('edit.default_badRecordTpl'));
+                        $this->translate('edit.default_badRecordTpl'));
                     $flag = false;
                 }
             }
@@ -187,7 +189,7 @@ class Content extends Form
         }
         if (!$result) {
             $this->log('Save failed', array('model' => get_class($this->content), 'data' => $fields));
-            $this->addMessage($this->lexicon->getMsg('edit.update_failed'));
+            $this->addMessage($this->translate('edit.update_failed'));
         } else {
             $this->content->close();
             $this->setFields($this->content->edit($result)->toArray('', '', '_', false));
@@ -225,12 +227,12 @@ class Content extends Form
             } else {
                 $this->redirect();
             }
-            $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('create.default_successTpl'));
+            $this->renderTpl = $this->getCFGDef('successTpl', $this->translate('create.default_successTpl'));
         } else {
             if ($successTpl = $this->getCFGDef('successTpl')) {
                 $this->renderTpl = $successTpl;
             } else {
-                $this->addMessage($this->lexicon->getMsg('edit.update_success'));
+                $this->addMessage($this->translate('edit.update_success'));
             }
         }
     }

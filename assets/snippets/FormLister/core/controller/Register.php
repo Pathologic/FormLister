@@ -1,5 +1,7 @@
 <?php namespace FormLister;
 
+use jsonHelper;
+
 /**
  * Контроллер для регистрации пользователя
  * Class Register
@@ -39,7 +41,7 @@ class Register extends Form
             $this->redirect('exitTo');
             $this->user->edit($id);
             $this->setFields($this->user->toArray());
-            $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('register.default_skipTpl'));
+            $this->renderTpl = $this->getCFGDef('skipTpl', $this->translate('register.default_skipTpl'));
             $this->setValid(false);
         };
 
@@ -135,7 +137,7 @@ class Register extends Form
         $result = $this->user->save(true);
         $this->log('Register user', array('data' => $fields, 'result' => $result, 'log' => $this->user->getLog()));
         if (!$result) {
-            $this->addMessage($this->lexicon->getMsg('register.registration_failed'));
+            $this->addMessage($this->translate('register.registration_failed'));
         } else {
             $this->user->close();
             $userdata = $this->user->edit($result)->toArray();
@@ -143,7 +145,7 @@ class Register extends Form
             $this->setField('user.password', $password);
             $this->runPrepare('preparePostProcess');
             if ($checkActivation) {
-                $hash = md5(json_encode($userdata));
+                $hash = md5(jsonHelper::toJSON($userdata));
                 $uidName = $this->getCFGDef('uidName', $this->user->fieldPKName());
                 $query = http_build_query(array(
                     $uidName => $result,
@@ -166,7 +168,7 @@ class Register extends Form
     {
         $this->redirect();
         $this->setFormStatus(true); //результат отправки писем значения не имеет
-        $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('register.default_successTpl'));
+        $this->renderTpl = $this->getCFGDef('successTpl', $this->translate('register.default_successTpl'));
     }
 
     /**
