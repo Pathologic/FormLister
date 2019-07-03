@@ -22,10 +22,8 @@ class Profile extends Core
     public function __construct(DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
-        $lang = $this->lexicon->loadLang('profile');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('profile');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
         $uid = $modx->getLoginUserId('web');
         if ($uid) {
             /* @var $user \modUsers */

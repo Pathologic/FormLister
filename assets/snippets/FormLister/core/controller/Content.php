@@ -26,10 +26,8 @@ class Content extends Form
     public function __construct(DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
-        $lang = $this->lexicon->loadLang('content');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('content');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
         $this->content = $this->loadModel(
             $this->getCFGDef('model', '\modResource'),
             $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modResource.php')

@@ -16,7 +16,8 @@ class MailChimp extends Core
     public function __construct(DocumentParser $modx, $cfg = array())
     {
         parent::__construct($modx, $cfg);
-        $this->lexicon->loadLang('mailchimp');
+        $this->lexicon->fromFile('mailchimp');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
     }
 
     /**

@@ -26,10 +26,8 @@ class Activate extends Form
             $this->getCFGDef('model', '\modUsers'),
             $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
         );
-        $lang = $this->lexicon->loadLang('activate');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('activate');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
         $userField = $this->getCFGDef('userField', 'email');
         $this->userField = $userField;
         $uidName = $this->getCFGDef('uidName', $this->user->fieldPKName());

@@ -26,10 +26,8 @@ class Register extends Form
             $this->getCFGDef('model', '\modUsers'),
             $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
         );
-        $lang = $this->lexicon->loadLang('register');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('register');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
     }
 
     /**

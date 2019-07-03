@@ -28,10 +28,8 @@ class DeleteContent extends Form
             $this->getCFGDef('model', '\modUsers'),
             $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
         );
-        $lang = $this->lexicon->loadLang('deleteContent');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('deleteContent');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
         $idField = $this->getCFGDef('idField','id');
         if (isset($_REQUEST[$idField]) && is_scalar($_REQUEST[$idField])) {
             $this->id = (int)$_REQUEST[$idField];

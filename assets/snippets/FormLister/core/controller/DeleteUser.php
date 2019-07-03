@@ -18,10 +18,8 @@ class DeleteUser extends Form
     public function __construct(DocumentParser $modx, array $cfg = array())
     {
         parent::__construct($modx, $cfg);
-        $lang = $this->lexicon->loadLang('deleteUser');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('deleteUser');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
         $uid = $modx->getLoginUserId('web');
         $userdata = array();
         if ($uid) {

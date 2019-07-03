@@ -30,10 +30,8 @@ class Reminder extends Form
             $this->getCFGDef('model', '\modUsers'),
             $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
         );
-        $lang = $this->lexicon->loadLang('reminder');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('reminder');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
         $hashField = $this->getCFGDef('hashField', 'hash');
         $uidField = $this->getCFGDef('uidField', $this->user->fieldPKName());
         $uidName = $this->getCFGDef('uidName', $uidField);

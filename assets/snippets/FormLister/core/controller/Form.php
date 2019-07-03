@@ -46,10 +46,8 @@ class Form extends Core
             'bcc'      => $this->getCFGDef('bcc'),
             'noemail'  => $this->getCFGDef('noemail', false)
         );
-        $lang = $this->lexicon->loadLang('form');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('form');
+        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
     }
 
     /**
