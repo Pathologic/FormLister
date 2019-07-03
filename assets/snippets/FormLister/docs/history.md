@@ -1,5 +1,6 @@
 ## History
 ### 1.9.0
+* [Refactor] Из отладочных записей удаляются дампы объектов (Debug).
 * [Enhancement] Подключение сторонних обработчиков для лексиконов (Lexicon).
 * [Refactor] Работа с настройками через Helpers\Config (Lexicon).
 * [Refactor] Методы loadLang, getMsg, parseLang объявлены устаревшими, вместо него следует использовать fromFile, get, parse (Lexicon).
