@@ -29,4 +29,4 @@ Parameters to load lexicons are:
 }`
 ```
 
-After that you can use the [%key%] placeholders to output lexicon entries. EvoBabel lexicons are supported as well.
+After that you can use the [%key%] placeholders to output lexicon entries. It possible to connect external lexicons with the help of adapter class (see "assets/snippets/FormLister/lib/LexiconHandlers/EvoBabelLexiconHandler.php" file for details; adapter class name should be set in "lexiconHandler" parameter.

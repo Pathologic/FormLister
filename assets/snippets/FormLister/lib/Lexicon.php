@@ -1,6 +1,9 @@
 <?php namespace Helpers;
+
 use APIhelpers;
 use DocumentParser;
+use Helpers\Lexicon\AbstractLexiconHandler;
+
 /**
  * Class Lexicon
  * @package Helpers
@@ -10,16 +13,24 @@ class Lexicon
     protected $modx = null;
     public $config = null;
     protected $lexicon = array();
+    protected $lexiconHandler = null;
 
     /**
      * Lexicon constructor.
      * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(DocumentParser $modx, $cfg = array())
+    public function __construct (DocumentParser $modx, $cfg = array())
     {
         $this->modx = $modx;
         $this->config = new Config($cfg);
+        $handler = $this->config->getCFGDef('handler', 'Helpers\\Lexicon\\EvoBabelLexiconHandler');
+        if (class_exists($handler)) {
+            $handler = new $handler($modx, $this);
+            if ($handler instanceof AbstractLexiconHandler) {
+                $this->lexiconHandler = $handler;
+            }
+        }
     }
 
     /**
@@ -30,7 +41,8 @@ class Lexicon
      * @param string $langDir папка с языковыми пакетами
      * @return array массив с лексиконом
      */
-    public function fromFile($name = 'core', $lang = '', $langDir = '') {
+    public function fromFile ($name = 'core', $lang = '', $langDir = '')
+    {
         return $this->loadLang($name, $lang, $langDir);
     }
 
@@ -43,7 +55,7 @@ class Lexicon
      * @return array массив с лексиконом
      * @deprecated
      */
-    public function loadLang($name = 'core', $lang = '', $langDir = '')
+    public function loadLang ($name = 'core', $lang = '', $langDir = '')
     {
         $langDir = empty($langDir) ? MODX_BASE_PATH . $this->config->getCFGDef('langDir',
                 'lang/') : MODX_BASE_PATH . $langDir;
@@ -70,7 +82,7 @@ class Lexicon
      * @param string $lang
      * @param string $langDir
      */
-    private function loadLexiconFile($name = 'core', $lang = '', $langDir = '')
+    private function loadLexiconFile ($name = 'core', $lang = '', $langDir = '')
     {
         $filepath = "{$langDir}{$lang}/{$name}.inc.php";
         if (file_exists($filepath)) {
@@ -87,7 +99,7 @@ class Lexicon
      * @param $lang
      * @return array
      */
-    public function fromArray($lang = array())
+    public function fromArray ($lang = array())
     {
         $language = $this->config->getCFGDef('lang', $this->modx->getConfig('manager_language'));
         if (is_array($lang) && isset($lang[$language])) {
@@ -100,21 +112,40 @@ class Lexicon
     /**
      * Получение строки из языкового пакета
      *
-     * @param string $name имя записи в языковом пакете
-     * @param string $def Строка по умолчанию, если запись в языковом пакете не будет обнаружена
+     * @param string $key имя записи в языковом пакете
+     * @param string $default Строка по умолчанию, если запись в языковом пакете не будет обнаружена
      * @return string строка в соответствии с текущими языковыми настройками
      */
-    public function getMsg($name, $def = '')
+    public function get ($key, $default = '')
     {
-        $out = APIhelpers::getkey($this->lexicon, $name, $def);
-        if (class_exists('evoBabel', false) && isset($this->modx->snippetCache['lang'])) {
-            $msg = $this->modx->runSnippet('lang', array('a' => $name));
-            if (!empty($msg)) {
-                $out = $msg;
-            }
+        return $this->getMsg($key, $default);
+    }
+
+    /**
+     * Получение строки из языкового пакета
+     *
+     * @param string $key имя записи в языковом пакете
+     * @param string $def Строка по умолчанию, если запись в языковом пакете не будет обнаружена
+     * @return string строка в соответствии с текущими языковыми настройками
+     * @deprecated
+     */
+    public function getMsg ($key, $def = '')
+    {
+        $out = APIhelpers::getkey($this->lexicon, $key, $def);
+        if (!is_null($this->lexiconHandler)) {
+            $out = $this->lexiconHandler->get($key, $def);
         }
 
         return $out;
+    }
+
+    /**
+     * @param $tpl
+     * @return string
+     */
+    public function parse ($tpl)
+    {
+        return $this->parseLang($tpl);
     }
 
     /**
@@ -122,14 +153,15 @@ class Lexicon
      *
      * @param string $tpl HTML шаблон
      * @return string
+     * @deprecated
      */
-    public function parseLang($tpl)
+    public function parseLang ($tpl)
     {
         if (is_scalar($tpl) && !empty($tpl)) {
             if (preg_match_all("/\[\%([a-zA-Z0-9\.\_\-]+)\%\]/", $tpl, $match)) {
                 $langVal = array();
                 foreach ($match[1] as $item) {
-                    $langVal[] = $this->getMsg($item);
+                    $langVal[] = $this->get($item);
                 }
                 $tpl = str_replace($match[0], $langVal, $tpl);
             }
@@ -143,7 +175,7 @@ class Lexicon
     /**
      * @return bool
      */
-    public function isReady()
+    public function isReady ()
     {
         return !empty($this->lexicon);
     }
@@ -153,7 +185,8 @@ class Lexicon
      * @param bool $overwrite
      * @return $this
      */
-    public function setLexicon($lexicon = array(), $overwrite = false) {
+    public function setLexicon ($lexicon = array(), $overwrite = false)
+    {
         if ($overwrite) {
             $this->lexicon = $lexicon;
         } else {
@@ -166,7 +199,8 @@ class Lexicon
     /**
      * @return array
      */
-    public function getLexicon() {
+    public function getLexicon ()
+    {
         return $this->lexicon;
     }
 }

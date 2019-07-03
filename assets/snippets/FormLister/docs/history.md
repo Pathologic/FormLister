@@ -1,5 +1,15 @@
 ## History
 ### 1.9.0
+* [Enhancement] Подключение сторонних обработчиков для лексиконов (Lexicon).
+* [Refactor] Работа с настройками через Helpers\Config (Lexicon).
+* [Refactor] Методы loadLang, getMsg, parseLang объявлены устаревшими, вместо него следует использовать fromFile, get, parse (Lexicon).
+* [Enhancement] Методы setLexicon и getLexicon (Lexicon). 
+* [Enhancement] Метод getErrorType для получения нарушенных правил валидации для поля (Core). 
+* [Enhancement] Плейсхолдер капчи доступен в api-режимах, через ключ captcha (Core). 
+* [Refactor] Получение строк из лексикона заменено на вызов метода translate.
+* [Refactor] Загрузка основных правил валидации перенесена в метод initForm, после выполнения prepare.
+* [Refactor] Обход Gpc вынесен в отдельный класс Helpers\Gpc.
+* [Refactor] Защита формы от повторных отправок вынесена в трейт FormLister\SubmitProtection (Form).
 * [Enhancement] Возможность использования функций для получения данных запроса (Core).
 * [Refactor] Проверки protectSubmit и submitLimit выполняются до обработки формы (Form).
 * [Refactor] В api-режимах обрабатываются языковые плейсхолдеры в сообщениях об ошибках валидации (Core).

@@ -95,7 +95,7 @@ abstract class Core
     /**
      * @var Lexicon|null
      */
-    protected $lexicon = null;
+    public $lexicon = null;
 
     public $captcha = null;
 
@@ -126,7 +126,8 @@ abstract class Core
         }
         $this->lexicon = new Lexicon($modx, array(
             'langDir' => 'assets/snippets/FormLister/core/lang/',
-            'lang'    => $this->getCFGDef('lang', $this->modx->getConfig('manager_language'))
+            'lang'    => $this->getCFGDef('lang', $this->modx->getConfig('manager_language')),
+            'handler' => $this->getCFGDef('lexiconHandler')
         ));
         $this->DLTemplate = DLTemplate::getInstance($modx);
         $this->DLTemplate->setTemplatePath($this->getCFGDef('templatePath'));
@@ -638,7 +639,7 @@ abstract class Core
                     $result = !$result;
                 }
                 if ((int)$this->getCFGDef('api', 0) > 0 && $this->lexicon->isReady()) {
-                    $message = $this->lexicon->parseLang($message);
+                    $message = $this->lexicon->parse($message);
                 }
                 if (!$result) {
                     $errors[] = array(
@@ -776,7 +777,7 @@ abstract class Core
     public function addError ($field, $type, $message)
     {
         if ($this->lexicon->isReady()) {
-            $message = $this->lexicon->parseLang($message);
+            $message = $this->lexicon->parse($message);
         }
         $this->formData['errors'][$field][$type] = $message;
 
@@ -792,7 +793,7 @@ abstract class Core
     {
         if ($message) {
             if ($this->lexicon->isReady()) {
-                $message = $this->lexicon->parseLang($message);
+                $message = $this->lexicon->parse($message);
             }
             $this->formData['messages'][] = $message;
             $this->plhCache = array();
@@ -905,7 +906,7 @@ abstract class Core
     /**
      * Загрузка правил валидации
      * @param string $param
-     * @return array|mixed|\xNop
+     * @return array
      */
     public function getValidationRules ($param = 'rules')
     {
@@ -1009,7 +1010,7 @@ abstract class Core
         $this->DLTemplate->setTemplateData($templateData);
         $out = $this->DLTemplate->parseChunk($name, $data, $parseDocumentSource);
         if ($this->lexicon->isReady()) {
-            $out = $this->lexicon->parseLang($out);
+            $out = $this->lexicon->parse($out);
         }
         if (!$parseDocumentSource && $rewriteUrls) {
             $out = $this->modx->rewriteUrls($out);
@@ -1031,10 +1032,7 @@ abstract class Core
      * @return string
      */
     public function translate($name, $default = '') {
-        $out = $default;
-        if ($this->lexicon->isReady()) {
-            $out = $this->lexicon->getMsg($name, $default);
-        }
+        $out = $this->lexicon->get($name, $default);
 
         return $out;
     }
@@ -1240,6 +1238,7 @@ abstract class Core
     /**
      * @param $model
      * @param string $path
+     * @param string $init
      * @return object
      */
     public function loadModel ($model, $path = '', $init = '')
