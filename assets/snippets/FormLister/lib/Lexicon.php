@@ -14,6 +14,28 @@ class Lexicon
     public $config = null;
     protected $lexicon = array();
     protected $lexiconHandler = null;
+    protected $aliases = array(
+        'bg' => 'bulgarian',
+        'zh' => 'chinese',
+        'cs' => 'czech',
+        'da' => 'danish',
+        'en' => 'english',
+        'fi' => 'finnish',
+        'fr' => 'francais-utf8',
+        'de' => 'german',
+        'he' => 'hebrew',
+        'it' => 'italian',
+        'jp' => 'japanese-utf8',
+        'nl' => 'nederlands-utf8',
+        'no' => 'norsk',
+        'fa' => 'persian',
+        'pl' => 'polish-utf8',
+        'pt' => 'portuguese-br-utf8',
+        'ru' => 'russian-UTF8',
+        'es' => 'spanish-utf8',
+        'sv' => 'svenska-utf8',
+        'uk' => 'ukrainian'
+    );
 
     /**
      * Lexicon constructor.
@@ -43,20 +65,6 @@ class Lexicon
      */
     public function fromFile ($name = 'core', $lang = '', $langDir = '')
     {
-        return $this->loadLang($name, $lang, $langDir);
-    }
-
-    /**
-     * Загрузка языкового пакета
-     *
-     * @param string $name файл языкового пакета
-     * @param string $lang имя языкового пакета
-     * @param string $langDir папка с языковыми пакетами
-     * @return array массив с лексиконом
-     * @deprecated
-     */
-    public function loadLang ($name = 'core', $lang = '', $langDir = '')
-    {
         $langDir = empty($langDir) ? MODX_BASE_PATH . $this->config->getCFGDef('langDir',
                 'lang/') : MODX_BASE_PATH . $langDir;
         if (empty($lang)) {
@@ -78,6 +86,20 @@ class Lexicon
     }
 
     /**
+     * Загрузка языкового пакета
+     *
+     * @param string $name файл языкового пакета
+     * @param string $lang имя языкового пакета
+     * @param string $langDir папка с языковыми пакетами
+     * @return array массив с лексиконом
+     * @deprecated
+     */
+    public function loadLang ($name = 'core', $lang = '', $langDir = '')
+    {
+        return $this->fromFile($name, $lang, $langDir);
+    }
+
+    /**
      * @param string $name
      * @param string $lang
      * @param string $langDir
@@ -85,6 +107,9 @@ class Lexicon
     private function loadLexiconFile ($name = 'core', $lang = '', $langDir = '')
     {
         $filepath = "{$langDir}{$lang}/{$name}.inc.php";
+        if (!file_exists($filepath)) {
+            $filepath = "{$langDir}{$this->getAlias($lang)}/{$name}.inc.php";
+        }
         if (file_exists($filepath)) {
             $tmp = include($filepath);
             if (is_array($tmp)) {
@@ -102,6 +127,9 @@ class Lexicon
     public function fromArray ($lang = array())
     {
         $language = $this->config->getCFGDef('lang', $this->modx->getConfig('manager_language'));
+        if(is_array($lang) && !isset($lang[$language])) {
+            $language = $this->getAlias($language);
+        }
         if (is_array($lang) && isset($lang[$language])) {
             $this->setLexicon($lang[$language]);
         }
@@ -118,7 +146,12 @@ class Lexicon
      */
     public function get ($key, $default = '')
     {
-        return $this->getMsg($key, $default);
+        $out = APIhelpers::getkey($this->lexicon, $key, $default);
+        if (!is_null($this->lexiconHandler)) {
+            $out = $this->lexiconHandler->get($key, $default);
+        }
+
+        return $out;
     }
 
     /**
@@ -131,12 +164,7 @@ class Lexicon
      */
     public function getMsg ($key, $def = '')
     {
-        $out = APIhelpers::getkey($this->lexicon, $key, $def);
-        if (!is_null($this->lexiconHandler)) {
-            $out = $this->lexiconHandler->get($key, $def);
-        }
-
-        return $out;
+        return $this->get($key, $def);
     }
 
     /**
@@ -144,18 +172,6 @@ class Lexicon
      * @return string
      */
     public function parse ($tpl)
-    {
-        return $this->parseLang($tpl);
-    }
-
-    /**
-     * Замена в шаблоне фраз из лексикона
-     *
-     * @param string $tpl HTML шаблон
-     * @return string
-     * @deprecated
-     */
-    public function parseLang ($tpl)
     {
         if (is_scalar($tpl) && !empty($tpl)) {
             if (preg_match_all("/\[\%([a-zA-Z0-9\.\_\-]+)\%\]/", $tpl, $match)) {
@@ -170,6 +186,18 @@ class Lexicon
         }
 
         return $tpl;
+    }
+
+    /**
+     * Замена в шаблоне фраз из лексикона
+     *
+     * @param string $tpl HTML шаблон
+     * @return string
+     * @deprecated
+     */
+    public function parseLang ($tpl)
+    {
+        return $this->parse($tpl);
     }
 
     /**
@@ -202,5 +230,17 @@ class Lexicon
     public function getLexicon ()
     {
         return $this->lexicon;
+    }
+
+    /**
+     * @param $language string
+     * @return string
+     */
+    public function getAlias($language) {
+        if (isset($this->aliases[$language])) {
+            $language = $this->aliases[$language];
+        }
+
+        return $language;
     }
 }
