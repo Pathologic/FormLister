@@ -1006,12 +1006,7 @@ abstract class Core
             'messages'   => $this->getFormData('messages'),
             'plh'        => $this->placeholders
         );
-        /* TODO remove in further versions*/
-        if (method_exists($this->DLTemplate, 'setTwigTemplateVars')) {
-            $this->DLTemplate->setTwigTemplateVars($templateData);
-        } else {
-            $this->DLTemplate->setTemplateData($templateData);
-        }
+        $this->DLTemplate->setTemplateData($templateData);
         $out = $this->DLTemplate->parseChunk($name, $data, $parseDocumentSource);
         if ($this->lexicon->isReady()) {
             $out = $this->lexicon->parseLang($out);
