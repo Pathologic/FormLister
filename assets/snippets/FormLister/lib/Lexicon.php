@@ -148,7 +148,7 @@ class Lexicon
     {
         $out = APIhelpers::getkey($this->lexicon, $key, $default);
         if (!is_null($this->lexiconHandler)) {
-            $out = $this->lexiconHandler->get($key, $default);
+            $out = $this->lexiconHandler->get($key, $out);
         }
 
         return $out;
