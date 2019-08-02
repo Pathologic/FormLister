@@ -25,9 +25,9 @@ Determines the source of request data:
 * post - $_POST array;
 * get - $_GET array;
 * request - $_REQUEST array;
-* the result of anonymous function or class method call.
+* anonymous function or class method name - the result of its call.
 
-Possible values - post, get, request, anonymous function or class method. 
+Possible values - post, get, request, anonymous function or class method name. 
 
 Default value - post.
 
@@ -54,12 +54,13 @@ The way of output.
 
 Possible values:
 
-- 0: html only;
-- 1: json array with form data;
-- 2: json array with form data and html.
+- 0: html only (default);
+- 1: array with form data;
+- 2: array with form data and html.
+- 3: FormLister object;
 
 ### apiFormat
-Output format.
+Output format for mode 1 or mode 2.
 
 Possible value - json or array.
 
