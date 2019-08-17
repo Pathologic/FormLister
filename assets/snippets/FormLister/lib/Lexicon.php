@@ -68,7 +68,7 @@ class Lexicon
         $langDir = empty($langDir) ? MODX_BASE_PATH . $this->config->getCFGDef('langDir',
                 'lang/') : MODX_BASE_PATH . $langDir;
         if (empty($lang)) {
-            $lang = $this->config->getCFGDef('lang', $this->modx->getConfig('manager_language'));
+            $lang = $this->config->getCFGDef('lang', $this->modx->getConfig('lang_code'));
         }
 
         if (is_scalar($name) && !empty($name)) {
@@ -76,8 +76,8 @@ class Lexicon
         }
 
         foreach ($name as $n) {
-            if ($lang != 'english') {
-                $this->loadLexiconFile($n, 'english', $langDir);
+            if ($lang != 'english' && $lang != 'en') {
+                $this->loadLexiconFile($n, 'en', $langDir);
             }
             $this->loadLexiconFile($n, $lang, $langDir);
         }
@@ -148,7 +148,7 @@ class Lexicon
     {
         $out = APIhelpers::getkey($this->lexicon, $key, $default);
         if (!is_null($this->lexiconHandler)) {
-            $out = $this->lexiconHandler->get($key, $out);
+            $out = $this->lexiconHandler->get($key, $default);
         }
 
         return $out;

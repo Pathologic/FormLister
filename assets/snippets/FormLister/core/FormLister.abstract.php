@@ -126,7 +126,7 @@ abstract class Core
         }
         $this->lexicon = new Lexicon($modx, array(
             'langDir' => 'assets/snippets/FormLister/core/lang/',
-            'lang'    => $this->getCFGDef('lang', $this->modx->getConfig('manager_language')),
+            'lang'    => $this->getCFGDef('lang', $this->modx->getConfig('lang_code')),
             'handler' => $this->getCFGDef('lexiconHandler')
         ));
         $this->DLTemplate = DLTemplate::getInstance($modx);
@@ -142,7 +142,8 @@ abstract class Core
     /**
      * @return $this
      */
-    public function getRequest() {
+    public function getRequest ()
+    {
         $disableSubmit = $this->getCFGDef('disableSubmit', 0);
         if (!$disableSubmit) {
             $method = $this->getCFGDef('formMethod', 'post');
@@ -473,7 +474,9 @@ abstract class Core
         * Если api = 2, то возвращаются данные формы и шаблон
         * Если api = 3, то возвращается объект
         */
-        if ($api == 3) return $this;
+        if ($api == 3) {
+            return $this;
+        }
 
         $data = $this->getFormData();
         unset($data['files']);
@@ -578,7 +581,7 @@ abstract class Core
      * Возвращает результаты выполнения правил валидации
      * @param object $validator
      * @param array $rules
-     * @param  array $fields
+     * @param array $fields
      * @return bool|array
      */
     public function validate ($validator, $rules, $fields)
@@ -1031,7 +1034,8 @@ abstract class Core
      * @param string $default
      * @return string
      */
-    public function translate($name, $default = '') {
+    public function translate ($name, $default = '')
+    {
         $out = $this->lexicon->get($name, $default);
 
         return $out;
@@ -1263,11 +1267,11 @@ abstract class Core
      * @param bool $flag
      * @return array
      */
-    public function filesToArray (array $_files, array $allowed, $flag = true)
+    public function filesToArray (array $_files, array $allowed = array(), $flag = true)
     {
         $files = array();
         foreach ($_files as $name => $file) {
-            if (!in_array($name, $allowed) && !is_int($name)) {
+            if (!empty($allowed) && !in_array($name, $allowed) && !is_int($name)) {
                 continue;
             }
             if ($flag) {
