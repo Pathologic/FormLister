@@ -33,8 +33,6 @@ if (!class_exists($classname)) {
         require_once($dir . $controller . ".php");
     }
 }
-if (!isset($langDir)) $params['langDir'] = 'assets/snippets/FormLister/core/lang/';
-
 if (class_exists($classname)) {
     /** @var \FormLister\Core $FormLister */
     $FormLister = new $classname($modx, $params);
