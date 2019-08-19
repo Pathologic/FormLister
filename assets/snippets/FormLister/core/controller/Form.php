@@ -32,9 +32,7 @@ class Form extends Core
     public function __construct(\DocumentParser $modx, array $cfg = array())
     {
         parent::__construct($modx, $cfg);
-        if ($files = $this->getCFGDef('attachments')) {
-            $this->setFiles($this->filesToArray($_FILES, $this->config->loadArray($files)));
-        }
+        $this->setFiles($this->filesToArray($_FILES));
         $this->mailConfig = array(
             'isHtml'   => $this->getCFGDef('isHtml', 1),
             'to'       => $this->getCFGDef('to'),

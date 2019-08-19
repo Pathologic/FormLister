@@ -47,19 +47,16 @@ class Register extends Form
     }
 
     /**
-     * @param string $param
-     * @return array|mixed|\xNop
+     * Возвращает результат проверки формы
+     * @return bool
      */
-    public function getValidationRules($param = 'rules')
+    public function validateForm ()
     {
-        $rules = parent::getValidationRules($param);
-        if (isset($rules['password']) && isset($rules['repeatPassword']) && !empty($this->getField('password'))) {
-            if (isset($rules['repeatPassword']['equals'])) {
-                $rules['repeatPassword']['equals']['params'] = $this->getField('password');
-            }
+        if (isset($this->rules['password']) && isset($this->rules['repeatPassword']) && !empty($this->getField('password')) && isset($this->rules['repeatPassword']['equals'])) {
+            $this->rules['repeatPassword']['equals']['params'] = $this->getField('password');
         }
 
-        return $rules;
+        return parent::validateForm();
     }
 
     /**

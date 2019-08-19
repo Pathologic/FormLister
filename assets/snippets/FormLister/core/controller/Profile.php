@@ -69,28 +69,27 @@ class Profile extends Core
 
 
     /**
-     * @param string $param
-     * @return array|mixed|\xNop
+     * Возвращает результат проверки формы
+     * @return bool
      */
-    public function getValidationRules($param = 'rules')
+    public function validateForm()
     {
-        $rules = parent::getValidationRules($param);
         $password = $this->getField('password');
         if (empty($password) || !is_scalar($password)) {
             $this->forbiddenFields[] = 'password';
-            if (isset($rules['password'])) {
-                unset($rules['password']);
+            if (isset($this->rules['password'])) {
+                unset($this->rules['password']);
             }
-            if (isset($rules['repeatPassword'])) {
-                unset($rules['repeatPassword']);
+            if (isset($this->rules['repeatPassword'])) {
+                unset($this->rules['repeatPassword']);
             }
         } else {
-            if (isset($rules['repeatPassword']['equals'])) {
-                $rules['repeatPassword']['equals']['params'] = $this->getField('password');
+            if (isset($this->rules['repeatPassword']['equals'])) {
+                $this->rules['repeatPassword']['equals']['params'] = $this->getField('password');
             }
         }
 
-        return $rules;
+        return parent::validateForm();
     }
 
     /**
