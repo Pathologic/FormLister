@@ -537,6 +537,7 @@ abstract class Core
         $filterer = $this->loadModel($filterer, '', array());
         $filterSet = $this->config->loadArray($this->getCFGDef('filters', ''), '');
         foreach ($filterSet as $field => $filters) {
+            if (!$this->fieldExists($field)) continue;
             $value = $this->getField($field);
             if (!is_array($filters)) {
                 $filters = array($filters);
