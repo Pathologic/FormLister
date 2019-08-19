@@ -148,7 +148,7 @@ class Lexicon
     {
         $out = APIhelpers::getkey($this->lexicon, $key, $default);
         if (!is_null($this->lexiconHandler)) {
-            $out = $this->lexiconHandler->get($key, $default);
+            $out = $this->lexiconHandler->get($key, $out);
         }
 
         return $out;
@@ -176,7 +176,7 @@ class Lexicon
         if (is_scalar($tpl) && !empty($tpl)) {
             if (preg_match_all("/\[\%([a-zA-Z0-9\.\_\-]+)\%\]/", $tpl, $match)) {
                 $langVal = array();
-                foreach ($match[1] as $item) {
+                 foreach ($match[1] as $item) {
                     $langVal[] = $this->get($item);
                 }
                 $tpl = str_replace($match[0], $langVal, $tpl);
