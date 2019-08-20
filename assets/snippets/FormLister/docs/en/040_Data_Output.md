@@ -3,7 +3,10 @@
 Data are sanitized, arrays are converted to strings to be output in templates. Special placeholders are set for form controls. "Field name" below is the raw field name, without brackets for array fields.
 
 Raw field value (or placeholder):
+```
 [+field name+]
+[+placeholder.name+]
+```
 
 Sanitized field value (array fields are converted to strings): 
 ```
@@ -62,4 +65,9 @@ There are 3 possible types of messages in the [+form.messages+] placeholder: fai
 Lexicon entries:
 [%lexicon keys%]
 
-If EvoTwig plugin is used then template variables are available: FormLister (controller object), errors (formData['errors'] array), messages (formData['messages'] array), data (formData['fields'] array).
+If any template engine (EvoTwig, EvoBlade) is used then template variables are available: 
+* FormLister (controller object);
+* errors (formData['errors'] array);
+* messages (formData['messages'] array;
+* data (formData['fields'] array);
+* plh (placeholders set with setPlaceholder()) method as well as prerendered error messages if "prerenderErrors" parameter is on).

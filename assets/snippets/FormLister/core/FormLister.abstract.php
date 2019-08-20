@@ -488,8 +488,13 @@ abstract class Core
         if ($api == 1) {
             $out = $data;
         } else {
-            $plh = $this->getCFGDef('skipPrerender',
-                0) ? $this->getFormData('fields') : $this->prerenderForm($this->getFormStatus());
+            $skipPrerender = $this->getCFGDef('skipPrerender', 0);
+            $prerenderErrors = $this->getCFGDef('prerenderErrors', 0);
+            if($skipPrerender && $prerenderErrors) {
+                $plh = $this->errorsToPlaceholders();
+                $this->placeholders = array_merge($plh, $this->placeholders);
+            }
+            $plh = $skipPrerender ? $this->getFormData('fields') : $this->prerenderForm($this->getFormStatus());
             $this->log('Render output', array('template' => $this->renderTpl, 'data' => $plh));
             $form = $this->parseChunk($this->renderTpl, $plh);
             if (!$api) {

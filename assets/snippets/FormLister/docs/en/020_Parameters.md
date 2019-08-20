@@ -297,6 +297,13 @@ Possible values - 0 or 1.
 
 Default value - 0.
 
+### prerenderErrors
+Allows to process form errors if "skipPrerender" parameter is on. The results are saved to placeholders.
+
+Possible values - 0 or 1.
+
+Default value - 0.
+
 ### templatePath, templateExtension
 Sets template files folder and template files extension. These parameters are needed to use with EvoTwig plugin.
 
