@@ -490,7 +490,7 @@ abstract class Core
         } else {
             $skipPrerender = $this->getCFGDef('skipPrerender', 0);
             $prerenderErrors = $this->getCFGDef('prerenderErrors', 0);
-            if($skipPrerender && $prerenderErrors) {
+            if ($skipPrerender && $prerenderErrors) {
                 $plh = $this->errorsToPlaceholders();
                 $this->placeholders = array_merge($plh, $this->placeholders);
             }
@@ -546,7 +546,9 @@ abstract class Core
         $filterer = $this->loadModel($filterer, '', array());
         $filterSet = $this->config->loadArray($this->getCFGDef('filters', ''), '');
         foreach ($filterSet as $field => $filters) {
-            if (!$this->fieldExists($field)) continue;
+            if (!$this->fieldExists($field)) {
+                continue;
+            }
             $value = $this->getField($field);
             if (!is_array($filters)) {
                 $filters = array($filters);
@@ -1012,7 +1014,8 @@ abstract class Core
      */
     public function parseChunk ($name, $data, $parseDocumentSource = false)
     {
-        $parseDocumentSource = $parseDocumentSource || $this->getCFGDef('parseDocumentSource', 0);
+        $isModxChunk = !preg_match('/^@[A-Z]_/', $name);
+        $parseDocumentSource = $isModxChunk && ($parseDocumentSource || $this->getCFGDef('parseDocumentSource', 0));
         $rewriteUrls = $this->getCFGDef('rewriteUrls', 1);
         $templateData = array(
             'FormLister' => $this,
@@ -1021,17 +1024,19 @@ abstract class Core
             'plh'        => $this->placeholders
         );
         $this->DLTemplate->setTemplateData($templateData);
-        $out = $this->DLTemplate->parseChunk($name, $data, $parseDocumentSource);
-        if ($this->lexicon->isReady()) {
-            $out = $this->lexicon->parse($out);
-        }
-        if (!$parseDocumentSource && $rewriteUrls) {
-            $out = $this->modx->rewriteUrls($out);
-        }
-        if ($this->getCFGDef('removeEmptyPlaceholders', 1)) {
-            preg_match_all('~\[(\+|\*|\(|%)([^:\+\[\]]+)([^\[\]]*?)(\1|\)|%)\]~s', $out, $matches);
-            if ($matches[0]) {
-                $out = str_replace($matches[0], '', $out);
+        $out = $this->DLTemplate->parseChunk($name, $data, $parseDocumentSource, $isModxChunk && !$this->getCFGDef('disablePhx', 1));
+        if ($isModxChunk) {
+            if ($this->lexicon->isReady()) {
+                $out = $this->lexicon->parse($out);
+            }
+            if (!$parseDocumentSource && $rewriteUrls) {
+                $out = $this->modx->rewriteUrls($out);
+            }
+            if ($this->getCFGDef('removeEmptyPlaceholders', 1)) {
+                preg_match_all('~\[(\+|\*|\(|%)([^:\+\[\]]+)([^\[\]]*?)(\1|\)|%)\]~s', $out, $matches);
+                if ($matches[0]) {
+                    $out = str_replace($matches[0], '', $out);
+                }
             }
         }
 

@@ -71,3 +71,5 @@ If any template engine (EvoTwig, EvoBlade) is used then template variables are a
 * messages (formData['messages'] array;
 * data (formData['fields'] array);
 * plh (placeholders set with setPlaceholder()) method as well as prerendered error messages if "prerenderErrors" parameter is on).
+
+Post procession of MODX parser construction is disabled when template engine is used.
