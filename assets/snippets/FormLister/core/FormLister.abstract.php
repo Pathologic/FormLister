@@ -230,7 +230,7 @@ abstract class Core
                 //Массив значений указывается в параметре defaults
                 case 'array':
                     if ($arrayParam) {
-                        $fields = $this->config->loadArray($this->getCFGDef('defaults'));
+                        $fields = $this->config->loadArray($this->getCFGDef($arrayParam));
                     }
                     break;
                 //Массив значений указывается в произвольном параметре

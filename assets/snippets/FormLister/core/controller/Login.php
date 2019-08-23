@@ -9,6 +9,7 @@ use DocumentParser;
  */
 class Login extends Core
 {
+    use DateConverter;
     public $user = null;
     protected $requestUri = '';
     protected $context = '';
@@ -33,6 +34,7 @@ class Login extends Core
         $this->context = $this->getCFGDef('context', 'web');
         $this->lexicon->fromFile('login');
         $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
+        $this->dateFormat = $this->getCFGDef('dateFormat', '');
     }
 
     /**
@@ -106,6 +108,9 @@ class Login extends Core
             $this->redirect();
         }
         $this->setFields($this->user->toArray());
+        if ($dob = $this->fromTimestamp($this->getField('dob'))) {
+            $this->setField('dob', $dob);
+        }
         $this->renderTpl = $this->getCFGDef('successTpl');
     }
 }

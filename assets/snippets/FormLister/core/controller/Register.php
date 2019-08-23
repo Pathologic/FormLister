@@ -1,5 +1,6 @@
 <?php namespace FormLister;
 
+use DateTime;
 use jsonHelper;
 
 /**
@@ -9,6 +10,7 @@ use jsonHelper;
  */
 class Register extends Form
 {
+    use DateConverter;
     /**
      * @var \modUsers
      */
@@ -28,6 +30,7 @@ class Register extends Form
         );
         $this->lexicon->fromFile('register');
         $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
+        $this->dateFormat = $this->getCFGDef('dateFormat', '');
     }
 
     /**
@@ -121,6 +124,9 @@ class Register extends Form
         }
         $password = $this->getField('password');
         $fields = $this->filterFields($this->getFormData('fields'), $this->allowedFields, $this->forbiddenFields);
+        if (isset($fields['dob']) && ($dob = $this->toTimestamp($fields['dob']))) {
+            $fields['dob'] = $dob;
+        }
         $checkActivation = $this->getCFGDef('checkActivation', 0);
         if ($checkActivation) {
             $fields['logincount'] = -1;
@@ -137,6 +143,9 @@ class Register extends Form
             $this->user->close();
             $userdata = $this->user->edit($result)->toArray();
             $this->setFields($userdata);
+            if ($dob = $this->fromTimestamp($this->getField('dob'))) {
+                $this->setField('dob', $dob);
+            }
             $this->setField('user.password', $password);
             $this->runPrepare('preparePostProcess');
             if ($checkActivation) {

@@ -9,6 +9,7 @@ use DocumentParser;
  */
 class Profile extends Core
 {
+    use DateConverter;
     /**
      * @var \modUsers
      */
@@ -36,6 +37,7 @@ class Profile extends Core
                 'userdata' => $this->user->toArray()
             ));
         }
+        $this->dateFormat = $this->getCFGDef('dateFormat', '');
     }
 
     /**
@@ -48,7 +50,7 @@ class Profile extends Core
     {
         parent::setExternalFields($sources, $arrayParam);
         parent::setExternalFields('array', 'userdata');
-
+        var_dump($this->config->getConfig());
         return $this;
     }
 
@@ -62,6 +64,9 @@ class Profile extends Core
             $this->redirect('exitTo');
             $this->renderTpl = $this->getCFGDef('skipTpl', $this->translate('profile.default_skipTpl'));
             $this->setValid(false);
+        }
+        if (!$this->isSubmitted() && ($dob = $this->getField('dob'))) {
+            $this->setField('dob', $this->fromTimestamp($dob));
         }
 
         return parent::render();
@@ -162,12 +167,18 @@ class Profile extends Core
         if (isset($fields['email'])) {
             $fields['email'] = is_scalar($fields['email']) ? $fields['email'] : '';
         }
+        if (isset($fields['dob']) && ($dob = $this->toTimestamp($fields['dob']))) {
+            $fields['dob'] = $dob;
+        }
         $result = $this->user->fromArray($fields)->save(true);
         $this->log('Update profile', array('data' => $fields, 'result' => $result, 'log' => $this->user->getLog()));
         if ($result) {
             $this->setFormStatus(true);
             $this->user->close();
             $this->setFields($this->user->edit($result)->toArray());
+            if ($dob = $this->fromTimestamp($this->getField('dob'))) {
+                $this->setField('dob', $dob);
+            }
             $this->setField('user.password', $newpassword);
             $this->runPrepare('preparePostProcess');
             if (!empty($newpassword) && ($password !== $this->user->getPassword($newpassword))) {
