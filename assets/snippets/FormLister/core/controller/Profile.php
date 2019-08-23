@@ -50,7 +50,7 @@ class Profile extends Core
     {
         parent::setExternalFields($sources, $arrayParam);
         parent::setExternalFields('array', 'userdata');
-        var_dump($this->config->getConfig());
+
         return $this;
     }
 
