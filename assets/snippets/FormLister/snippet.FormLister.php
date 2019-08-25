@@ -33,6 +33,10 @@ if (!class_exists($classname)) {
         require_once($dir . $controller . ".php");
     }
 }
+
+$DLTemplate = DLTemplate::getInstance($modx);
+$templatePath = $DLTemplate->getTemplatePath();
+$templateExtension = $DLTemplate->getTemplateExtension();
 if (class_exists($classname)) {
     /** @var \FormLister\Core $FormLister */
     $FormLister = new $classname($modx, $params);
@@ -49,5 +53,6 @@ if (class_exists($classname)) {
 } else {
     $modx->logEvent(0, 1, "Controller {$classname} is missing", 'FormLister');
 }
+$DLTemplate->setTemplatePath($templatePath)->setTemplateExtension($templateExtension);
 
 return $out;
