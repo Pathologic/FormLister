@@ -130,3 +130,7 @@ Possible values - number of seconds since last login attempt.
 
 Default value - 3600 (1 hour).
 
+### dateFormat
+Date format for the "dob" field.
+
+Possible values - date format according to the "date" function ("d.m.Y" etc.).

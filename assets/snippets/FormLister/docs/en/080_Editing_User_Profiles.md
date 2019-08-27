@@ -96,3 +96,8 @@ Success message template.
 Possible values - template name, according to DocLister templating rules.
 
 Default value - none.
+
+### dateFormat
+Date format for the "dob" field.
+
+Possible values - date format according to the "date" function ("d.m.Y" etc.).

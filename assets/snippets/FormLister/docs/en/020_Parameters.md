@@ -21,7 +21,13 @@ The name of the form, required parameter.
 Form needs to have a hidden field named "formid" and its value has to be the same as parameter value. The form means to be sent, if there is a key named "formid" in the $_REQUEST array and its value is equal to the parameter value.
 
 ### formMethod
-Possible values - post, get or request.
+Determines the source of request data:
+* post - $_POST array;
+* get - $_GET array;
+* request - $_REQUEST array;
+* anonymous function or class method name - the result of its call.
+
+Possible values - post, get, request, anonymous function or class method name. 
 
 Default value - post.
 
@@ -48,12 +54,13 @@ The way of output.
 
 Possible values:
 
-- 0: html only;
-- 1: json array with form data;
-- 2: json array with form data and html.
+- 0: html only (default);
+- 1: array with form data;
+- 2: array with form data and html.
+- 3: FormLister object;
 
 ### apiFormat
-Output format.
+Output format for mode 1 or mode 2.
 
 Possible value - json or array.
 
@@ -285,6 +292,13 @@ Default value - 0.
 
 ### skipPrerender
 Allows to skip some form fields processing (sanitizing values, converting arrays to strings, error messages rendering). Set to 1, if you do not use MODX templates. 
+
+Possible values - 0 or 1.
+
+Default value - 0.
+
+### prerenderErrors
+Allows to process form errors if "skipPrerender" parameter is on. The results are saved to placeholders.
 
 Possible values - 0 or 1.
 

@@ -136,3 +136,8 @@ Password length (if the password needs to be created automatically).
 Possible values - number of characters greater than 6.
 
 Default value - 6.
+
+### dateFormat
+Date format for the "dob" field.
+
+Possible values - date format according to the "date" function ("d.m.Y" etc.).
