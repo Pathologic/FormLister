@@ -626,6 +626,8 @@ abstract class Core
                         } else {
                             $params = array($value, $description['params']);
                         }
+                    }elseif (isset($description['function'])) {
+                        $params = array($value, $description['params']);
                     }
                     $message = isset($description['message']) ? $description['message'] : '';
                 } else {
