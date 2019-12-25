@@ -77,7 +77,7 @@ class Login extends Core
         }
         $this->user->edit($login);
 
-        if ($this->getCFGDef('checkActivation', 0) && $this->user->get('logincount') < 0) {
+        if ($this->getCFGDef('checkActivation', 0) && !$this->user->get('verified')) {
             $this->addMessage($this->lexicon->getMsg('login.user_notactivated'));
 
             return;

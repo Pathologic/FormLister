@@ -86,7 +86,7 @@ class Activate extends Form
             $hash = false;
         } else {
             $userdata = $this->user->edit($uid)->toArray();
-            $hash = $this->user->getID() && $userdata['logincount'] < 0 ? md5(jsonHelper::toJson($userdata)) : false;
+            $hash = $this->user->getID() && !$userdata['verified'] ? md5(jsonHelper::toJson($userdata)) : false;
         }
 
         return $hash;
@@ -136,7 +136,7 @@ class Activate extends Form
                 $uid = $this->getField('id');
                 $hash = $this->getField('hash');
                 if ($hash && $hash == $this->getUserHash($uid)) {
-                    $result = $this->user->edit($uid)->set('logincount', 0)->save(true);
+                    $result = $this->user->edit($uid)->set('verified', 1)->save(true);
                     $this->log('Activate user', array('user' => $uid, 'result' => $result));
                     if (!$result) {
                         $this->addMessage($this->translate('activate.update_failed'));
@@ -152,20 +152,30 @@ class Activate extends Form
     }
 
     /**
+     * @return string
+     */
+    public function getMode() {
+        return $this->mode;
+    }
+
+    /**
      *
      */
     public function postProcess()
     {
         $this->setFormStatus(true);
         switch ($this->mode) {
-            case "hash":
-                $this->renderTpl = $this->getCFGDef('successTpl',
+            case 'hash':
+                $tpl = $this->getCFGDef('successTpl',
                     $this->translate('activate.default_successTpl'));
                 break;
-            case "activate":
+            case 'activate':
                 $this->redirect();
-                $this->renderTpl = $this->getCFGDef('activateSuccessTpl',
+                $tpl = $this->getCFGDef('activateSuccessTpl',
                     $this->translate('activate.default_activateSuccessTpl'));
+        }
+        if (!empty($tpl)) {
+            $this->renderTpl = $tpl;
         }
     }
 }

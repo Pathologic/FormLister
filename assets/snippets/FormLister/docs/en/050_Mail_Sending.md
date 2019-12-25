@@ -153,7 +153,7 @@ Default value - 60.
 
 ## Templates
 ### reportTpl
-The main template of the letter.
+The main template of the letter. There's the [+attachments.value+] placeholder available in reportTpl template, it contains the list of attached files. To output particular file field use the [+field name.value+] placeholder. Files are sent only in letters with reportTpl template.
 
 Possible values - template name, according to DocLister templating rules.
 
@@ -214,26 +214,3 @@ Allows to delete attachment files if the mail is sent successfully.
 Possible values - 0 or 1.
 
 Default value - 0.
-
-### fileValidator
-Class name to validate files. This class has to be loaded before snippet call.
-
-Default value - \FormLister\FileValidator
-
-### fileRules
-Validation rules (see "Data validation" chapter). Default validator has the following rules:
-
-- required: files are loaded successfully;
-- optional: returns true even if files were not submitted (it makes file field not required);
-- allowed: file extension is in defined array;
-- images: file extension is jpg, jpeg, gif, png, bmp;
-- minSize: file size in kilobytes is greater than defined;
-- maxSize: file size in kilobytes is less than defined;
-- sizeBetween: file size in kilobytes is in the range;
-- minCount: files count is greater than defined;
-- maxCount: files count is less than defined;
-- countBetween: files count is in the range;
-
-There's no sense to use the "!field name" construction in file validation rules,  because the value of the file field can not be empty, so use the "optional" rule instead.
-
-There's the [+attachments.value+] placeholder available in reportTpl template, it contains the list of attached files. To output particular file field use the [+field name.value+] placeholder. Files are sent only in letters with reportTpl template.

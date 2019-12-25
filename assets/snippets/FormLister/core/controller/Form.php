@@ -18,11 +18,6 @@ class Form extends Core
      * @var array
      */
     public $mailConfig = array();
-    /**
-     * Правила валидации файлов
-     * @var array
-     */
-    protected $fileRules = array();
 
     /**
      * Form constructor.
@@ -32,7 +27,6 @@ class Form extends Core
     public function __construct(\DocumentParser $modx, array $cfg = array())
     {
         parent::__construct($modx, $cfg);
-        $this->setFiles($this->filesToArray($_FILES));
         $this->mailConfig = array(
             'isHtml'   => $this->getCFGDef('isHtml', 1),
             'to'       => $this->getCFGDef('to'),
@@ -46,32 +40,6 @@ class Form extends Core
         );
         $this->lexicon->fromFile('form');
         $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
-    }
-
-    /**
-     * @return bool
-     */
-    public function validateForm()
-    {
-        parent::validateForm();
-        if (!$this->getCFGDef('attachments')) {
-            return $this->isValid();
-        }
-        $validator = $this->getCFGDef('fileValidator', '\FormLister\FileValidator');
-        $validator = $this->loadModel($validator, '', array());
-        $fields = $this->getFormData('files');
-        $rules = $this->getValidationRules('fileRules');
-        $this->fileRules = array_merge($this->fileRules, $rules);
-        $this->log('Prepare to validate files', array('fields' => $fields, 'rules' => $this->fileRules));
-        $result = $this->validate($validator, $this->fileRules, $fields);
-        if ($result !== true) {
-            foreach ($result as $item) {
-                $this->addError($item[0], $item[1], $item[2]);
-            }
-            $this->log('File validation errors', $this->getFormData('errors'));
-        }
-
-        return $this->isValid();
     }
 
     /**
@@ -327,7 +295,10 @@ class Form extends Core
         }
         $this->runPrepare('prepareAfterProcess');
         $this->redirect();
-        $this->renderTpl = $this->getCFGDef('successTpl', $this->translate('form.default_successTpl'));
+        $tpl = $this->getCFGDef('successTpl', $this->translate('form.default_successTpl'));
+        if (!empty($tpl)) {
+            $this->renderTpl = $tpl;
+        }
     }
 
     /**

@@ -128,9 +128,7 @@ class Register extends Form
             $fields['dob'] = $dob;
         }
         $checkActivation = $this->getCFGDef('checkActivation', 0);
-        if ($checkActivation) {
-            $fields['logincount'] = -1;
-        }
+        $field['verified'] = (int)!$checkActivation;
         $fields['username'] = is_scalar($fields['username']) ? $fields['username'] : '';
         $fields['email'] = is_scalar($fields['email']) ? $fields['email'] : '';
         $this->user->create($fields);

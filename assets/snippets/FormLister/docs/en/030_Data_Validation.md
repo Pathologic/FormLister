@@ -110,6 +110,23 @@ Validator method returns true if the rule is passed, false or error message if n
 
 Example contains the "сustom" rule name, but it can be any if it's not in validator class. So you can use several custom rules.
 
+### Files validation
+### fileRules
+Default validator file validator (\FormLister\FileValidator) has the following rules:
+
+- required: files are loaded successfully;
+- optional: returns true even if files were not submitted (it makes file field not required);
+- allowed: file extension is in defined array;
+- images: file extension is jpg, jpeg, gif, png, bmp;
+- minSize: file size in kilobytes is greater than defined;
+- maxSize: file size in kilobytes is less than defined;
+- sizeBetween: file size in kilobytes is in the range;
+- minCount: files count is greater than defined;
+- maxCount: files count is less than defined;
+- countBetween: files count is in the range;
+
+There's no sense to use the "!field name" construction in file validation rules,  because the value of the file field can not be empty, so use the "optional" rule instead.
+
 ### Validation results
 Error data are stored as an array and can be obtained with getFormData('errors') method call:
 ```

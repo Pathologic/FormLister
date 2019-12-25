@@ -93,7 +93,6 @@ class Profile extends Core
                 $this->rules['repeatPassword']['equals']['params'] = $this->getField('password');
             }
         }
-
         return parent::validateForm();
     }
 
@@ -170,6 +169,10 @@ class Profile extends Core
         if (isset($fields['dob']) && ($dob = $this->toTimestamp($fields['dob']))) {
             $fields['dob'] = $dob;
         }
+        $verificationField = $this->getCFGDef('verificationField', 'email');
+        if (isset($fields[$verificationField]) && $this->user->get($verificationField) != $fields[$verificationField]) {
+            $fields['verified'] = 0;
+        }
         $result = $this->user->fromArray($fields)->save(true);
         $this->log('Update profile', array('data' => $fields, 'result' => $result, 'log' => $this->user->getLog()));
         if ($result) {
@@ -181,7 +184,8 @@ class Profile extends Core
             }
             $this->setField('user.password', $newpassword);
             $this->runPrepare('preparePostProcess');
-            if (!empty($newpassword) && ($password !== $this->user->getPassword($newpassword))) {
+            $checkActivation = $this->getCFGDef('checkActivation', 0);
+            if ($checkActivation && !$this->getField('verified')) {
                 $this->user->logOut('WebLoginPE', true);
                 $this->redirect('exitTo');
             }

@@ -180,6 +180,16 @@ Validation rules array.
 
 Default value - none.
 
+### fileValidator
+Class name to validate files. This class has to be loaded before snippet call.
+
+Default value - \FormLister\FileValidator
+
+### fileRules
+Files validation rules array.
+
+Default value - none.
+
 ## Templates
 ### formTpl
 Form template. It needs to have the required field named "formid" with the same value as "formid" parameter's one.

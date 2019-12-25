@@ -29,7 +29,7 @@ The same for the "username" field:
 }`
 ```
 
-If the "password" field is empty, then the password will stay unchanged.If the password is changed then user needs to be authorized again. The new password is stored in the "user.password" field.
+If the "password" field is empty, then the password will stay unchanged. The new password is stored in the "user.password" field. If the field specified by "verificationField" parameter is changed and "checkActivation" parameter is enabled then user needs to be authorized again. 
 
 ## Parameters
 ### model
@@ -61,6 +61,20 @@ Fields forbidden to process. The "password" and "username" fields are processed 
 Possible value - field names, comma separated. 
 
 Default value - none.
+
+### verificationField
+When this field is changed, then profile activation will be reset.
+
+Possible value - field name.
+
+Default value - email.
+
+### checkActivation
+Logs user out when set if verification field is changed.
+
+Possible values - 0, 1.
+
+Default value - 0.
 
 ### preparePostProcess
 Allows to process data after saving user data.
