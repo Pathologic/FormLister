@@ -114,7 +114,7 @@ class Content extends Form
                 $cid = is_null($this->content) ? false : $this->content->getID();
                 if ($cid) {
                     $owner = $this->content->get($ownerField);
-                    if ($this->getCFGDef('onlyAuthors', 1) && $owner && $owner != $uid) {
+                    if ($this->getCFGDef('onlyOwners', 1) && $owner && $owner != $uid) {
                         $this->redirect('badOwnerTo');
                         $this->renderTpl = $this->getCFGDef('badOwnerTpl',
                             $this->translate('edit.default_badOwnerTpl'));
