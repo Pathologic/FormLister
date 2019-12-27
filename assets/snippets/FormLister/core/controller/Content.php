@@ -113,8 +113,8 @@ class Content extends Form
             } else {
                 $cid = is_null($this->content) ? false : $this->content->getID();
                 if ($cid) {
-                    $owner = $this->content->get($ownerField);
-                    if ($this->getCFGDef('onlyOwners', 1) && $owner && $owner != $uid) {
+                    $owner = (int)$this->content->get($ownerField);
+                    if ($this->getCFGDef('onlyOwners', 1) && $owner !== $uid) {
                         $this->redirect('badOwnerTo');
                         $this->renderTpl = $this->getCFGDef('badOwnerTpl',
                             $this->translate('edit.default_badOwnerTpl'));
