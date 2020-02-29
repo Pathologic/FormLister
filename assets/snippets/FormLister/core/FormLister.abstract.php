@@ -1221,10 +1221,19 @@ abstract class Core
                 $redirect = $page . (empty($query) ? '' : '?' . $query);
             }
             $this->setField($param, $redirect);
-            $this->formData['redirect'] = $redirect;
+            $this->saveRedirect($redirect);
             $this->log('Redirect (' . $param . ') to' . $redirect, ['data' => $this->getFormData('fields')]);
             $this->sendRedirect($redirect, $header);
         }
+    }
+
+    /**
+     * @param $redirect
+     */
+    public function saveRedirect($redirect) {
+        $this->formData['redirect'] = $redirect;
+
+        return $this;
     }
 
     /**
