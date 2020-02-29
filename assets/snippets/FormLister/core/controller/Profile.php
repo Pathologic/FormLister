@@ -1,30 +1,30 @@
 <?php namespace FormLister;
 
 use DocumentParser;
+use modUsers;
 
 /**
  * Контроллер для редактирования профиля
  * Class Profile
  * @package FormLister
+ * @property modUsers $user
  */
 class Profile extends Core
 {
     use DateConverter;
-    /**
-     * @var \modUsers
-     */
-    public $user = null;
+
+    public $user;
 
     /**
      * Profile constructor.
      * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(DocumentParser $modx, $cfg = array())
+    public function __construct (DocumentParser $modx, $cfg = [])
     {
         parent::__construct($modx, $cfg);
         $this->lexicon->fromFile('profile');
-        $this->log('Lexicon loaded', array('lexicon' => $this->lexicon->getLexicon()));
+        $this->log('Lexicon loaded', ['lexicon' => $this->lexicon->getLexicon()]);
         $uid = $modx->getLoginUserId('web');
         if ($uid) {
             /* @var $user \modUsers */
@@ -33,9 +33,9 @@ class Profile extends Core
                 $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modUsers.php')
             );
             $this->user = $user->edit($uid);
-            $this->config->setConfig(array(
+            $this->config->setConfig([
                 'userdata' => $this->user->toArray()
-            ));
+            ]);
         }
         $this->dateFormat = $this->getCFGDef('dateFormat', '');
     }
@@ -58,7 +58,7 @@ class Profile extends Core
     /**
      * @return string
      */
-    public function render()
+    public function render ()
     {
         if (is_null($this->user) || !$this->user->getID()) {
             $this->redirect('exitTo');
@@ -77,7 +77,7 @@ class Profile extends Core
      * Возвращает результат проверки формы
      * @return bool
      */
-    public function validateForm()
+    public function validateForm ()
     {
         $password = $this->getField('password');
         if (empty($password) || !is_scalar($password)) {
@@ -93,6 +93,7 @@ class Profile extends Core
                 $this->rules['repeatPassword']['equals']['params'] = $this->getField('password');
             }
         }
+
         return parent::validateForm();
     }
 
@@ -101,7 +102,7 @@ class Profile extends Core
      * @param $value
      * @return bool
      */
-    public static function uniqueEmail($fl, $value)
+    public static function uniqueEmail ($fl, $value)
     {
         $result = true;
         if (is_scalar($value) && !is_null($fl->user) && ($fl->user->get("email") !== $value)) {
@@ -119,7 +120,7 @@ class Profile extends Core
      * @param $value
      * @return bool
      */
-    public static function uniqueUsername($fl, $value)
+    public static function uniqueUsername ($fl, $value)
     {
         $result = true;
         if (is_scalar($value) && !is_null($fl->user) && ($fl->user->get("email") !== $value)) {
@@ -135,7 +136,7 @@ class Profile extends Core
     /**
      *
      */
-    public function process()
+    public function process ()
     {
         if ($this->user->get('username') == $this->user->get('email') && !empty($this->getField('email')) && empty($this->getField('username'))) {
             $this->setField('username', $this->getField('email'));
@@ -152,7 +153,9 @@ class Profile extends Core
         $newpassword = $this->getField('password');
         $password = $this->user->get('password');
         if (!empty($newpassword) && ($password !== $this->user->getPassword($newpassword))) {
-            if (!empty($this->allowedFields)) $this->allowedFields[] = 'password';
+            if (!empty($this->allowedFields)) {
+                $this->allowedFields[] = 'password';
+            }
             if (!empty($this->forbiddenFields)) {
                 $_forbidden = array_flip($this->forbiddenFields);
                 unset($_forbidden['password']);
@@ -174,7 +177,11 @@ class Profile extends Core
             $fields['verified'] = 0;
         }
         $result = $this->user->fromArray($fields)->save(true);
-        $this->log('Update profile', array('data' => $fields, 'result' => $result, 'log' => $this->user->getLog()));
+        $this->log('Update profile', [
+            'data'   => $fields,
+            'result' => $result,
+            'log'    => $this->user->getLog()
+        ]);
         if ($result) {
             $this->setFormStatus(true);
             $this->user->close();
@@ -184,6 +191,7 @@ class Profile extends Core
             }
             $this->setField('user.password', $newpassword);
             $this->runPrepare('preparePostProcess');
+            $this->runPrepare('prepareAfterProcess');
             $checkActivation = $this->getCFGDef('checkActivation', 0);
             if ($checkActivation && !$this->getField('verified')) {
                 $this->user->logOut('WebLoginPE', true);

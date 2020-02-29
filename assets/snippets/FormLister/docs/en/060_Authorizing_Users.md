@@ -35,11 +35,6 @@ Default value - password.
 ### rememberField
 Field to remember user. If the field value is equal to true, then a special auto login cookie will be set after successful authorization. Cookie name and its lifetime is defined by the "cookieName" and "cookieLifetime" parameters.
 
-It's possible to set the "rememberme" field in the "defaults" parameter, to enable it by default:
-```
-&defaults=`{"rememberme":1}`
-```
-
 Possible values - field name.
 
 Default value - rememberme.

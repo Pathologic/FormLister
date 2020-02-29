@@ -152,7 +152,7 @@ Possible values - an array:
 ### prepare, prepareProcess, prepareAfterProcess
 It's similar to the "prepare" parameter of DocLister. 
 
-Snippets defined in the "prepare" parameter are run after form data loaded, "prepareProcess" - after validation is passed successfully, "prepareAfterProcess" - after form processing is finished. Controller object is available in prepare-snippets via $FormLister variable, while $data array contains the values of form fields. Additional $name variable allows to determine the parameter initiated snippet call; so you can use one snippet for all cases. Use controller methods (setField, setFields etc.) to change form data in prepare-snippets. 
+Snippets defined in the "prepare" parameter are run after form data loaded, "prepareProcess" - after validation is passed successfully, "prepareAfterProcess" - after form processing is finished. Controller object is available in prepare-snippets via $FormLister variable, while $data array contains the values of form fields. Additional $name variable allows to determine the parameter initiated snippet call; so you can use one snippet for all cases. Use controller methods (setField, setFields etc.) to change form data in prepare-snippets, or return data to change as an array. 
 
 Possible values - snippet names, anonymous functions, static methods of loaded classes.
 
