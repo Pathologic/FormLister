@@ -1229,6 +1229,7 @@ abstract class Core
 
     /**
      * @param $redirect
+     * @return Core
      */
     public function saveRedirect($redirect) {
         $this->formData['redirect'] = $redirect;
