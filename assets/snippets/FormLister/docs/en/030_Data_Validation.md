@@ -125,8 +125,6 @@ Default validator file validator (\FormLister\FileValidator) has the following r
 - maxCount: files count is less than defined;
 - countBetween: files count is in the range;
 
-There's no sense to use the "!field name" construction in file validation rules,  because the value of the file field can not be empty, so use the "optional" rule instead.
-
 ### Validation results
 Error data are stored as an array and can be obtained with getFormData('errors') method call:
 ```

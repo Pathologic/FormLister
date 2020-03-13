@@ -1,4 +1,8 @@
 ## History
+### 1.11.0
+* [Refactor] Метод filesToArray теперь игнорирует неотправленные файлы (с ошибкой 4) (Core).
+* [Refactor] Из валидатора файлов убрана проверка ошибки 4 (FileValidator).
+
 ### 1.10.3
 * [Fix] Обработка параметра attachments (Form).
 * [Enhancement] Добавлен prepareAfterProcess там, где его не было.

@@ -1339,7 +1339,10 @@ abstract class Core
             }
             if (is_array($sub_name)) {
                 foreach (array_keys($sub_name) as $key) {
-                    $files[$name][$key] = [
+                    if ($file['error'][$key] === 4) {
+                        continue;
+                    }
+                    $files[$name][] = [
                         'name'     => $file['name'][$key],
                         'type'     => $file['type'][$key],
                         'tmp_name' => $file['tmp_name'][$key],
@@ -1348,7 +1351,7 @@ abstract class Core
                     ];
                     $files[$name] = $this->filesToArray($files[$name], $allowed, false);
                 }
-            } else {
+            } elseif ($file['error'] !== 4) {
                 $files[$name] = $file;
             }
         }
