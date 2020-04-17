@@ -279,7 +279,11 @@ class Validator
     protected static function sanitizeEmail($email) {
         if (function_exists('idn_to_ascii')) {
             $_email = explode('@', $email);
-            $_email[1] = idn_to_ascii($_email[1]);
+            if (defined('IDNA_NONTRANSITIONAL_TO_ASCII') && defined('INTL_IDNA_VARIANT_UTS46')) {
+                $_email[1] = idn_to_ascii($string, IDNA_NONTRANSITIONAL_TO_ASCII, INTL_IDNA_VARIANT_UTS46);
+            } else {
+                $_email[1] = idn_to_ascii($_email[1]);
+            }
             $email = implode('@', $_email);
         }
 

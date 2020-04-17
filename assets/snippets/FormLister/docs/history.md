@@ -1,4 +1,7 @@
 ## History
+### 1.11.1
+* [Fix] Ошибка "INTL_IDNA_VARIANT_2003 is deprecated" в PHP 7.3 (Validator).
+
 ### 1.11.0
 * [Refactor] Метод filesToArray теперь игнорирует неотправленные файлы (с ошибкой 4) (Core).
 * [Refactor] Из валидатора файлов убрана проверка ошибки 4 (FileValidator).
