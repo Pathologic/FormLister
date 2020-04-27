@@ -1,4 +1,7 @@
 ## History
+### 1.11.2
+* [Fix] Обработка пустого параметра reportTpl (Form).
+
 ### 1.11.1
 * [Fix] Ошибка "INTL_IDNA_VARIANT_2003 is deprecated" в PHP 7.3 (Validator).
 
