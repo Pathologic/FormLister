@@ -22,6 +22,7 @@ class Reminder extends Form
     protected $userField = '';
     protected $uidField = '';
     protected $hashField = '';
+    protected $uidName = '';
 
     /**
      * Reminder constructor.
@@ -44,6 +45,7 @@ class Reminder extends Form
         $this->hashField = $hashField;
         $this->uidField = $uidField;
         $this->userField = $userField;
+        $this->uidName = $uidName;
         $this->config->setConfig([
             'protectSubmit' => 0
         ]);
@@ -86,7 +88,7 @@ class Reminder extends Form
     public function renderReset ()
     {
         $hash = $this->getField($this->hashField);
-        $uid = $this->getField($this->getCFGDef('uidName', $this->uidField));
+        $uid = $this->getField($this->uidName);
         if (is_scalar($hash) && $hash && $hash == $this->getUserHash($uid)) {
             if ($this->getCFGDef('resetTpl')) {
                 $this->setField('user.hash', $hash);
@@ -164,7 +166,7 @@ class Reminder extends Form
              * Если не указан, то запрещаем отправку письма, пароль будет показан на экране
              */
             case "reset":
-                $uid = $this->getField($this->uidField);
+                $uid = $this->getField($this->uidName);
                 $hash = $this->getField($this->hashField);
                 if ($hash && $hash == $this->getUserHash($uid)) {
                     if ($this->getField('password') == '' && !isset($this->rules['password'])) {
