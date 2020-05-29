@@ -11,14 +11,42 @@ class FileValidator
      * @param $value
      * @return bool
      */
-    public static function required($value)
+    public static function required ($value)
     {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
+        $value = self::value($value);
         $flag = false;
         foreach ($value as $file) {
-            $flag = !$file['error'] && is_uploaded_file($file['tmp_name']);
+            $flag = !empty($file) && !$file['error'] && is_uploaded_file($file['tmp_name']);
+            if (!$flag) {
+                break;
+            }
+        }
+
+        return $flag;
+    }
+
+    /**
+     * @param $value
+     * @return bool
+     * @deprecated
+     */
+    public static function optional ($value)
+    {
+        return self::required($value);
+    }
+
+    /**
+     * @param $value
+     * @param $allowed
+     * @return bool
+     */
+    public static function allowed ($value, $allowed)
+    {
+        $value = self::value($value);
+        $flag = false;
+        foreach ($value as $file) {
+            $ext = strtolower(substr(strrchr($file['name'], '.'), 1));
+            $flag = in_array($ext, $allowed);
             if (!$flag) {
                 break;
             }
@@ -31,57 +59,7 @@ class FileValidator
      * @param $value
      * @return bool
      */
-    public static function optional($value)
-    {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
-        $flag = false;
-        foreach ($value as $file) {
-            if ($file['error'] === 4) {
-                $flag = true;
-            } else {
-                $flag = !$file['error'] && is_uploaded_file($file['tmp_name']);
-                if (!$flag) {
-                    break;
-                }
-            }
-        }
-
-        return $flag;
-    }
-
-    /**
-     * @param $value
-     * @param $allowed
-     * @return bool
-     */
-    public static function allowed($value, $allowed)
-    {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
-        $flag = false;
-        foreach ($value as $file) {
-            if ($file['error'] === 4) {
-                $flag = true;
-            } else {
-                $ext = strtolower(substr(strrchr($file['name'], '.'), 1));
-                $flag = in_array($ext, $allowed);
-                if (!$flag) {
-                    break;
-                }
-            }
-        }
-
-        return $flag;
-    }
-
-    /**
-     * @param $value
-     * @return bool
-     */
-    public static function images($value)
+    public static function images ($value)
     {
         return self::allowed($value, array("jpg", "jpeg", "png", "gif", "bmp"));
     }
@@ -91,11 +69,9 @@ class FileValidator
      * @param $max
      * @return bool
      */
-    public static function maxSize($value, $max)
+    public static function maxSize ($value, $max)
     {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
+        $value = self::value($value);
         $flag = false;
         foreach ($value as $file) {
             $size = round($file['size'] / 1024, 0);
@@ -113,21 +89,15 @@ class FileValidator
      * @param $min
      * @return bool
      */
-    public static function minSize($value, $min)
+    public static function minSize ($value, $min)
     {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
+        $value = self::value($value);
         $flag = false;
         foreach ($value as $file) {
-            if ($file['error'] === 4) {
-                $flag = true;
-            } else {
-                $size = round($file['size'] / 1024, 0);
-                $flag = $size > $min;
-                if (!$flag) {
-                    break;
-                }
+            $size = round($file['size'] / 1024, 0);
+            $flag = $size > $min;
+            if (!$flag) {
+                break;
             }
         }
 
@@ -140,21 +110,15 @@ class FileValidator
      * @param $max
      * @return bool
      */
-    public static function sizeBetween($value, $min, $max)
+    public static function sizeBetween ($value, $min, $max)
     {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
+        $value = self::value($value);
         $flag = false;
         foreach ($value as $file) {
-            if ($file['error'] === 4) {
-                $flag = true;
-            } else {
-                $size = round($file['size'] / 1024, 0);
-                $flag = $size > $min && $size < $max;
-                if (!$flag) {
-                    break;
-                }
+            $size = round($file['size'] / 1024, 0);
+            $flag = $size > $min && $size < $max;
+            if (!$flag) {
+                break;
             }
         }
 
@@ -166,11 +130,9 @@ class FileValidator
      * @param $max
      * @return bool
      */
-    public static function maxCount($value, $max)
+    public static function maxCount ($value, $max)
     {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
+        $value = self::value($value);
 
         return self::getCount($value) < $max;
     }
@@ -180,11 +142,9 @@ class FileValidator
      * @param $min
      * @return bool
      */
-    public static function minCount($value, $min)
+    public static function minCount ($value, $min)
     {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
+        $value = self::value($value);
 
         return self::getCount($value) > $min;
     }
@@ -195,11 +155,9 @@ class FileValidator
      * @param $max
      * @return bool
      */
-    public static function countBetween($value, $min, $max)
+    public static function countBetween ($value, $min, $max)
     {
-        if (!self::isArray($value)) {
-            $value = array($value);
-        }
+        $value = self::value($value);
 
         return self::getCount($value) > $min && self::getCount($value) < $max;
     }
@@ -208,16 +166,29 @@ class FileValidator
      * @param $value
      * @return bool
      */
-    protected static function isArray($value)
+    protected static function isArray ($value)
     {
         return isset($value[0]);
     }
 
     /**
      * @param $value
+     * @return array
+     */
+    protected static function value ($value) {
+        $out = [];
+        if (!empty($value) && !self::isArray($value)) {
+            $out = [$value];
+        }
+
+        return $out;
+    }
+
+    /**
+     * @param $value
      * @return int
      */
-    protected static function getCount($value)
+    protected static function getCount ($value)
     {
         $out = 0;
         foreach ($value as $file) {

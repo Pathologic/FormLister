@@ -28,8 +28,6 @@ use jsonHelper;
  * @property string $renderTpl
  * @property array $formData
  * @property bool $valid
- * @property array $rules
- * @property array $fileRules
  * @property array $allowedFields
  * @property array $forbiddenFields
  * @property array $placeholders
@@ -73,16 +71,6 @@ abstract class Core
     private $valid = true;
 
     protected $validator;
-
-    /**
-     * Массив с правилами валидации полей
-     */
-    protected $rules = [];
-
-    /**
-     * Правила валидации файлов
-     */
-    protected $fileRules = [];
 
     /**
      * Массив с именами полей, которые можно отправлять в форме
@@ -211,8 +199,6 @@ abstract class Core
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
         $this->initCaptcha();
         $this->runPrepare('prepare');
-        $this->rules = array_merge($this->getValidationRules(), $this->rules);
-        $this->fileRules = array_merge($this->getValidationRules('fileRules'), $this->fileRules);
 
         return $this;
     }
@@ -587,7 +573,7 @@ abstract class Core
         $validator = $this->getCFGDef('validator', '\FormLister\Validator');
         $validator = $this->loadModel($validator, '', []);
         $fields = $this->getFormData('fields');
-        $rules = $this->rules;
+        $rules = $this->getValidationRules();
         $this->log('Prepare to validate fields', ['fields' => $fields, 'rules' => $rules]);
         $result = $this->validate($validator, $rules, $fields);
         if ($result !== true) {
@@ -610,9 +596,17 @@ abstract class Core
         $validator = $this->loadModel($validator, '', []);
         $fields = $this->getFormData('files');
         $rules = $this->getValidationRules('fileRules');
-        $this->fileRules = array_merge($this->fileRules, $rules);
-        $this->log('Prepare to validate files', ['fields' => $fields, 'rules' => $this->fileRules]);
-        $result = $this->validate($validator, $this->fileRules, $fields);
+        $this->log('Prepare to validate files', ['fields' => $fields, 'rules' => $rules]);
+        /* workaround to keep deprecated 'optional' rule working */
+        $rulesFields = array_keys($rules);
+        foreach ($rulesFields as $key => &$value) {
+            if (isset($rules[$value]['optional']) && substr($value, 0, 1) !== '!') {
+                $value = '!' . $value;
+            }
+        }
+        unset($value);
+        $rules = array_combine($rulesFields, array_values($rules));
+        $result = $this->validate($validator, $rules, $fields);
         if ($result !== true) {
             foreach ($result as $item) {
                 $this->addError($item[0], $item[1], $item[2]);

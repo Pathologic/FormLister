@@ -115,7 +115,6 @@ Example contains the "сustom" rule name, but it can be any if it's not in valid
 Default validator file validator (\FormLister\FileValidator) has the following rules:
 
 - required: files are loaded successfully;
-- optional: returns true even if files were not submitted (it makes file field not required);
 - allowed: file extension is in defined array;
 - images: file extension is jpg, jpeg, gif, png, bmp;
 - minSize: file size in kilobytes is greater than defined;
