@@ -148,6 +148,27 @@ Possible values - an array:
 }`
 ```
 
+### fieldAliases
+Allows to set field aliases. For exemplae, "foo" field has "bar" alias:
+```
+$FormLister->setField("foo", 10);
+$FormLister->getField("bar"); //10
+$FormLister->setField("bar", 20);
+$FormLister->getField("foo"); //20
+$FormLister->unsetField("foo");
+$FormLister->getField("foo"); //Nothig
+$FormLister->getField("bar"); //Nothing (but "bar" field stays untouched when function call is unsetField("foo", false)); 
+```
+
+Possible values - an array:
+```
+&fieldAliases=`{
+    "field name":"alias",
+    "field name":"alias"
+}
+```
+Default value - none. 
+
 ## Data Processing
 ### prepare, prepareProcess, prepareAfterProcess
 It's similar to the "prepare" parameter of DocLister. 

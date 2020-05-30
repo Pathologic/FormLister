@@ -1,4 +1,9 @@
 ## History
+### 1.12.0
+* [Enhancement] Параметр fieldAliases - псевдонимы полей (Core).
+* [Refactor] В функции between, minLength, maxLength, lengthBetween, minCount, maxCount, countBetween добавлен параметр определяющий строгость сравнения (по умолчанию - нестрогое) (Validator).    
+* [Refactor] В функции maxSize, minSize, sizeBetween, minCount, maxCount, countBetween добавлен параметр определяющий строгость сравнения (по умолчанию - нестрогое, совместимость нарушена) (FileValidator).
+
 ### 1.11.3
 * [Fix] Некорректная обработка параметра uidName (Reminder).
 * [Refactor] Правило валидации файлов "optional" объявлено устаревшим. Необязательные файловые поля следует задавать по общему правилу (Core).
@@ -13,7 +18,6 @@
 
 ### 1.11.0
 * [Refactor] Метод filesToArray теперь игнорирует неотправленные файлы (с ошибкой 4) (Core).
-
 
 ### 1.10.3
 * [Fix] Обработка параметра attachments (Form).

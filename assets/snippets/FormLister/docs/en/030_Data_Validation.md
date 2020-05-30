@@ -5,7 +5,37 @@ Validator applies validation rules to field values one by one, if error occures 
 Validation is passed successfully if there are no records in form errors array. 
 
 ### Validation rules
-Validation rules are described as an array. Field name is the array key, and array value contains the rules array. Validation rule is the method of validator class. The key of rules array is the rule name (the name of validation method), its value is either error message string, or an array with rule description. This array contains needed values in the key named "params" and an error message in the key named "message".
+Validation rules are described as an array. Field name is the array key, and array value contains the rules array. 
+
+Validation rule is the method of validator class. The key of rules array is the rule name (the name of validation method), its value is either error message string, or an array with rule description. 
+
+This array contains needed values in the key named "params" and an error message in the key named "message".
+
+If several values are needed for the rule, then pass them as an array:
+```
+&rules=`{
+    "field" : {
+        "lengthBetween" : {
+            "params" : [10, 20],
+            "message" : "The length should be from 10 to 20"
+        }
+    }
+}`
+```
+
+If the rule requires an array (the "in" rule and other), then you should specify this array in the following way:
+```
+&rules=`{
+    "field" : {
+        "in" : {
+            "params" : [ [10,20,30] ],
+            "message" : "field value should be equal to 10, 20 or 30"
+        }
+    }
+}`
+```
+
+It needs to pass an array to validator method as single argument.
 
 Use exclamation mark for rule denial: "!numeric" - the field passes validation if its value is not numeric.
 
@@ -37,7 +67,21 @@ If you need to validate only not empty fields, then set exclamation mark before 
 - max: field value length is less or equal to defined;
 - greater: field value is greater than defined;
 - less: field value is less than defined;
-- between: field value is in the range;
+- between: field value is in the range (strict or loose comparison possible, loose is default);
+```
+"field":{
+    "less": {
+        "params" : [10, 20],
+        "message": "'field' value should be greater or equal to 10 and less or equal to 20"
+    }
+},
+"another_field":{
+    "less": {
+        "params" : [10, 20, true],
+        "message": "'another_field' value should be strictly greater than 10 and strictly less than 20"
+    }
+}
+```
 - equals: field value is equals to defined;
 - in: field value is in defined array;
 - alpha: field value contains only letters;
@@ -50,38 +94,14 @@ If you need to validate only not empty fields, then set exclamation mark before 
 - url: field value is an url;
 - email: field value is an e-mail address;
 - length: field value length is equal to defined;
-- minLength: field value length is greater or equal to defined;
-- maxLength: field value length is less or equal to defined;
-- lengthBetween: field value length is in the range;
-- minCount: array size is greater than defined;
-- maxCount: array size is less than defined;
-- countBetween: array size is in the range.
+- minLength: field value length is greater than defined (strict or loose comparison possible, loose is default);
+- maxLength: field value length is less than defined (strict or loose comparison possible, loose is default);
+- lengthBetween: field value length is in the range (strict or loose comparison possible, loose is default);
+- minCount: array size is greater than defined (strict or loose comparison possible, loose is default);
+- maxCount: array size is less than defined (strict or loose comparison possible, loose is default);
+- countBetween: array size is in the range (strict or loose comparison possible, loose is default).
 
-If several values are needed for the rule, then pass them as an array:
-```
-&rules=`{
-    "field" : {
-        "lengthBetween" : {
-            "params" : [10,20],
-            "message" : "Длина должна быть от 10 до 20"
-        }
-    }
-}`
-```
-
-If the rule requires an array (the "in" rule and other), then you should specify this array in the following way:
-```
-&rules=`{
-    "field" : {
-        "in" : {
-            "params" : [ [10,20,30] ],
-            "message" : "field value should be equal to 10, 20 or 30"
-        }
-    }
-}`
-```
-
-It needs to pass an array to validator method as single argument.
+Add one more parameter having "true" value to set strict comparison in rules with the choice of strict or loose comparision available (see "between" rule example above).
 
 It's possible to use anonymous functions or static methods of loaded classes:
 ```
@@ -99,7 +119,7 @@ It's possible to use anonymous functions or static methods of loaded classes:
 
 Validation method should accept controller object as the first argument, field value as the second argument, parameters from the "params" key of the rule description as other arguments:
 ```
-public static function myCustomRule($fl,$value,$a,$b,$c) {
+public static function myCustomRule($fl, $value, $a, $b, $c) {
     $result = $fl->getField('field1') == $a && $fl->getField('field2') == $b && $value == $c;
     return $result;
 }
@@ -117,12 +137,12 @@ Default validator file validator (\FormLister\FileValidator) has the following r
 - required: files are loaded successfully;
 - allowed: file extension is in defined array;
 - images: file extension is jpg, jpeg, gif, png, bmp;
-- minSize: file size in kilobytes is greater than defined;
-- maxSize: file size in kilobytes is less than defined;
-- sizeBetween: file size in kilobytes is in the range;
-- minCount: files count is greater than defined;
-- maxCount: files count is less than defined;
-- countBetween: files count is in the range;
+- minSize: file size in kilobytes is greater than defined (strict or loose comparison possible, loose is default);
+- maxSize: file size in kilobytes is less than defined (strict or loose comparison possible, loose is default);
+- sizeBetween: file size in kilobytes is in the range (strict or loose comparison possible, loose is default);
+- minCount: files count is greater than defined (strict or loose comparison possible, loose is default);
+- maxCount: files count is less than defined (strict or loose comparison possible, loose is default);
+- countBetween: files count is in the range (strict or loose comparison possible, loose is default);
 
 ### Validation results
 Error data are stored as an array and can be obtained with getFormData('errors') method call:
