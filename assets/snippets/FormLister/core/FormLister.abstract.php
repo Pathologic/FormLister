@@ -35,6 +35,7 @@ use jsonHelper;
  * @property array $plhCache
  * @property array $fieldAliases;
  * @property array $aliasFields;
+ * @property array $rules;
  */
 abstract class Core
 {
@@ -89,9 +90,6 @@ abstract class Core
 
     protected $emptyFormControls = [];
 
-    /**
-     * @var Lexicon|null
-     */
     public $lexicon;
 
     public $captcha;
@@ -103,6 +101,7 @@ abstract class Core
 
     protected $fieldAliases = [];
     protected $aliasFields = [];
+    protected $rules = [];
 
     /**
      * Core constructor.
@@ -206,6 +205,7 @@ abstract class Core
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
         $this->initCaptcha();
         $this->runPrepare('prepare');
+        $this->rules = $this->getValidationRules();
 
         return $this;
     }
@@ -998,6 +998,9 @@ abstract class Core
      */
     public function getValidationRules($param = 'rules')
     {
+        if ($param === 'rules' && !empty($this->rules)) {
+            return $this->rules;
+        }
         $rules = $this->getCFGDef($param);
         if (empty($rules)) {
             $this->log('No validation rules defined');

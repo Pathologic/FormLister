@@ -1,4 +1,7 @@
 ## History
+* [Fix] Загрузка правил валидации (Core).
+* [Refactor] Проверка protectSubmit (SubmitProtection).
+
 ### 1.12.0
 * [Enhancement] Параметр fieldAliases - псевдонимы полей (Core).
 * [Refactor] В функции between, minLength, maxLength, lengthBetween, minCount, maxCount, countBetween добавлен параметр определяющий строгость сравнения (по умолчанию - нестрогое) (Validator).    
