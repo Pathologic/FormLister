@@ -203,9 +203,9 @@ abstract class Core
             ->setExternalFields($this->getCFGDef('defaultsSources', 'array'))
             ->sanitizeForm();
         $this->renderTpl = $this->getCFGDef('formTpl'); //Шаблон по умолчанию
+        $this->rules = $this->getValidationRules();
         $this->initCaptcha();
         $this->runPrepare('prepare');
-        $this->rules = $this->getValidationRules();
 
         return $this;
     }
