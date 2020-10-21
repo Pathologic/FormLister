@@ -47,7 +47,7 @@ class Lexicon
         $this->modx = $modx;
         $this->config = new Config($cfg);
         $handler = $this->config->getCFGDef('handler', 'Helpers\\Lexicon\\EvoBabelLexiconHandler');
-        if (class_exists($handler)) {
+        if (!empty($handler) && class_exists($handler)) {
             $handler = new $handler($modx, $this);
             if ($handler instanceof AbstractLexiconHandler) {
                 $this->lexiconHandler = $handler;

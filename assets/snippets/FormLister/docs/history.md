@@ -1,6 +1,8 @@
 ## History
+### 1.13.0
 * [Fix] Загрузка правил валидации (Core).
 * [Refactor] Проверка protectSubmit (SubmitProtection).
+* [Refactor] Проверка параметра handler (Lexicon).
 
 ### 1.12.0
 * [Enhancement] Параметр fieldAliases - псевдонимы полей (Core).
