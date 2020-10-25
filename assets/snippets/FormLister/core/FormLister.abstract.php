@@ -248,8 +248,9 @@ abstract class Core
                 }
                 //Массив значений указывается в параметре сессии
                 case 'session':
-                    if (isset($_SESSION[$_source[1]]) && !empty($_source[1]) && is_array($_SESSION[$_source[1]])) {
-                        $fields = $_SESSION[$_source[1]];
+                    if (!empty($_source[1])) {
+                        $keys = explode(',', $_source[1]);
+                        $fields = $this->getDefaultsSourceValues($_SESSION, $keys);
                         if (isset($_source[2])) {
                             $prefix = $_source[2];
                         }
@@ -257,30 +258,15 @@ abstract class Core
                     break;
                 //Значение поля берется из плейсхолдера MODX
                 case 'plh':
-                    if (!empty($_source[1])) {
-                        $fields = [];
-                        $keys = explode(',', $_source[1]);
-                        foreach ($keys as $key) {
-                            $key = trim($key);
-                            if (isset($this->modx->placeholders[$key])) {
-                                $fields[$key] = $this->modx->placeholders[$key];
-                            }
-                        }
-                        if (isset($_source[2])) {
-                            $prefix = $_source[2];
-                        }
-                    }
-                    break;
-                //Массив значений берется из плейсхолдера MODX
                 case 'aplh':
-                    if (isset($this->modx->placeholders[$_source[1]]) && !empty($_source[1]) && is_array($this->modx->placeholders[$_source[1]])) {
-                        $fields = $this->modx->placeholders[$_source[1]];
+                    if (!empty($_source[1])) {
+                        $keys = explode(',', $_source[1]);
+                        $fields = $this->getDefaultsSourceValues($this->modx->placeholders, $keys);
                         if (isset($_source[2])) {
                             $prefix = $_source[2];
                         }
                     }
                     break;
-                //Загружает в форму массив конфигурации MODX
                 case 'config':
                     $fields = $this->modx->config;
                     if (isset($_source[1])) {
@@ -290,14 +276,8 @@ abstract class Core
                 //Загружает значения из кук (перечисляются через запятую)
                 case 'cookie':
                     if (!empty($_source[1])) {
-                        $fields = [];
                         $keys = explode(',', $_source[1]);
-                        foreach ($keys as $key) {
-                            $key = trim($key);
-                            if (isset($_COOKIE[$key])) {
-                                $fields[$key] = $_COOKIE[$key];
-                            }
-                        }
+                        $fields = $this->getDefaultsSourceValues($_COOKIE, $keys, true);
                         if (isset($_source[2])) {
                             $prefix = $_source[2];
                         }
@@ -354,6 +334,39 @@ abstract class Core
         }
 
         return $this;
+    }
+
+    /**
+     * @param  array  $source
+     * @param  array  $keys
+     * @param  bool   $json
+     * @return array
+     */
+    protected function getDefaultsSourceValues($source = [], $keys = [], $json = false)
+    {
+        $fields = [];
+        if (!is_array($source)) return [];
+        foreach ($keys as $key) {
+            $key = trim($key);
+            if (isset($source[$key])) {
+                $value = $source[$key];
+                if (is_scalar($value)) {
+                    if ($json) {
+                        $_value = $this->config->loadArray($value, '');
+                        if (!empty($_value)) {
+                            $value = $_value;
+                        }
+                    } else {
+                        $value = [$key => $value];
+                    }
+                }
+                if (is_array($value) && array_keys($value) !== range(0, count($value) - 1)) {
+                    $fields = $value;
+                }
+            }
+        }
+
+        return $fields;
     }
 
     /**

@@ -180,14 +180,11 @@ class Reminder extends Form
                     } else {
                         $this->setField('newpassword', $this->getField('password'));
                         $this->setFields($this->user->toArray());
-                        if ($this->getCFGDef('resetReportTpl')) {
-                            $this->mailConfig['to'] = $this->getField('email');
-                        }
+                        $this->mailConfig['to'] = $this->getField('email');
                         parent::process();
                     }
                 } else {
                     $this->addMessage($this->translate('reminder.update_failed'));
-                    parent::process();
                 }
                 break;
         }

@@ -294,6 +294,12 @@ class Form extends Core
             foreach ($cfg as $key => &$value) {
                 $value = str_replace($search, $replace, $value);
             }
+            $config = \APIhelpers::renameKeyArr($this->modx->config, '[(', ')]', '');
+            $search = array_keys($config);
+            $replace = array_values($config);
+            foreach ($cfg as $key => &$value) {
+                $value = str_replace($search, $replace, $value);
+            }
         }
 
         return $cfg;

@@ -55,6 +55,13 @@ Possible values - template name, according to DocLister templating rules.
 
 Default value - none.
 
+### activateReportTpl
+Successful activation letter template.
+
+Possible values - template name, according to DocLister templating rules.
+
+Default value - none.
+
 ### successTpl
 Message template if e-mail with activation data is sent successfully.
 

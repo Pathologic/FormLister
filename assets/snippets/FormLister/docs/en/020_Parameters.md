@@ -99,11 +99,10 @@ Possible sources:
 
 - array: json or php array, its values are defined by the parameter named "defaults";
 - param:parameter name:prefix - the same as the "array" source but you can specify any snippet parameter, not only "defaults";
-- session:array key:prefix - loads data from $_SESSION[array key];
-- plh:keys, comma separated:prefix - loads data from $modx->placeholders property;
-- aplh:placeholder name:prefix - loads data from an array stored in placeholder;
+- session:array keys, comma separated:prefix - loads data from $_SESSION according to the given keys, the values can be arrays;
+- plh:keys, comma separated:prefix - loads data from $modx->placeholders property according to the given keys, the values can be arrays;
+- cookie:keys, comma separated:префикс - loads data from the $_COOKIE array according to the given keys, the values can be json-arrays;
 - config:prefix- loads data from MODX configuration;
-- cookie:keys, comma separated:префикс - loads data from the $_COOKIE array;
 - MODxAPI class name:key:prefix - a key is the argument of edit() method, the class has to be loaded before snippet call;
 - document:prefix - loads current document data from modResource model. It needs no key;
 - user:key:prefix - load authorized user data from modUsers model. User type is provided by key value (web or mgr).

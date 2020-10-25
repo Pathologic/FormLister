@@ -147,7 +147,13 @@ class Activate extends Form
                         $this->addMessage($this->translate('activate.update_failed'));
                     } else {
                         $this->setFields($this->user->toArray());
-                        $this->postProcess();
+                        if ($tpl = $this->getCFGDef('activateReportTpl')) {
+                            $this->mailConfig['to'] = $this->getField('email');
+                            $this->config->setConfig([
+                                'reportTpl' => $tpl
+                            ]);
+                            parent::process();
+                        }
                     }
                 } else {
                     $this->addMessage($this->translate('activate.update_failed'));
