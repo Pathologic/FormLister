@@ -6,10 +6,12 @@ use modUsers;
 /**
  * Class DeleteUser
  * @package FormLister
- * @property modUsers $user
  */
 class DeleteUser extends Form
 {
+    /**
+     * @var object|null
+     */
     public $user;
 
     /**

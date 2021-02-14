@@ -7,12 +7,14 @@ use modUsers;
  * Контроллер для редактирования профиля
  * Class Profile
  * @package FormLister
- * @property modUsers $user
  */
 class Profile extends Core
 {
     use DateConverter;
 
+    /**
+     * @var object|null
+     */
     public $user;
 
     /**

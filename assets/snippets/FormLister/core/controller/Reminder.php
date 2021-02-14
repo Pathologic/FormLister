@@ -9,19 +9,33 @@ use modUsers;
  * Контроллер для восстановления паролей
  * Class Reminder
  * @package FormLister
- * @property modUsers $user
- * @property string $userField
- * @property string $uidField
- * @property string $hashField
  */
 class Reminder extends Form
 {
+    /**
+     * @var object|null
+     */
     protected $user;
 
+    /**
+     * @var string
+     */
     protected $mode = 'hash';
+    /**
+     * @var string
+     */
     protected $userField = '';
+    /**
+     * @var string
+     */
     protected $uidField = '';
+    /**
+     * @var string
+     */
     protected $hashField = '';
+    /**
+     * @var string
+     */
     protected $uidName = '';
 
     /**

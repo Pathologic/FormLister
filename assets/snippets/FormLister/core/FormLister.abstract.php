@@ -14,46 +14,40 @@ use jsonHelper;
 /**
  * Class FormLister
  * @package FormLister
- * @property DocumentParser $modx
- * @property FS $fs
- * @property Debug $debug
- * @property Config $config
- * @property Validator $validator
- * @property Lexicon $lexicon
- * @property CaptchaInterface $captcha
- * @property Gpc $gpc
- * @property DLTemplate $DLTemplate
- * @property array $_rq
- * @property string $formid
- * @property string $renderTpl
- * @property array $formData
- * @property bool $valid
- * @property array $allowedFields
- * @property array $forbiddenFields
- * @property array $placeholders
- * @property array $emptyFormControls
- * @property array $plhCache
- * @property array $fieldAliases;
- * @property array $aliasFields;
- * @property array $rules;
  */
 abstract class Core
 {
-    protected $_rq = [];
-
-    protected $modx;
-    public $fs;
-    public $debug;
-    protected $formid = '';
-
-    public $config;
-
     /**
+     * @var array
+     */
+    protected $_rq = [];
+    /**
+     * @var DocumentParser
+     */
+    protected $modx;
+    /**
+     * @var FS
+     */
+    public $fs;
+    /**
+     * @var Debug
+     */
+    public $debug;
+    /**
+     * @var string
+     */
+    protected $formid = '';
+    /**
+     * @var Config
+     */
+    public $config;
+    /**
+     * @var string
      * Шаблон по умолчанию для вывода
      */
     public $renderTpl = '';
-
     /**
+     * @var array
      * Данные формы
      * fields - значения полей
      * errors - ошибки (поле => сообщение)
@@ -67,40 +61,74 @@ abstract class Core
         'files'    => [],
         'status'   => false
     ];
-
     /**
+     * @var bool
      * Разрешает обработку формы
      */
     private $valid = true;
-
+    /**
+     * @var Validator
+     */
     protected $validator;
 
     /**
+     * @var array
      * Массив с именами полей, которые можно отправлять в форме
      * По умолчанию все поля разрешены
      */
     public $allowedFields = [];
 
     /**
+     * @var array
      * Значения для пустых элементов управления, например чекбоксов
      */
     public $forbiddenFields = [];
 
+    /**
+     * @var array
+     */
     protected $placeholders = [];
 
+    /**
+     * @var array
+     */
     protected $emptyFormControls = [];
 
+    /**
+     * @var Lexicon
+     */
     public $lexicon;
 
+    /**
+     * @var CaptchaInterface
+     */
     public $captcha;
 
+    /**
+     * @var array
+     */
     protected $plhCache = [];
 
+    /**
+     * @var DLTemplate
+     */
     protected $DLTemplate;
+    /**
+     * @var Gpc
+     */
     protected $gpc;
 
+    /**
+     * @var array
+     */
     protected $fieldAliases = [];
+    /**
+     * @var array
+     */
     protected $aliasFields = [];
+    /**
+     * @var array
+     */
     protected $rules = [];
 
     /**
@@ -292,7 +320,7 @@ abstract class Core
                             if (isset($_source[1])) {
                                 $_source[2] = $_source[1];
                             }
-                            $_source[1] = $this->modx->documentIdentifier;
+                            $_source[1] = (int)$this->modx->documentIdentifier;
                         } else {
                             break;
                         }
@@ -300,7 +328,7 @@ abstract class Core
                         //Загружает данные авторизованного пользователя, user:web:user
                         if (!empty($_source[1])) {
                             $_source[0] = '\modUsers';
-                            $_source[1] = $this->modx->getLoginUserID($_source[1]);
+                            $_source[1] = (int)$this->modx->getLoginUserID($_source[1]);
                             if (!$_source[1]) {
                                 break;
                             }
@@ -312,7 +340,7 @@ abstract class Core
                         $classname = $_source[0];
                         if (!is_null($model = $this->loadModel($classname)) && isset($_source[1])) {
                             /** @var \autoTable $model */
-                            if ($model->edit($_source[1])->getID()) {
+                            if ($model->edit((int)$_source[1])->getID()) {
                                 $fields = $model->toArray();
                                 if (isset($_source[2])) {
                                     $prefix = $_source[2];

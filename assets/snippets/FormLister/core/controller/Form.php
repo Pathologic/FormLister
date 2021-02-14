@@ -1,5 +1,6 @@
 <?php namespace FormLister;
 
+use DocumentParser;
 use Helpers\Mailer;
 
 /**
@@ -9,7 +10,6 @@ use Helpers\Mailer;
 /**
  * Class Form
  * @package FormLister
- * @property array $mailConfig
  */
 class Form extends Core
 {
@@ -22,10 +22,10 @@ class Form extends Core
 
     /**
      * Form constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct (\DocumentParser $modx, array $cfg = [])
+    public function __construct (DocumentParser $modx, array $cfg = [])
     {
         parent::__construct($modx, $cfg);
         $this->mailConfig = [

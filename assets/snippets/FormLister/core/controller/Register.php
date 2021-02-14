@@ -1,6 +1,7 @@
 <?php namespace FormLister;
 
 use APIhelpers;
+use DocumentParser;
 use jsonHelper;
 use modUsers;
 
@@ -8,19 +9,22 @@ use modUsers;
  * Контроллер для регистрации пользователя
  * Class Register
  * @package FormLister
- * @property modUsers $user
  */
 class Register extends Form
 {
     use DateConverter;
+
+    /**
+     * @var object|null
+     */
     public $user;
 
     /**
      * Register constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct (\DocumentParser $modx, $cfg = [])
+    public function __construct (DocumentParser $modx, $cfg = [])
     {
         parent::__construct($modx, $cfg);
         $this->user = $this->loadModel(
