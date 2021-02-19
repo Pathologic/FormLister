@@ -55,7 +55,7 @@ class Activate extends Form
      */
     public function render()
     {
-        if ($id = $this->modx->getLoginUserID('web')) {
+        if ($id = (int)$this->modx->getLoginUserID('web')) {
             $this->redirect('exitTo');
             $this->user->edit($id);
             $this->setFields($this->user->toArray());
@@ -76,7 +76,7 @@ class Activate extends Form
     public function renderActivate()
     {
         $hash = $this->getField('hash');
-        $uid = $this->getField('id');
+        $uid = (int)$this->getField('id');
         if (is_scalar($hash) && $hash && $hash == $this->getUserHash($uid)) {
             $this->process();
         } else {
@@ -144,7 +144,7 @@ class Activate extends Form
              * Отправляем пользователю письмо для активации, если указан шаблон такого письма
              */
             case "activate":
-                $uid = $this->getField('id');
+                $uid = (int)$this->getField('id');
                 $hash = $this->getField('hash');
                 if ($hash && $hash == $this->getUserHash($uid)) {
                     $result = $this->user->edit($uid)->set('verified', 1)->save(true);

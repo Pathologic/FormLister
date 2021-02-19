@@ -111,7 +111,7 @@ class Profile extends Core
             /* @var $user \modUsers */
             $user = clone($fl->user);
             $user->set('email', $value);
-            $result = $user->checkUnique('web_user_attributes', 'email', 'internalKey');
+            $result = $user->isUnique('email');
         }
 
         return $result;
@@ -129,7 +129,7 @@ class Profile extends Core
             /* @var $user \modUsers */
             $user = clone($fl->user);
             $user->set('username', $value);
-            $result = $user->checkUnique('web_users', 'username');
+            $result = $user->isUnique('username');
         }
 
         return $result;

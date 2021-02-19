@@ -79,7 +79,7 @@ class DeleteUser extends Form
      */
     public function process()
     {
-        $uid = $this->modx->getLoginUserID('web');
+        $uid = (int)$this->modx->getLoginUserID('web');
         if (!is_null($this->user)) {
             $password = $this->getField('password');
             if ($this->user->testAuth($uid, $password, true)) {

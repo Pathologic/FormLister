@@ -77,7 +77,7 @@ class Register extends Form
         $result = true;
         if (is_scalar($value) && !is_null($fl->user)) {
             $fl->user->set('email', $value);
-            $result = $fl->user->checkUnique('web_user_attributes', 'email', 'internalKey');
+            $result = $fl->user->isUnique('email');
         }
 
         return $result;
@@ -95,7 +95,7 @@ class Register extends Form
         $result = true;
         if (is_scalar($value) && !is_null($fl->user)) {
             $fl->user->set('username', $value);
-            $result = $fl->user->checkUnique('web_users', 'username');
+            $result = $fl->user->isUnique('username');
         }
 
         return $result;

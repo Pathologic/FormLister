@@ -80,7 +80,7 @@ class Reminder extends Form
      */
     public function render ()
     {
-        if ($id = $this->modx->getLoginUserID('web')) {
+        if ($id = (int)$this->modx->getLoginUserID('web')) {
             $this->redirect('exitTo');
             $this->user->edit($id);
             $this->setFields($this->user->toArray());
