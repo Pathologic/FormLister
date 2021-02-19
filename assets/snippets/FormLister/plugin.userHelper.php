@@ -40,7 +40,7 @@ if ($e->name == 'OnWebLogin' && isset($userObj)) {
 if ($e->name == 'OnWebPageInit' || $e->name == 'OnPageNotFound') {
     $model = isset($params['model']) && class_exists($params['model']) ? $params['model'] : '\\modUsers';
     $user = new $model($modx);
-    if ($uid = $modx->getLoginUserID('web')) {
+    if ($uid = (int)$modx->getLoginUserID('web')) {
         if ($trackWebUserActivity == 'Yes') {
             $sid = $modx->sid = session_id();
             $pageId = (int)$modx->documentIdentifier;
