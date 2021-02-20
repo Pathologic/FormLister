@@ -16,7 +16,7 @@ All model fields are available in templates. Additional field "user.password" wi
 ### model
 Class to manage users.
 
-Possible values - class name.
+Possible values - class name. Use Pathologic\EvolutionCMS\MODxAPI\modUsers model from pathologic/modxapi package in Evo 3.0.
 
 Default value - \modUsers
 

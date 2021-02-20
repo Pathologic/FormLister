@@ -24,7 +24,7 @@ Default value - assets/lib/MODxAPI/modResource.php.
 ### userModel
 Class to manage users.
 
-Possible values - class name.
+Possible values - class name. Use Pathologic\EvolutionCMS\MODxAPI\modUsers model from pathologic/modxapi package in Evo 3.0.
 
 Default value - \modUsers
 
@@ -38,7 +38,7 @@ Default value - assets/lib/MODxAPI/modUsers.php
 ### ownerField
 Field name to get the record owner. For the modResource class it can be the name of a tv-parameter (because web users can not create documents in Evo).
 
-Possible values - field name.
+Possible values - field name. It should be "createdby" in Evo 3.x.
 
 Default value - aid.
 

@@ -10,6 +10,7 @@ use Helpers\Lexicon;
 use Helpers\Debug;
 use Helpers\Gpc;
 use jsonHelper;
+use ReflectionClass;
 
 /**
  * Class FormLister
@@ -315,7 +316,9 @@ abstract class Core
                 case 'document':
                     //Загружает поля документа
                     if ($_source[0] == 'document') {
-                        $_source[0] = '\modResource';
+                        $_source[0] = class_exists('Pathologic\EvolutionCMS\MODxAPI\modResource')
+                            ? 'Pathologic\EvolutionCMS\MODxAPI\modResource'
+                            : '\modResource';
                         if ($this->modx->documentIdentifier) {
                             if (isset($_source[1])) {
                                 $_source[2] = $_source[1];
@@ -327,7 +330,9 @@ abstract class Core
                     } else {
                         //Загружает данные авторизованного пользователя, user:web:user
                         if (!empty($_source[1])) {
-                            $_source[0] = '\modUsers';
+                            $_source[0] = class_exists('Pathologic\EvolutionCMS\MODxAPI\modUsers')
+                                ? 'Pathologic\EvolutionCMS\MODxAPI\modUsers'
+                                : '\modUsers';
                             $_source[1] = (int)$this->modx->getLoginUserID($_source[1]);
                             if (!$_source[1]) {
                                 break;
@@ -679,6 +684,7 @@ abstract class Core
         } //если правил нет, то не проверяем
         //применяем правила
         $errors = [];
+        $reflection = new ReflectionClass($validator);
         foreach ($rules as $field => $ruleSet) {
             $skipFlag = substr($field, 0, 1) == '!' ? true : false;
             if ($skipFlag) {
@@ -708,7 +714,7 @@ abstract class Core
                     $message = $description;
                 }
                 if (method_exists($validator, $rule)) {
-                    $result = call_user_func_array(
+                    $result = count($params) === $reflection->getMethod($rule)->getNumberOfRequiredParameters() && call_user_func_array(
                         [$validator, $rule],
                         $params
                     );

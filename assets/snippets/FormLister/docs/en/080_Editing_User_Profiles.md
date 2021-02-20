@@ -35,7 +35,7 @@ If the "password" field is empty, then the password will stay unchanged. The new
 ### model
 Class to manage users.
 
-Possible values - class name.
+Possible values - class name. Use Pathologic\EvolutionCMS\MODxAPI\modUsers model from pathologic/modxapi package in Evo 3.0.
 
 Default value - \modUsers
 

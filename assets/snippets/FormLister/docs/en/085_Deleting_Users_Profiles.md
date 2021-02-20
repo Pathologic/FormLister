@@ -10,7 +10,7 @@
 ### model
 Класс для работы с пользователями.
 
-Возможные значения - имя класса.
+Возможные значения - имя класса. Use Pathologic\EvolutionCMS\MODxAPI\modUsers model from pathologic/modxapi package in Evo 3.0.
 
 Значение по умолчанию - \modUsers
 

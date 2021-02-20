@@ -7,7 +7,7 @@ Login controller authorizes registered users using special MODxAPI class to mana
 ### model
 Class to manage users.
 
-Possible values - class name.
+Possible values - class name. Use Pathologic\EvolutionCMS\MODxAPI\modUsers model from pathologic/modxapi package in Evo 3.0.
 
 Default value - \modUsers
 
