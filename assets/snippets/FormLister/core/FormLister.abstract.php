@@ -709,6 +709,13 @@ abstract class Core
                             $params[] = $description['params'];
                         }
                     }
+                    if (isset($description['@params'])) {
+                        if (is_array($description['@params'])) {
+                            $params = array_merge($params, $this->parseValidationRuleParams($description['@params']));
+                        } else {
+                            $params[] = $this->parseValidationRuleParams($description['@params']);
+                        }
+                    }
                     $message = isset($description['message']) ? $description['message'] : '';
                 } else {
                     $message = $description;
@@ -748,6 +755,27 @@ abstract class Core
         }
 
         return empty($errors) ? true : $errors;
+    }
+
+    /**
+     * @param $params
+     * @return array|string
+     */
+    protected function parseValidationRuleParams($params) {
+        if (is_array($params)) {
+            foreach ($params as &$param) {
+                if (strpos($param, '@') === 0) {
+                    $param = $this->getField(substr($param, 1));
+                }
+            }
+            unset($param);
+        } else {
+            if (strpos($params, '@') === 0) {
+                $params = $this->getField(substr($params, 1));
+            }
+        }
+
+        return $params;
     }
 
     /**

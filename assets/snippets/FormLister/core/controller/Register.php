@@ -132,7 +132,7 @@ class Register extends Form
         $fields['username'] = is_scalar($fields['username']) ? $fields['username'] : '';
         $fields['email'] = is_scalar($fields['email']) ? $fields['email'] : '';
         $this->user->create($fields);
-        $this->addWebUserToGroups(0, $this->config->loadArray($this->getCFGDef('userGroups')));
+        $this->user->setUserGroupsByName(0, $this->config->loadArray($this->getCFGDef('userGroups')));
         $result = $this->user->save(true);
         $this->log('Register user', [
             'data'   => $fields,
@@ -177,29 +177,5 @@ class Register extends Form
         if (!empty($tpl)) {
             $this->renderTpl = $tpl;
         }
-    }
-
-    /**
-     * Добавляет пользователя в группы
-     * @param int $uid
-     * @param array $groups
-     * @return $this
-     */
-    public function addWebUserToGroups ($uid = 0, $groups = [])
-    {
-        if (!$groups) {
-            return $this;
-        }
-        foreach ($groups as &$group) {
-            $group = $this->modx->db->escape(trim($group));
-        }
-        $groups = "'" . implode("','", $groups) . "'";
-        $groupNames = $this->modx->db->query("SELECT `id` FROM " . $this->modx->getFullTableName('webgroup_names') . " WHERE `name` IN (" . $groups . ")");
-        $webGroups = $this->modx->db->getColumn('id', $groupNames);
-        if ($webGroups) {
-            $this->user->setUserGroups($uid, $webGroups);
-        }
-
-        return $this;
     }
 }

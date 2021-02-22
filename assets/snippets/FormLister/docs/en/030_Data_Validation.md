@@ -10,6 +10,15 @@ Validation rules are described as an array. Field name is the array key, and arr
 Validation rule is the method of validator class. The key of rules array is the rule name (the name of validation method), its value is either error message string, or an array with rule description. 
 
 This array contains needed values in the key named "params" and an error message in the key named "message".
+Values can be taken from form fields, you should use "@params" insteadof "@params" and the value should be set as "@field":
+```
+"field":{
+    "equals": {
+        "@params" : "@foobar",
+        "message": "'field' should be equal to 'foobar' field value"
+    }
+}
+```
 
 If several values are needed for the rule, then pass them as an array:
 ```
