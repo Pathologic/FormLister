@@ -731,6 +731,12 @@ abstract class Core
                         if (is_callable($rule)) {
                             $result = call_user_func_array($rule, array_merge([$this], $params));
                         }
+                    } elseif (isset($description['snippet'])) {
+                        $rule = $description['snippet'];
+                        $result = $this->modx->runSnippet($rule, [
+                            'FormLister' => $this,
+                            'value' => $value
+                        ]);
                     }
                 }
                 if (is_string($result)) {
