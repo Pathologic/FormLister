@@ -737,6 +737,7 @@ abstract class Core
                             'FormLister' => $this,
                             'value' => $value
                         ]);
+                        if ($result === '' || $result === '1') $result = (bool)$result;
                     }
                 }
                 if (is_string($result)) {
