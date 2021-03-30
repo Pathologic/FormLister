@@ -727,13 +727,13 @@ abstract class Core
                     );
                 } else {
                     if (isset($description['function'])) {
-                        $rule = $description['function'];
-                        if (is_callable($rule)) {
-                            $result = call_user_func_array($rule, array_merge([$this], $params));
+                        $customRule = $description['function'];
+                        if (is_callable($customRule)) {
+                            $result = call_user_func_array($customRule, array_merge([$this], $params));
                         }
                     } elseif (isset($description['snippet'])) {
-                        $rule = $description['snippet'];
-                        $result = $this->modx->runSnippet($rule, [
+                        $customRule = $description['snippet'];
+                        $result = $this->modx->runSnippet($customRule, [
                             'FormLister' => $this,
                             'value' => $value
                         ]);
