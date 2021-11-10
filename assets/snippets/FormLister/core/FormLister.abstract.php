@@ -724,7 +724,7 @@ abstract class Core
                     $message = $description;
                 }
                 if (method_exists($validator, $rule)) {
-                    $result = count($params) === $reflection->getMethod($rule)->getNumberOfRequiredParameters() && call_user_func_array(
+                    $result = count($params) >= $reflection->getMethod($rule)->getNumberOfRequiredParameters() && call_user_func_array(
                         [$validator, $rule],
                         $params
                     );
