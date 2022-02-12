@@ -558,6 +558,9 @@ abstract class Core
             }
         }
         if ($api) {
+            $allowed = $this->config->loadArray($this->getCFGDef('allowedApiFields'));
+            $forbidden = $this->config->loadArray($this->getCFGDef('forbiddenApiFields'));
+            $out['fields'] = $this->filterFields($out['fields'], $allowed, $forbidden);
             $out = $this->getCFGDef('apiFormat', 'json') == 'json' ? jsonHelper::toJson($out) : $out;
         }
 
@@ -1333,7 +1336,7 @@ abstract class Core
                 $page = $redirect;
             } else {
                 $redirect = $this->config->loadArray($redirect, '');
-                if (!is_array($redirect)) {
+                if (filter_var($redirect, FILTER_VALIDATE_URL) !== false) {
                     $page = $redirect;
                 } else {
                     if (isset($redirect['query']) && is_array($redirect['query'])) {
