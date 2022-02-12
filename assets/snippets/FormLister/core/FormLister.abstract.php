@@ -1332,7 +1332,7 @@ abstract class Core
         if ($redirect = $this->getCFGDef($param, 0)) {
             $header = '';
             $query = http_build_query($_query);
-            if (is_numeric($redirect)) {
+            if (is_numeric($redirect) || filter_var($redirect, FILTER_VALIDATE_URL) !== false) {
                 $page = $redirect;
             } else {
                 $redirect = $this->config->loadArray($redirect, '');
