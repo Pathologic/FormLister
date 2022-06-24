@@ -1,6 +1,8 @@
 ## History
 ### 1.19.1
 * [Enhancement] Внешний источник $_GET (Core).
+* [Fix] Ошибка в PHP 8.1 (modxCaptcha).
+* [Enhancement] Recaptcha v.3 (ReCaptcha).
 
 ### 1.19.0
 * [Fix] Не работал параметр redirectTo, если значение - ссылка (Core).
