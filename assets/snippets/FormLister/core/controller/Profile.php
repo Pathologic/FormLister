@@ -181,6 +181,12 @@ class Profile extends Core
             'log'    => $this->user->getLog()
         ]);
         if ($result) {
+            if ($this->modx->getLoginUserID() && $this->getField($this->getCFGDef('rememberField', 'rememberme'))) {
+                //Updating session_id in cookie, if user is login and just saved
+                $cookieLifetime = $this->getCFGDef('cookieLifetime', 60 * 60 * 24 * 365 * 5);
+                $loginCookie = $this->getCFGDef('cookieName', 'WebLoginPE');
+                $this->user->setAutoLoginCookie($loginCookie, $cookieLifetime);
+            }
             $this->setFormStatus(true);
             $this->user->close();
             $this->setFields($this->user->edit($result)->toArray());
