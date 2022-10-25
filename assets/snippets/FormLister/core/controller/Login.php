@@ -1,5 +1,8 @@
 <?php namespace FormLister;
 
+use DocumentParser;
+use modUsers;
+
 /**
  * Контроллер для авторизации пользователя
  * Class Login
@@ -7,16 +10,27 @@
  */
 class Login extends Core
 {
-    public $user = null;
+    use DateConverter;
+
+    /**
+     * @var object|null
+     */
+    public $user;
+    /**
+     * @var string
+     */
     protected $requestUri = '';
+    /**
+     * @var string
+     */
     protected $context = '';
 
     /**
      * Login constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, $cfg = array())
+    public function __construct(DocumentParser $modx, $cfg = [])
     {
         parent::__construct($modx, $cfg);
         $this->user = $this->loadModel(
@@ -27,12 +41,11 @@ class Login extends Core
         if (0 === strpos($requestUri, MODX_BASE_URL)) {
             $requestUri = substr($requestUri, strlen(MODX_BASE_URL));
         } 
-        $this->requestUri = $this->modx->config['site_url'] . $requestUri;
+        $this->requestUri = $this->modx->getConfig('site_url') . $requestUri;
         $this->context = $this->getCFGDef('context', 'web');
-        $lang = $this->lexicon->loadLang('login');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('login');
+        $this->log('Lexicon loaded', ['lexicon' => $this->lexicon->getLexicon()]);
+        $this->dateFormat = $this->getCFGDef('dateFormat', '');
     }
 
     /**
@@ -41,7 +54,7 @@ class Login extends Core
     public function render()
     {
         if ($id = $this->modx->getLoginUserID($this->context)) {
-            $this->redirect();
+            $this->redirect('exitTo');
             $this->user->edit($id);
             $this->setFields($this->user->toArray());
             $this->renderTpl = $this->getCFGDef('skipTpl', $this->lexicon->getMsg('login.default_skipTpl'));
@@ -75,7 +88,7 @@ class Login extends Core
         }
         $this->user->edit($login);
 
-        if ($this->getCFGDef('checkActivation', 0) && $this->user->get('logincount') < 0) {
+        if ($this->getCFGDef('checkActivation', 0) && !$this->user->get('verified')) {
             $this->addMessage($this->lexicon->getMsg('login.user_notactivated'));
 
             return;
@@ -93,8 +106,9 @@ class Login extends Core
         $loginCookie = $this->getCFGDef('cookieName', 'WebLoginPE');
         $this->user->authUser($login, $remember, $loginCookie, true);
         $this->setFormStatus(true);
-        if (isset($this->modx->documentIdentifier) && $this->modx->documentIdentifier == $this->modx->config['unauthorized_page']) {
-            $uaPage = $this->modx->makeUrl($this->modx->config['unauthorized_page'], "", "", "full");
+        $this->runPrepare('prepareAfterProcess');
+        if (isset($this->modx->documentIdentifier) && $this->modx->documentIdentifier == $this->modx->getConfig('unauthorized_page')) {
+            $uaPage = $this->modx->makeUrl($this->modx->getConfig('unauthorized_page'), "", "", "full");
             $requested = explode('?', $this->requestUri);
             if (array_shift($requested) != $uaPage) {
                 $this->setField('redirectTo', $this->requestUri);
@@ -106,6 +120,9 @@ class Login extends Core
             $this->redirect();
         }
         $this->setFields($this->user->toArray());
+        if ($dob = $this->fromTimestamp($this->getField('dob'))) {
+            $this->setField('dob', $dob);
+        }
         $this->renderTpl = $this->getCFGDef('successTpl');
     }
 }

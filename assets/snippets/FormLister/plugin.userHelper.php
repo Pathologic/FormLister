@@ -6,8 +6,10 @@
  * Time: 18:59
  */
 $e = $modx->event;
-include_once(MODX_BASE_PATH . 'assets/lib/MODxAPI/modUsers.php');
-if ($e->name == 'OnWebAuthentication') {
+if (!class_exists('\\FormLister\\Core')) {
+    include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/__autoload.php');
+}
+if ($e->name == 'OnWebAuthentication' && isset($userObj)) {
     /**
      * @var modUsers $userObj
      */
@@ -21,7 +23,7 @@ if ($e->name == 'OnWebAuthentication') {
         $userObj->save();
     }
 }
-if ($e->name == 'OnWebLogin') {
+if ($e->name == 'OnWebLogin' && isset($userObj)) {
     if (!$userObj->get('lastlogin')) {
         $userObj->set('lastlogin', time());
     } else {
@@ -35,16 +37,34 @@ if ($e->name == 'OnWebLogin') {
         $userObj->setAutoLoginCookie($cookieName, $cookieLifetime);
     }
 }
+//Updating session_id in cookie, if user is login and just saved
+if ($e->name == 'OnWebSaveUser' && isset($userObj)) {
+    if( (int)$modx->getLoginUserID('web') == (int)$id && isset($_COOKIE[$cookieName]) ) { //checking, if current logined user was saved
+        $cookieParts = explode("|", $_COOKIE[$cookieName], 4);
+        if(isset($cookieParts[2]) && ($userObj->get('sessionid') != $cookieParts[2])) { //checking, if session ids in cookie and in user object became not equals
+            $userObj->setAutoLoginCookie($cookieName, $cookieLifetime);
+        }
+    }
+}
+
 if ($e->name == 'OnWebPageInit' || $e->name == 'OnPageNotFound') {
-    $user = new \modUsers($modx);
-    if ($uid = $modx->getLoginUserID('web')) {
+    $model = isset($params['model']) && class_exists($params['model']) ? $params['model'] : '\\modUsers';
+    $user = new $model($modx);
+    if ($uid = (int)$modx->getLoginUserID('web')) {
+        if ($trackWebUserActivity == 'Yes') {
+            $sid = $modx->sid = session_id();
+            $pageId = (int)$modx->documentIdentifier;
+            $uid = class_exists('\\EvolutionCMS\\Services\\UserManager') ? $uid : -1 * $uid;
+            $q = $modx->db->query("REPLACE INTO {$modx->getFullTableName('active_users')} (`sid`, `internalKey`, `username`, `lasthit`, `action`, `id`) values('{$sid}', {$uid}, '{$_SESSION['webShortname']}', '{$modx->time}', 998, {$pageId})");
+            $modx->updateValidatedUserSession();
+        }
         if (isset($_REQUEST[$logoutKey])) {
             $user->logOut($cookieName, true);
-            $page = $modx->config['site_url'] . (isset($_REQUEST['q']) ? $_REQUEST['q'] : '');
+            $page = $modx->getConfig('site_url') . (isset($_REQUEST['q']) ? $_REQUEST['q'] : '');
             $query = $_GET;
             unset($query[$logoutKey], $query['q']);
             if ($query) {
-                $page . '?' . http_build_query($query);
+                $page .= '?' . http_build_query($query);
             }
             $modx->sendRedirect($page);
         } elseif (!$user->edit($uid)->getID() || $user->checkBlock($uid)) {
@@ -54,3 +74,4 @@ if ($e->name == 'OnWebPageInit' || $e->name == 'OnPageNotFound') {
         $user->AutoLogin($cookieLifetime, $cookieName, true);
     }
 }
+

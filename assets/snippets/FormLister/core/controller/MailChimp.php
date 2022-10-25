@@ -1,5 +1,7 @@
 <?php namespace FormLister;
 
+use DocumentParser;
+
 /**
  * Class MailChimp
  * @package FormLister
@@ -8,13 +10,14 @@ class MailChimp extends Core
 {
     /**
      * MailChimp constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, $cfg = array())
+    public function __construct(DocumentParser $modx, $cfg = [])
     {
         parent::__construct($modx, $cfg);
-        $this->lexicon->loadLang('mailchimp');
+        $this->lexicon->fromFile('mailchimp');
+        $this->log('Lexicon loaded', ['lexicon' => $this->lexicon->getLexicon()]);
     }
 
     /**
@@ -22,7 +25,7 @@ class MailChimp extends Core
      */
     public function process()
     {
-        $errorMessage = $this->lexicon->getMsg('mc.subscription_failed');
+        $errorMessage = $this->translate('mc.subscription_failed');
         if (!$this->getCFGDef('apiKey')) {
             $this->addMessage($errorMessage);
 
@@ -36,16 +39,19 @@ class MailChimp extends Core
             return false;
         }
 
-        $MailChimp->post("lists/$list_id/members", array(
+        $MailChimp->post("lists/{$list_id}/members", [
             'email_address' => $this->getField('email'),
-            'merge_fields'  => array('NAME' => $this->getField('name')),
+            'merge_fields'  => ['NAME' => $this->getField('name')],
             'status'        => 'pending',
-        ));
+        ]);
         if (!$MailChimp->getLastError()) {
             $this->addMessage($errorMessage);
+
+            return false;
         } else {
             $this->setFormStatus(true);
-            $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('mc.default_successTpl'));
+            $this->runPrepare('prepareAfterProcess');
+            $this->renderTpl = $this->getCFGDef('successTpl', $this->translate('mc.default_successTpl'));
 
             return true;
         }

@@ -1,5 +1,9 @@
 <?php namespace FormLister;
 
+use autoTable;
+use DocumentParser;
+use modUsers;
+
 /**
  * Контроллер для создания записей
  * Class Content
@@ -7,27 +11,37 @@
  */
 class Content extends Form
 {
+    /**
+     * @var string
+     */
     protected $mode = 'create';
+    /**
+     * @var int
+     */
     protected $id = 0;
+    /**
+     * @var int
+     */
     protected $owner = 0;
     /**
-     * @var \autoTable $content
+     * @var object|null
      */
-    public $content = null;
-    public $user = null;
+    public $content;
+    /**
+     * @var object|null
+     */
+    public $user;
 
     /**
      * Content constructor.
-     * @param \DocumentParser $modx
+     * @param DocumentParser $modx
      * @param array $cfg
      */
-    public function __construct(\DocumentParser $modx, $cfg = array())
+    public function __construct(DocumentParser $modx, $cfg = [])
     {
         parent::__construct($modx, $cfg);
-        $lang = $this->lexicon->loadLang('content');
-        if ($lang) {
-            $this->log('Lexicon loaded', array('lexicon' => $lang));
-        }
+        $this->lexicon->fromFile('content');
+        $this->log('Lexicon loaded', ['lexicon' => $this->lexicon->getLexicon()]);
         $this->content = $this->loadModel(
             $this->getCFGDef('model', '\modResource'),
             $this->getCFGDef('modelPath', 'assets/lib/MODxAPI/modResource.php')
@@ -50,7 +64,7 @@ class Content extends Form
                 $this->mode = 'edit';
             }
         }
-        $data = array();
+        $data = [];
         if ($this->mode == 'edit') {
             $data = $this->content->edit($this->id)->toArray('', '', '_', false);
             $this->mailConfig['noemail'] = 1;
@@ -59,15 +73,17 @@ class Content extends Form
             } else {
                 $defaultsSources = "param:contentdata";
             }
-            $this->config->setConfig(array(
+            $this->config->setConfig([
                 'defaultsSources' => $defaultsSources,
                 'contentdata'     => $data,
                 'formTpl'         => $this->getCFGDef('editTpl', $this->getCFGDef('formTpl')),
                 'successTpl'      => $this->getCFGDef('editSuccessTpl'),
-                'onlyUsers'       => 1
-            ));
+                'onlyUsers'       => 1,
+                'protectSubmit'   => 0,
+                'submitLimit'     => 0
+            ]);
         }
-        $this->log('Content mode is ' . $this->mode, array('data' => $data));
+        $this->log('Content mode is ' . $this->mode, ['data' => $data]);
     }
 
     /**
@@ -85,12 +101,12 @@ class Content extends Form
                 if (!$uid) {
                     $this->redirect('exitTo');
                     $this->renderTpl = $this->getCFGDef('skipTpl',
-                        $this->lexicon->getMsg('create.default_skipTpl'));
+                        $this->translate('create.default_skipTpl'));
                     $flag = false;
                 } elseif (!$this->checkUserGroups($uid, $this->getCFGDef('userGroups'))) {
                     $this->redirect('badGroupTo');
                     $this->renderTpl = $this->getCFGDef('badGroupTpl',
-                        $this->lexicon->getMsg('create.default_badGroupTpl'));
+                        $this->translate('create.default_badGroupTpl'));
                     $flag = false;
                 }
             }
@@ -101,28 +117,28 @@ class Content extends Form
             if (!$uid) {
                 $this->redirect('exitTo');
                 $this->renderTpl = $this->getCFGDef('skipEditTpl',
-                    $this->lexicon->getMsg('edit.default_skipEditTpl'));
+                    $this->translate('edit.default_skipEditTpl'));
                 $flag = false;
             } elseif (!$this->checkUserGroups($uid, $this->getCFGDef('userGroups'))) {
                 $this->redirect('badGroupTo');
                 $this->renderTpl = $this->getCFGDef('badGroupTpl',
-                    $this->lexicon->getMsg('edit.default_badGroupTpl'));
+                    $this->translate('edit.default_badGroupTpl'));
                 $flag = false;
             } else {
                 $cid = is_null($this->content) ? false : $this->content->getID();
                 if ($cid) {
-                    $owner = $this->content->get($ownerField);
-                    if ($this->getCFGDef('onlyAuthors', 1) && $owner && $owner != $uid) {
+                    $owner = (int)$this->content->get($ownerField);
+                    if ($this->getCFGDef('onlyOwners', 1) && $owner !== $uid) {
                         $this->redirect('badOwnerTo');
                         $this->renderTpl = $this->getCFGDef('badOwnerTpl',
-                            $this->lexicon->getMsg('edit.default_badOwnerTpl'));
+                            $this->translate('edit.default_badOwnerTpl'));
                         $flag = false;
                     }
                     $this->owner = $uid;
                 } else {
                     $this->redirect('badRecordTo');
                     $this->renderTpl = $this->getCFGDef('badRecordTpl',
-                        $this->lexicon->getMsg('edit.default_badRecordTpl'));
+                        $this->translate('edit.default_badRecordTpl'));
                     $flag = false;
                 }
             }
@@ -156,36 +172,36 @@ class Content extends Form
                     if ($this->owner || !$this->getCFGDef('onlyUsers', 1)) {
                         $fields[$ownerField] = $this->owner;
                         $result = $this->content->create($fields)->save(true, $clearCache);
-                        $this->log('Create record', array('data' => $fields, 'result' => $result ,'log' => $this->content->getLog()));
+                        $this->log('Create record', ['data' => $fields, 'result' => $result ,'log' => $this->content->getLog()]);
                     }
                     if ($result) {
                         $url = '';
 
-                        $evtOut = $this->modx->invokeEvent('OnMakeDocUrl', array(
+                        $evtOut = $this->modx->invokeEvent('OnMakeDocUrl', [
                             'invokedBy' => __CLASS__,
                             'id'        => $result,
                             'data'      => $this->getFormData('fields')
-                        ));
+                        ]);
                         if (is_array($evtOut) && count($evtOut) > 0) {
                             $url = array_pop($evtOut);
                         }
                         if ($url) {
                             $this->setField('content.url', $url);
                         }
-                        $this->log('Created record', array('data' => $fields, 'result' => $result));
+                        $this->log('Created record', ['data' => $fields, 'result' => $result]);
                     }
                     break;
                 case 'edit':
                     $result = $this->content->fromArray($fields)->save(true, $clearCache);
                     if ($result) {
-                        $this->log('Update record', array('data' => $fields, 'result' => $result));
+                        $this->log('Update record', ['data' => $fields, 'result' => $result]);
                     }
                     break;
             }
         }
         if (!$result) {
-            $this->log('Save failed', array('model' => get_class($this->content), 'data' => $fields));
-            $this->addMessage($this->lexicon->getMsg('edit.update_failed'));
+            $this->log('Save failed', ['model' => get_class($this->content), 'data' => $fields]);
+            $this->addMessage($this->translate('edit.update_failed'));
         } else {
             $this->content->close();
             $this->setFields($this->content->edit($result)->toArray('', '', '_', false));
@@ -196,7 +212,7 @@ class Content extends Form
                 $this->setFields($this->user->edit($this->owner)->toArray(), 'user');
             }
             $this->runPrepare('preparePostProcess');
-            $this->log('Update form data', array('data' => $this->getFormData('fields')));
+            $this->log('Update form data', ['data' => $this->getFormData('fields')]);
             if ($this->mode == 'create') {
                 parent::process();
             } else {
@@ -215,20 +231,16 @@ class Content extends Form
         if ($this->mode == 'create') {
             if ($this->getCFGDef('editAfterCreate', 0)) {
                 $idField = $this->getCFGDef('idField');
-                $this->redirect('redirectTo',
-                    array(
-                        $idField => $this->getField($idField)
-                    )
-                );
+                $this->redirect('redirectTo', [$idField => $this->getField($idField)]);
             } else {
                 $this->redirect();
             }
-            $this->renderTpl = $this->getCFGDef('successTpl', $this->lexicon->getMsg('create.default_successTpl'));
+            $this->renderTpl = $this->getCFGDef('successTpl', $this->translate('create.default_successTpl'));
         } else {
             if ($successTpl = $this->getCFGDef('successTpl')) {
                 $this->renderTpl = $successTpl;
             } else {
-                $this->addMessage($this->lexicon->getMsg('edit.update_success'));
+                $this->addMessage($this->translate('edit.update_success'));
             }
         }
     }
@@ -239,12 +251,12 @@ class Content extends Form
      */
     public function getContentFields($flip = false)
     {
-        $fields = array();
+        $fields = [];
         $contentFields = $this->getCFGDef('contentFields');
         $contentFields = $this->config->loadArray($contentFields, '');
         if (!$contentFields) {
             $fields = $this->filterFields($this->getFormData('fields'), $this->allowedFields, $this->forbiddenFields);
-            $this->log('Unable to get juxtaposition of content fields', array('contentFields' => $fields));
+            $this->log('Unable to get juxtaposition of content fields', ['contentFields' => $fields]);
         } else {
             if ($flip || ($this->mode == 'edit' && !$this->isSubmitted())) {
                 $contentFields = array_flip($contentFields);
@@ -255,7 +267,7 @@ class Content extends Form
                     $fields[$field] = $formField;
                 }
             }
-            $this->log('Juxtaposition of content fields', array('contentFields' => $fields));
+            $this->log('Juxtaposition of content fields', ['contentFields' => $fields]);
         }
 
         return $fields;
@@ -284,7 +296,7 @@ class Content extends Form
                 $flag = !empty(array_intersect($groups, $userGroups));
             }
         }
-        $this->log('Check user groups', array('result' => $flag));
+        $this->log('Check user groups', ['result' => $flag]);
 
         return $flag;
     }
