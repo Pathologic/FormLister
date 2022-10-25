@@ -110,12 +110,9 @@ class Activate extends Form
                     )
                 ) {
                     $this->setFields($this->user->toArray());
-                    if (empty($password)) {
-                        $password = \APIhelpers::genPass($this->getCFGDef('passwordLength', 6));
-                        $this->user->set('password', $password)->save(true);
-                        $this->setField('user.password', $password);
-                        $hash = $this->getUserHash($uid);
-                    }
+
+                    $hash = $this->getUserHash($uid);
+
                     $url = $this->getCFGDef('activateTo', isset($this->modx->documentIdentifier) && $this->modx->documentIdentifier > 0 ? $this->modx->documentIdentifier : $this->config['site_start']);
                     $uidName = $this->getCFGDef('uidName', $this->user->fieldPKName());
                     $this->setField('activate.url', $this->modx->makeUrl($url, "",
