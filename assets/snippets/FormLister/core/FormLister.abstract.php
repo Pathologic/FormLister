@@ -1190,6 +1190,7 @@ abstract class Core
      */
     public function parseChunk($name, array $data, $parseDocumentSource = false)
     {
+        $name = (string)$name;
         $isModxChunk = !preg_match('/^@[A-Z]_/', $name);
         $parseDocumentSource = $isModxChunk && ($parseDocumentSource || $this->getCFGDef('parseDocumentSource', 0));
         $rewriteUrls = $this->getCFGDef('rewriteUrls', 1);
