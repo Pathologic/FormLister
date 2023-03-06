@@ -1130,7 +1130,7 @@ abstract class Core
             'messagesOuterTpl',
             'messagesSplitter'
         );
-        $wrapper_chunk = '';
+        $wrapper_chunk = $wrapper;
         if(strpos( $wrapper, '@') !== 0) {
             $wrapper_chunk = $this->DLTemplate->getChunk($wrapper);
         }
