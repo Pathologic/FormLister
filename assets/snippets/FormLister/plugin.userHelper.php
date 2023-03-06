@@ -59,7 +59,8 @@ if ($e->name == 'OnWebPageInit' || $e->name == 'OnPageNotFound') {
             $sid = $modx->sid = session_id();
             $pageId = (int)$modx->documentIdentifier;
             $uid = function_exists('app') ? $uid : -1 * $uid;
-            $q = $modx->db->query("REPLACE INTO {$modx->getFullTableName('active_users')} (`sid`, `internalKey`, `username`, `lasthit`, `action`, `id`) values('{$sid}', {$uid}, '{$_SESSION['webShortname']}', '{$modx->time}', 998, {$pageId})");
+            $name = $modx->db->escape($_SESSION['webShortname'] ?? '');
+            $q = $modx->db->query("REPLACE INTO {$modx->getFullTableName('active_users')} (`sid`, `internalKey`, `username`, `lasthit`, `action`, `id`) values('{$sid}', {$uid}, '{$name}', '{$modx->time}', 998, {$pageId})");
             $modx->updateValidatedUserSession();
         }
         if (isset($_REQUEST[$logoutKey])) {
