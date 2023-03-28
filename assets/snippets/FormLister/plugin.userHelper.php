@@ -9,7 +9,7 @@ $e = $modx->event;
 if (!class_exists('\\FormLister\\Core')) {
     include_once(MODX_BASE_PATH . 'assets/snippets/FormLister/__autoload.php');
 }
-if ($e->name == 'OnWebAuthentication' && isset($userObj)) {
+if (($e->name == 'OnWebAuthentication' || $e->name == 'OnUserAuthentication') && isset($userObj)) {
     /**
      * @var modUsers $userObj
      */
@@ -23,7 +23,7 @@ if ($e->name == 'OnWebAuthentication' && isset($userObj)) {
         $userObj->save();
     }
 }
-if ($e->name == 'OnWebLogin' && isset($userObj)) {
+if (($e->name == 'OnWebLogin'  || $e->name == 'OnUserLogin') && isset($userObj)) {
     if (!$userObj->get('lastlogin')) {
         $userObj->set('lastlogin', time());
     } else {
@@ -38,7 +38,7 @@ if ($e->name == 'OnWebLogin' && isset($userObj)) {
     }
 }
 //Updating session_id in cookie, if user is login and just saved
-if ($e->name == 'OnWebSaveUser' && isset($userObj)) {
+if (($e->name == 'OnWebSaveUser'  || $e->name == 'OnUserSave') && isset($userObj)) {
     if( (int)$modx->getLoginUserID('web') == (int)$id && isset($_COOKIE[$cookieName]) ) { //checking, if current logined user was saved
         $cookieParts = explode("|", $_COOKIE[$cookieName], 4);
         if(isset($cookieParts[2]) && ($userObj->get('sessionid') != $cookieParts[2])) { //checking, if session ids in cookie and in user object became not equals
