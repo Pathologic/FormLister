@@ -50,7 +50,7 @@ class ReCaptchaWrapper implements CaptchaInterface
         $size = \APIhelpers::getkey($this->cfg, 'size', 'normal');
         $tabindex = \APIhelpers::getkey($this->cfg, 'tabindex', 0);
         $theme = \APIhelpers::getkey($this->cfg, 'theme', 'light');
-        $id = \APIhelpers::getkey($this->cfg, 'capthcaid', \APIhelpers::getkey($this->cfg, 'id'));
+        $id = \APIhelpers::getkey($this->cfg, 'captchaid', \APIhelpers::getkey($this->cfg, 'id'));
         $id = 'id="' . $id . '-recaptcha"';
         $badge = \APIhelpers::getkey($this->cfg, 'badge', 'bottomright');
         $callback = \APIhelpers::getkey($this->cfg, 'callback', '');
