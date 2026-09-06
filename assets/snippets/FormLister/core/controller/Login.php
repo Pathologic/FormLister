@@ -79,6 +79,7 @@ class Login extends Core
         if (!is_scalar($login)) {
             $login = '';
         }
+        $login = (string)$login;
         $password = $this->getField($this->getCFGDef('passwordField', 'password'));
         $remember = $this->getField($this->getCFGDef('rememberField', 'rememberme'));
         if ($this->user->checkBlock($login)) {
